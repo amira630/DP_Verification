@@ -12,18 +12,18 @@ module TOP();
     end
 
     // Create the interfaces for Transport Layer and the Sink Link Layer
-    DP_SOURCE_if DP_TL_if (clk);
-    DP_SOURCE_if DP_SINK_if (clk);
+    DP_TL_if tl_if (clk);
+    DP_SINK_if sink_if (clk);
 
     DP_SOURCE DP_SOURCE_DUT (
-        .tl_if(DP_TL_if),
-        .sink_if(DP_SINK_if)    // make sure the DP_SOURCE can take two interfaces
+        .tl_if(tl_if),
+        .sink_if(sink_if)    // make sure the DP_SOURCE can take two interfaces
     );
 
     initial begin
         // add virtual interfaces for each interface to the configurations database
-        uvm_config_db #(virtual DP_SOURCE_if)::set(null, "uvm_test_top", "DP_TL_vif", DP_TL_if);
-        uvm_config_db #(virtual DP_SOURCE_if)::set(null, "uvm_test_top", "DP_SINK_vif", DP_SINK_if);
+        uvm_config_db #(virtual DP_TL_if)::set(null, "uvm_test_top", "DP_TL_vif", tl_if);
+        uvm_config_db #(virtual DP_SINK_if)::set(null, "uvm_test_top", "DP_SINK_vif", sink_if);
         
         // Run the test
         run_test("DP_SOURCE_test");
