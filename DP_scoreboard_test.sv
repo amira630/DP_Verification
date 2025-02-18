@@ -18,7 +18,7 @@ class DP_scoreboard extends uvm_scoreboard;
     DP_TL_sequence seq_item_sb_tl;
     DP_SINK_sequence seq_item_sb_sink;
     
-    DP_SOURCE_config_pkg DP_SOURCE_config_pkg_scoreboard;
+    DP_SOURCE_config DP_SOURCE_config_scoreboard;
     virtual DP_TL_if DP_TL_scoreboard_vif;
     virtual DP_SINK_if DP_SINK_scoreboard_vif;
     
@@ -38,7 +38,7 @@ class DP_scoreboard extends uvm_scoreboard;
         sb_tl_fifo = new("sb_tl_fifo", this);
         sb_sink_fifo = new("sb_sink_fifo", this);
 
-        if (!uvm_config_db #(DP_SOURCE_config_pkg)::get(this, "", "CFG", DP_SOURCE_config_pkg_scoreboard)) begin
+        if (!uvm_config_db #(DP_SOURCE_config)::get(this, "", "CFG", DP_SOURCE_config_scoreboard)) begin
             `uvm_fatal("build_phase", "Scoreboard - Unable to get configuration object")
         end
     endfunction
@@ -47,8 +47,8 @@ class DP_scoreboard extends uvm_scoreboard;
         super.connect_phase(phase);
         sb_tl_export.connect(sb_tl_fifo.analysis_export);
         sb_sink_export.connect(sb_sink_fifo.analysis_export);
-        DP_TL_scoreboard_vif = DP_SOURCE_config_pkg_scoreboard.DP_TL_vif;
-        DP_SINK_scoreboard_vif = DP_SOURCE_config_pkg_scoreboard.DP_SINK_vif;
+        DP_TL_scoreboard_vif = DP_SOURCE_config_scoreboard.DP_TL_vif;
+        DP_SINK_scoreboard_vif = DP_SOURCE_config_scoreboard.DP_SINK_vif;
     endfunction
 
     task run_phase(uvm_phase phase);
