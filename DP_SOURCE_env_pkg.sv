@@ -25,7 +25,7 @@ package DP_SOURCE_env_pkg;
 
         function void build_phase(uvm_phase phase);
             super.build_phase(phase);
-
+            // Building the TL_agent, Sink_agent, scoreboard, reference model, TL_collector and Sink_collector
             tl_agt = DP_TL_agent::type_id::create("tl_agt", this);
             sink_agt = DP_SINK_agent::type_id::create("sink_agt", this);
             sb = DP_scoreboard::type_id::create("sb", this);
@@ -35,14 +35,23 @@ package DP_SOURCE_env_pkg;
         endfunction   
          
         function void connect_phase(uvm_phase phase);
+            super.connect_phase(phase);
+            // Transport Layer Agent → Scoreboard
             tl_agt.agt_ap.connect(sb.sb_export);
+
+            // Sink Agent → Scoreboard
             sink_agt.agt_ap.connect(sb.sb_export);
 
+            // Transport Layer Agent → Transport Layer Coverage Collector
             tl_agt.agt_ap.connect(tl_cov.cov_export);
+            // Sink Agent → Sink Coverage Collector
             sink_agt.agt_ap.connect(sink_cov.cov_export);
 
-            tl_agt.agt_ap.connect(ref_model.ref_model_export); 
-            //ref_model.ref_ap.connect(sb.sb_export);           
+            // Transport Layer Agent → Reference Model
+            tl_agt.agt_ap.connect(ref_model.ref_model_export);
+
+            // Reference Model → Scoreboard
+            ref_model.ref_ap.connect(sb.sb_export);
         endfunction
     endclass //className extends superClass
 endpackage
