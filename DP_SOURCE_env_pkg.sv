@@ -37,10 +37,10 @@ package DP_SOURCE_env_pkg;
         function void connect_phase(uvm_phase phase);
             super.connect_phase(phase);
             // Transport Layer Agent → Scoreboard
-            tl_agt.agt_ap.connect(sb.sb_export);
+            tl_agt.agt_ap.connect(sb.sb_tl_export);
 
             // Sink Agent → Scoreboard
-            sink_agt.agt_ap.connect(sb.sb_export);
+            sink_agt.agt_ap.connect(sb.sb_sink_export);
 
             // Transport Layer Agent → Transport Layer Coverage Collector
             tl_agt.agt_ap.connect(tl_cov.cov_export);
