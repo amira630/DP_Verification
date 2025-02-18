@@ -28,16 +28,16 @@ package DP_SOURCE_test_pkg;
 
         function void build_phase(uvm_phase phase);
             super.build_phase(phase);
-
+            // building the environment, TL_sequence, Sink_sequence and configurations object
             env = DP_SOURCE_env::type_id::create("env",this);
             DP_SOURCE_cfg = DP_SOURCE_config::type_id::create("DP_SOURCE_cfg");
             DP_TL_seq = DP_TL_sequence::type_id::create("DP_TL_seq", this);
             DP_SINK_seq = DP_SINK_sequence::type_id::create("DP_SINK_seq", this);
             
             // add virtual interfaces for each interface to the configurations database
-            if(!uvm_config_db #(virtual DP_SOURCE_if):: get(this, "","DP_TL_vif", DP_SOURCE_cfg.DP_TL_vif))
+            if(!uvm_config_db #(virtual DP_TL_if):: get(this, "","DP_TL_vif", DP_SOURCE_cfg.DP_TL_vif))
                 `uvm_fatal("build_phase","Test - Unable to get the virtual interface of the Transport Layer from the uvm_config_db");
-            if(!uvm_config_db #(virtual DP_SOURCE_if):: get(this, "","DP_SINK_vif", DP_SOURCE_cfg.DP_SINK_vif))
+            if(!uvm_config_db #(virtual DP_SINK_if):: get(this, "","DP_SINK_vif", DP_SOURCE_cfg.DP_SINK_vif))
                 `uvm_fatal("build_phase","Test - Unable to get the virtual interface of the DP Sink from the uvm_config_db"); 
             // pass the virtual interfaces on to the agents
             uvm_config_db #(DP_SOURCE_config)::set(this,"*", "CFG", DP_SOURCE_cfg);   
