@@ -51,7 +51,7 @@ package DP_SOURCE_env_pkg;
             tl_agt.agt_ap.connect(ref_model.ref_model_export);
 
             // Reference Model → Scoreboard
-            ref_model.ref_ap.connect(sb.sb_export);
+            ref_model.ref_ap.connect(sb.sb_ref_export);
         endfunction
     endclass //className extends superClass
 endpackage
