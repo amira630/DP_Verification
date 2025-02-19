@@ -11,132 +11,90 @@ class ALSU_coverage extends uvm_component;
     DP_TL_sequence seq_item_cov;
 
     covergroup cvr_grp;
-//   // Coverpoint for A
-//   a: coverpoint seq_item_cov.A {
-//     bins A_data_0 = {3'b000};
-//     bins A_data_max = {MAXPOS};
-//     bins A_data_min = {MAXNEG};
-//     bins A_data_default = default;
-//     bins A_data_walkingones[] = {3'b001, 3'b010, 3'b100} iff (seq_item_cov.red_op_A);
-//   }
+    
+            // Coverpoint for Reset
+            rst_cp: coverpoint trans.reset {
+                bins asserted = {0};  // Reset active
+                bins deasserted = {1}; // Reset inactive
+            }
+            
+            // Coverpoint for Carry-in signal
+            cin_cp: coverpoint trans.cin {
+                bins low = {0};
+                bins high = {1};
+            }
 
-//   // Coverpoint for B
-//  b: coverpoint seq_item_cov.B {
-//     bins B_data_0 = {3'b000};
-//     bins B_data_max = {MAXPOS};
-//     bins B_data_min = {MAXNEG};
-//     bins B_data_default = default;
-//     bins B_data_walkingones[] = {3'b001, 3'b010, 3'b100} iff (seq_item_cov.red_op_B && !seq_item_cov.red_op_A);
-//   }
+            // Coverpoint for Valid-in signal
+            valid_in_cp: coverpoint trans.valid_in {
+                bins valid_input = {1};
+                bins invalid_input = {0};
+            }
+            
+            // Coverpoint for ALU control signal (ensure all operations are exercised)
+            ctl_cp: coverpoint trans.ctl {
+                bins all_ops[] = {[SEL:XOR]}; // Cover all ALU operations
+                bins invalid_op[] = {[invalid_1:invalid_2]}; // Cover invalid operations
+            }
 
-//   // Coverpoint for ALU operations
-//   op: coverpoint seq_item_cov.opcode {
-//     bins Bins_shift[] = {SHIFT, ROTATE};
-//     bins Bins_arith[] = {ADD, MULT};
-//     bins Bins_bitwise[] = {OR, XOR};
-//     illegal_bins Bins_invalid[] = {INVALID_6, INVALID_7};
-//     bins Bins_trans = (OR => XOR => ADD => MULT => SHIFT);
-//   }
+            // Coverpoints for ALU input values (track different data patterns)
+            a_cp: coverpoint trans.a {
+                bins a_zero = {4'b0000};          // Test zero input
+                bins a_ones = {4'b1111};          // Test all ones
+                bins a_mid = {[4'b0111:4'b1000]}; // Test middle range values
+                bins a_walkingones[] = {4'b0001,4'b0010,4'b0100,4'b1000};
+                bins a_default = default;          // Test other values
+            }
 
-//      //some values of A
-//   a_all: coverpoint seq_item_cov.A {
-//     bins allvaluesofA[] = {ZERO, MAXPOS, MAXNEG};
-//     option.weight=0;
-//   }
+            b_cp: coverpoint trans.b {
+                bins b_zero = {4'b0000};          // Test zero input
+                bins b_ones = {4'b1111};          // Test all ones
+                bins b_mid = {[4'b0111:4'b1000]}; // Test middle range values
+                bins b_walkingones[] = {4'b0001, 4'b0010, 4'b0100, 4'b1000};
+                bins b_default = default;          // Test other values
+            }
 
-//      //some values of B
-//   b_all: coverpoint seq_item_cov.B {
-//     bins allvaluesofB[] = {ZERO, MAXPOS, MAXNEG};
-//     option.weight=0;
-//   }
+            // Coverpoint for ALU Operations
+            ALU_cp: coverpoint trans.ctl {
+                // bins Bins_shift[] = {[SHIFT_L:ROTATE_R]};
+                bins Bins_arith[] = {[ADD:SUB_b]};
+                bins Bins_B[] = {[SEL:DEC]};
+                bins Bins_bitwise[] = {[AND:XOR]};
+                illegal_bins Bins_invalid = {[invalid_1:invalid_2]};
+                bins opcode_default = default;          // Test other values
+            }            
+            
+            // Coverpoint for Carry-out
+            carry_cp: coverpoint trans.carry {
+                bins carry_0 = {0};
+                bins carry_1 = {1};
+            }
 
-//       //all values of cin
-//   CIN: coverpoint seq_item_cov.cin {
-//     bins allvaluesofcin[] = {0, 1};
-//     option.weight=0;
-//   }
+            // Coverpoint for Zero flag
+            zero_cp: coverpoint trans.zero {
+                bins zero_set = {1};
+                bins zero_unset = {0};
+            }
 
-//        //some values of OPCODE
-//   op_individual: coverpoint seq_item_cov.opcode {
-//     bins opcodeADD[] = {ADD};
-//     bins opcodeSHIFT[] = {SHIFT};
-//     bins opcodeNOTORorXOR[] = {ADD, MULT, SHIFT, ROTATE, INVALID_6, INVALID_7};
-//     option.weight=0;
-//   }
- 
-//        //all values of Serial_in
-//   SERIAL_IN: coverpoint seq_item_cov.serial_in {
-//     bins allvaluesofserial_in[] = {0, 1};
-//     option.weight=0;
-//   }
+            // Coverpoint for valid_out
+            valid_out_cp: coverpoint trans.valid_out {
+                bins valid_cases = {1} iff(trans.reset && trans.valid_in && (trans.ctl != invalid_1) && (trans.ctl != invalid_1));
+                bins invalid_cases = {0};
+            }   
 
-//        //all values of DIRECTION
-//   DIRECTION: coverpoint seq_item_cov.direction {
-//     bins allvaluesofdirection[] = {0, 1};
-//     option.weight=0;
-//   }
-
-//          //all values of RED_OP_A
-//   RED_OP_A: coverpoint seq_item_cov.red_op_A {
-//     bins red_op_AisONE[] = {1};
-//     bins red_op_AisZERO[] = {0};
-//     bins red_op_AisEITHERONEORZERO[] = {0, 1};
-//     option.weight=0;
-//   }
-
-//            //all values of RED_OP_B
-//   RED_OP_B: coverpoint seq_item_cov.red_op_B {
-//     bins red_op_BisONE[] = {1};
-//     bins red_op_BisZERO[] = {0};
-//     bins red_op_BisEITHERONEORZERO[] = {0, 1};
-//     option.weight=0;
-//   }
-
-//   // Cross Coverage
-
-//   // 1. All permutations of A and B when ALU is ADD or MULT
-//   cross a_all, b_all, op {
-//     bins add_mult_permutations = binsof(a_all.allvaluesofA) && binsof(b_all.allvaluesofB) && binsof(op.Bins_arith);
-//     option.cross_auto_bin_max = 0;
-//   }
-
-//   // 2. When ALU is ADD, cross A, B, and cin (0 or 1)
-//   cross CIN, op_individual {
-//     bins add_cin = binsof(CIN.allvaluesofcin) && binsof(op_individual.opcodeADD);
-//     option.cross_auto_bin_max = 0;
-//   }
-
-//   // 3. When ALU is SHIFT, cross A, B, and serial_in (0 or 1)
-//   cross SERIAL_IN, op_individual {
-//     bins shift_serial_in = binsof(SERIAL_IN.allvaluesofserial_in) && binsof(op_individual.opcodeSHIFT);
-//     option.cross_auto_bin_max = 0;
-//   }
-
-//   // 4. When ALU is SHIFT or ROTATE, cross A, B, and direction (0 or 1)
-//   cross DIRECTION, op {
-//     bins shift_rotate_dir = binsof(DIRECTION.allvaluesofdirection) && binsof(op.Bins_shift);
-//     option.cross_auto_bin_max = 0;
-//   }
-
-//   // 5. When ALU is OR/XOR with red_op_A, cross A (walking ones) and B = 0
-//   cross a, b, RED_OP_A, op {
-//     bins or_xor_red_op_A = binsof(a.A_data_walkingones) && binsof(b.B_data_0) && binsof(op.Bins_bitwise) && binsof(RED_OP_A.red_op_AisONE);
-//     option.cross_auto_bin_max = 0;
-//   }
-
-//   // 6. When ALU is OR/XOR with red_op_B, cross B (walking ones) and A = 0
-//   cross a, b, RED_OP_B, op {
-//     bins or_xor_red_op_A = binsof(b.B_data_walkingones) && binsof(a.A_data_0) && binsof(op.Bins_bitwise) && binsof(RED_OP_B.red_op_BisONE);
-//     option.cross_auto_bin_max = 0;
-//   }
-
-//   // 7. Invalid case: reduction operation active while opcode is not OR or XOR
-//   cross RED_OP_A, RED_OP_B, op_individual {
-//     bins invalid_reduction_case1 = binsof(op_individual.opcodeNOTORorXOR) && binsof(RED_OP_A.red_op_AisONE) && binsof(RED_OP_B.red_op_BisONE);
-//     bins invalid_reduction_case2 = binsof(op_individual.opcodeNOTORorXOR) && binsof(RED_OP_A.red_op_AisONE) && binsof(RED_OP_B.red_op_BisZERO);
-//     bins invalid_reduction_case3 = binsof(op_individual.opcodeNOTORorXOR) && binsof(RED_OP_A.red_op_AisZERO) && binsof(RED_OP_B.red_op_BisONE);
-//     option.cross_auto_bin_max = 0;
-//   }
+            // Cross Coverage
+            a_b_arith: cross a_cp, b_cp, ALU_cp{
+                bins abop  = ( (binsof(a_cp.a_ones) || binsof(a_cp.a_zero)) &&  (binsof(b_cp.b_ones) || binsof(b_cp.b_zero)) && binsof(ALU_cp.Bins_arith));
+                option.cross_auto_bin_max = 0;
+            }  
+            a_b_arithwc: cross cin_cp, ALU_cp{
+                bins abopwc  = (binsof(cin_cp.high) && binsof(ALU_cp.Bins_arith) intersect{ADD_c, SUB_b});
+                option.cross_auto_bin_max = 0;
+            }
+            a_b_bitwise: cross a_cp, b_cp, ALU_cp{
+                bins ab_bitab = (binsof(ALU_cp.Bins_bitwise) && binsof(a_cp.a_walkingones) && binsof(b_cp.b_walkingones));
+                bins ab_bita = (binsof(ALU_cp.Bins_bitwise) && binsof(a_cp.a_walkingones));
+                bins ab_bitb = (binsof(ALU_cp.Bins_bitwise) && binsof(b_cp.b_walkingones));
+                option.cross_auto_bin_max = 0;
 
   endgroup
  

@@ -25,19 +25,21 @@ class DP_TL_monitor extends uvm_monitor;
    forever begin
      rsp_seq_item = DP_TL_sequence::type_id::create("rsp_seq_item");
      @(negedge DP_TL_vif.clk);
-     rsp_seq_item.cin = DP_TL_vif.cin;
-     rsp_seq_item.red_op_A = DP_TL_vif.red_op_A;
-     rsp_seq_item.red_op_B = DP_TL_vif.red_op_B;
-     rsp_seq_item.bypass_A = DP_TL_vif.bypass_A; 
-     rsp_seq_item.bypass_B = DP_TL_vif.bypass_B;
-     rsp_seq_item.direction = DP_TL_vif.direction;
-     rsp_seq_item.serial_in = DP_TL_vif.serial_in;
-     rsp_seq_item.opcode = opcode_e'(DP_TL_vif.opcode);
-     rsp_seq_item.A = DP_TL_vif.A;
-     rsp_seq_item.B = DP_TL_vif.B;
-     rsp_seq_item.rst = DP_TL_vif.rst;
-     rsp_seq_item.out = DP_TL_vif.out;
-     rsp_seq_item.leds = DP_TL_vif.leds;
+     
+     rsp_seq_item.reset = DP_TL_vif.reset;
+     rsp_seq_item.a = DP_TL_vif.a;
+     rsp_seq_item.b = DP_TL_vif.b;
+     rsp_seq_item.cin = DP_TL_vif.cin; 
+     rsp_seq_item.ctl = DP_TL_vif.ctl;
+     rsp_seq_item.valid_in = DP_TL_vif.valid_in;
+  
+     rsp_seq_item.valid_out = DP_TL_vif.valid_out;
+     rsp_seq_item.alu = DP_TL_vif.alu;
+     rsp_seq_item.carry = DP_TL_vif.carry;
+     rsp_seq_item.zero = DP_TL_vif.zero;
+
+     //rsp_seq_item.alu = opcode_e'(DP_TL_vif.alu);
+
      mon_ap.write(rsp_seq_item);
         `uvm_info("run_phase", rsp_seq_item.convert2string(), UVM_LOW) 
    end
@@ -46,3 +48,17 @@ class DP_TL_monitor extends uvm_monitor;
 endclass
 
 endpackage
+
+// assign clk = intf.clk;
+// assign reset = intf.reset; 
+// assign a = intf.a;
+// assign b = intf.b;
+// assign cin = intf.cin;
+// assign ctl = intf.ctl;
+// assign valid_in = intf.valid_in;
+
+
+// assign intf.valid_out = valid_out; 
+// assign intf.alu = alu; 
+// assign intf.carry = carry; 
+// assign intf.zero = zero; 
