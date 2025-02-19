@@ -38,8 +38,6 @@ class DP_TL_monitor extends uvm_monitor;
      rsp_seq_item.carry = DP_TL_vif.carry;
      rsp_seq_item.zero = DP_TL_vif.zero;
 
-     //rsp_seq_item.alu = opcode_e'(DP_TL_vif.alu);
-
      mon_ap.write(rsp_seq_item);
         `uvm_info("run_phase", rsp_seq_item.convert2string(), UVM_LOW) 
    end
