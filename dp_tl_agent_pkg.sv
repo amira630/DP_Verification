@@ -1,22 +1,22 @@
-package dp_sink_agent_pkg;
+package dp_tl_agent_pkg;
 
     import uvm_pkg::*;
     `include "dp_source_config.sv"
-    `include "dp_sink_sequencer.sv"
-    `include "dp_sink_driver.sv"
-    `include "dp_sink_monitor.sv"
+    `include "dp_tl_sequencer.sv"
+    `include "dp_tl_driver.sv"
+    `include "dp_tl_monitor.sv"
     `include "uvm_macros.svh"
 
-    class dp_sink_agent extends uvm_agent;
-        `uvm_component_utils(dp_sink_agent)
+    class dp_tl_agent extends uvm_agent;
+        `uvm_component_utils(dp_tl_agent)
         
-        dp_sink_sequencer sqr;
-        dp_sink_driver drv;
-        dp_sink_monitor mon;
+        dp_tl_sequencer sqr;
+        dp_tl_driver drv;
+        dp_tl_monitor mon;
         dp_source_config dp_source_cfg;
-        uvm_analysis_port #(dp_sink_seq_item) agt_ap;
+        uvm_analysis_port #(dp_tl_seq_item) agt_ap;
 
-        function new(string name = "dp_sink_agent", uvm_component parent = null);
+        function new(string name = "dp_tl_agent", uvm_component parent = null);
             super.new(name, parent);
         endfunction //new()
 
@@ -27,9 +27,9 @@ package dp_sink_agent_pkg;
                 `uvm_fatal("build_phase","Test - Unable to get configuration object");
             
             //buikding the Transport Layer sequencer, driver and monitor
-            sqr = dp_sink_sequencer::type_id::create("sqr", this);
-            drv = dp_sink_driver::type_id::create("drv", this);
-            mon = dp_sink_monitor::type_id::create("mon", this);
+            sqr = dp_tl_sequencer::type_id::create("sqr", this);
+            drv = dp_tl_driver::type_id::create("drv", this);
+            mon = dp_tl_monitor::type_id::create("mon", this);
             // building the Transport Layer agent analysis port
             agt_ap = new("agt_ap", this);
         endfunction
@@ -38,12 +38,12 @@ package dp_sink_agent_pkg;
             super.connect_phase(phase);
 
             //connecting the virtual interface to the monitor and driver
-            drv.dp_sink_vif = dp_source_cfg.dp_sink_vif;
-            mon.dp_sink_vif = dp_source_cfg.dp_sink_vif;
+            drv.dp_tl_vif = dp_source_cfg.dp_tl_vif;
+            mon.dp_tl_vif = dp_source_cfg.dp_tl_vif;
 
-            //connecting the drive TLM port to the sequencer TLM export
+            //connecting the driver TLM port to the sequencer TLM export
             drv.seq_item_port.connect(sqr.seq_item_export);
-            
+
             //connecting the monitor analysis port to the agent analysis port
             mon.mon_ap.connect(agt_ap);
         endfunction
