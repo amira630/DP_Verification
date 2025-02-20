@@ -4,7 +4,7 @@ import DP_TL_sequence::*;
 import DP_SINK_sequence::*;
 import DP_SOURCE_config_pkg::*;
 import DP_SOURCE_ref::*;
-import shared_pkg::*;
+// import shared_pkg::*;
 `include "uvm_macros.svh"
 
 class DP_scoreboard extends uvm_scoreboard;
