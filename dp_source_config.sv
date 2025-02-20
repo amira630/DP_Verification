@@ -1,5 +1,3 @@
-package dp_source_config_pkg;
-
     import uvm_pkg::*;
     `include "uvm_macros.svh"
 
@@ -14,5 +12,3 @@ package dp_source_config_pkg;
             super.new(name);
         endfunction
     endclass 
-
-endpackage

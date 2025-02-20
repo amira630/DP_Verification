@@ -1,8 +1,8 @@
 package dp_source_test_pkg;
     
     import uvm_pkg::*;
-    import dp_source_config_pkg::*;
     import dp_source_env_pkg::*;
+    `include "dp_source_config.sv"
     `include "dp_tl_sequence.sv"
     `include "dp_sink_sequence.sv"
     `include "uvm_macros.svh"

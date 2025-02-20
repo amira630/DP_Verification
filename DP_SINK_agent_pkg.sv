@@ -1,7 +1,7 @@
 package dp_sink_agent_pkg;
 
     import uvm_pkg::*;
-    import dp_source_config_pkg::*;
+    `include "dp_source_config.sv"
     `include "dp_sink_sequencer.sv"
     `include "dp_sink_driver.sv"
     `include "dp_sink_monitor.sv"
