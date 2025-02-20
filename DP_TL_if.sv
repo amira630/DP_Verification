@@ -1,4 +1,4 @@
-interface DP_TL_if(clk);
+interface dp_tl_if(clk);
     logic reset, valid_in, cin, valid_out, carry, zero;    
     logic [3:0] a, b, alu; 
     logic valid_out_ref, carry_ref, zero_ref;

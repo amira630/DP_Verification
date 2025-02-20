@@ -1,16 +1,16 @@
-package DP_SOURCE_config_pkg;
+package dp_source_config_pkg;
 
     import uvm_pkg::*;
     `include "uvm_macros.svh"
 
-    class DP_SOURCE_config extends uvm_object;
-        `uvm_object_utils(alsu_config_obj)
+    class dp_source_config extends uvm_object;
+        `uvm_object_utils(dp_source_config)
         
         // Virtual Interfaces
-        virtual DP_TL_if DP_TL_vif;
-        virtual DP_SINK_if DP_SINK_vif;
+        virtual dp_tl_if dp_tl_vif;
+        virtual dp_sink_if dp_sink_vif;
 
-        function new(string name = "DP_SOURCE_config");
+        function new(string name = "dp_source_config");
             super.new(name);
         endfunction
     endclass 

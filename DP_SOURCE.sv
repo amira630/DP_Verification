@@ -1,4 +1,4 @@
-module DP_SOURCE(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
+module dp_source(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
 logic clk, reset, valid_in, cin, valid_out, carry, zero;    
 logic [3:0] a, b, ctl, alu;
 

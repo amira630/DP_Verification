@@ -1,5 +1,5 @@
 import macro_pkg::*;
-interface DP_SINK_if(clk);
+interface dp_sink_if(clk);
     opcode_e ctl;
     modport DUT (
         input ctl

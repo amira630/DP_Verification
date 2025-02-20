@@ -1,37 +1,37 @@
-package DP_SOURCE_env_pkg;
+package dp_source_env_pkg;
 
     import uvm_pkg::*;
-    import DP_TL_agent_pkg::*;
-    import DP_SINK_agent_pkg::*;
-    import DP_scoreboard_pkg::*;
-    import DP_SOURCE_ref_pkg::*;
-    import DP_TL_coverage_pkg::*;
-    import DP_SINK_coverage_pkg::*;
+    import dp_tl_agent_pkg::*;
+    import dp_sink_agent_pkg::*;
+    `include "dp_scoreboard.sv"
+    `include "dp_source_ref.sv"
+    `include "dp_tl_coverage.sv"
+    `include "dp_sink_coverage.sv"
     `include "uvm_macros.svh"
 
-    class DP_SOURCE_env extends uvm_env;
-        `uvm_component_utils(DP_SOURCE_env)
+    class dp_source_env extends uvm_env;
+        `uvm_component_utils(dp_source_env)
 
-        DP_TL_agent tl_agt;
-        DP_SINK_agent sink_agt;
-        DP_scoreboard sb;
-        DP_SOURCE_ref ref_model;
-        DP_TL_coverage tl_cov;
-        DP_SINK_coverage sink_cov;
+        dp_tl_agent tl_agt;
+        dp_sink_agent sink_agt;
+        dp_scoreboard sb;
+        dp_source_ref ref_model;
+        dp_tl_coverage tl_cov;
+        dp_sink_coverage sink_cov;
 
-        function new(string name = "DP_SOURCE_env", uvm_component parent = null);
+        function new(string name = "dp_source_env", uvm_component parent = null);
             super.new(name, parent);
         endfunction //new()
 
         function void build_phase(uvm_phase phase);
             super.build_phase(phase);
             // Building the TL_agent, Sink_agent, scoreboard, reference model, TL_collector and Sink_collector
-            tl_agt = DP_TL_agent::type_id::create("tl_agt", this);
-            sink_agt = DP_SINK_agent::type_id::create("sink_agt", this);
-            sb = DP_scoreboard::type_id::create("sb", this);
-            ref_model = DP_SOURCE_ref::type_id::create("ref_model", this);
-            tl_cov = DP_TL_coverage::type_id::create("tl_cov", this);
-            sink_cov = DP_SINK_coverage::type_id::create("sink_cov", this);
+            tl_agt = dp_tl_agent::type_id::create("tl_agt", this);
+            sink_agt = dp_sink_agent::type_id::create("sink_agt", this);
+            sb = dp_scoreboard::type_id::create("sb", this);
+            ref_model = dp_source_ref::type_id::create("ref_model", this);
+            tl_cov = dp_tl_coverage::type_id::create("tl_cov", this);
+            sink_cov = dp_sink_coverage::type_id::create("sink_cov", this);
         endfunction   
          
         function void connect_phase(uvm_phase phase);
