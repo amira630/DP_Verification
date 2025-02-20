@@ -4,13 +4,13 @@ import DP_SINK_sequence::*;
 // import shared_pkg::*;
 `include "uvm_macros.svh"
 
-class ALSU_coverage extends uvm_component;
-    `uvm_component_utils(ALSU_coverage)
+class DP_SINK_coverage extends uvm_component;
+    `uvm_component_utils(DP_SINK_coverage)
     uvm_analysis_export #(DP_SINK_sequence) cov_export;
     uvm_tlm_analysis_fifo #(DP_SINK_sequence) cov_fifo;
     DP_SINK_sequence seq_item_cov;
 
-    covergroup cvr_grp;
+    covergroup sink_cvr_grp;
 
             // // Coverpoint for Reset
             // rst_cp: coverpoint trans.reset {
@@ -30,11 +30,11 @@ class ALSU_coverage extends uvm_component;
             //     bins invalid_input = {0};
             // }
             
-            // // Coverpoint for ALU control signal (ensure all operations are exercised)
-            // ctl_cp: coverpoint trans.ctl {
-            //     bins all_ops[] = {[SEL:XOR]}; // Cover all ALU operations
-            //     bins invalid_op[] = {[invalid_1:invalid_2]}; // Cover invalid operations
-            // }
+            // Coverpoint for ALU control signal (ensure all operations are exercised)
+            ctl_cp: coverpoint trans.ctl {
+                bins all_ops[] = {[SEL:XOR]}; // Cover all ALU operations
+                bins invalid_op[] = {[invalid_1:invalid_2]}; // Cover invalid operations
+            }
 
             // // Coverpoints for ALU input values (track different data patterns)
             // a_cp: coverpoint trans.a {
@@ -101,7 +101,7 @@ class ALSU_coverage extends uvm_component;
 
     function new(string name = "DP_SINK_coverage", uvm_component parent = null);
         super.new(name, parent);
-        cvr_grp = new();
+        sink_cvr_grp = new();
     endfunction
 
     function void build_phase(uvm_phase phase);
@@ -119,7 +119,7 @@ class ALSU_coverage extends uvm_component;
         super.run_phase(phase);
         forever begin
             cov_fifo.get(seq_item_cov);
-            cvr_grp.sample();
+            sink_cvr_grp.sample();
         end
     endtask
 

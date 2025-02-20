@@ -31,7 +31,7 @@ class DP_SINK_monitor extends uvm_monitor;
      //rsp_seq_item.ctl = opcode_e'(DP_TL_vif.ctl);
 
      mon_ap.write(rsp_seq_item);
-        `uvm_info("run_phase", rsp_seq_item.convert2string(), UVM_LOW) 
+        `uvm_info("run_phase", rsp_seq_item.convert2string_stimulus(), UVM_LOW) 
    end
   endtask
  
