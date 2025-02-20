@@ -1,14 +1,14 @@
 package DP_TL_coverage;
 import uvm_pkg::*;
-import DP_TL_sequence::*;
+import DP_TL_seq_item::*;
 // import shared_pkg::*;
 `include "uvm_macros.svh"
 
 class DP_TL_coverage extends uvm_component;
     `uvm_component_utils(DP_TL_coverage)
-    uvm_analysis_export #(DP_TL_sequence) cov_export;
-    uvm_tlm_analysis_fifo #(DP_TL_sequence) cov_fifo;
-    DP_TL_sequence seq_item_cov;
+    uvm_analysis_export #(DP_TL_seq_item) cov_export;
+    uvm_tlm_analysis_fifo #(DP_TL_seq_item) cov_fifo;
+    DP_TL_seq_item seq_item_cov;
 
     covergroup tl_cvr_grp;
     

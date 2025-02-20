@@ -1,6 +1,6 @@
 package DP_TL_monitor;
 import uvm_pkg::*;
-import DP_TL_sequence::*;
+import DP_TL_seq_item::*;
 //import shared_pkg::*;
 `include "uvm_macros.svh"
 
@@ -8,8 +8,8 @@ class DP_TL_monitor extends uvm_monitor;
   `uvm_component_utils(DP_TL_monitor)
 
   virtual DP_TL_if DP_TL_vif;
-  DP_TL_sequence rsp_seq_item;
-  uvm_analysis_port #(DP_TL_sequence) mon_ap;
+  DP_TL_seq_item rsp_seq_item;
+  uvm_analysis_port #(DP_TL_seq_item) mon_ap;
 
   function new(string name = "DP_TL_monitor", uvm_component parent = null);
     super.new(name, parent);
@@ -23,7 +23,7 @@ class DP_TL_monitor extends uvm_monitor;
   task run_phase(uvm_phase phase);
    super.run_phase(phase);
    forever begin
-     rsp_seq_item = DP_TL_sequence::type_id::create("rsp_seq_item");
+     rsp_seq_item = DP_TL_seq_item::type_id::create("rsp_seq_item");
      @(negedge DP_TL_vif.clk);
      
      rsp_seq_item.reset = DP_TL_vif.reset;

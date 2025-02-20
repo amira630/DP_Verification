@@ -1,14 +1,14 @@
 package DP_SINK_coverage;
 import uvm_pkg::*;
-import DP_SINK_sequence::*;
+import DP_SINK_seq_item::*;
 // import shared_pkg::*;
 `include "uvm_macros.svh"
 
 class DP_SINK_coverage extends uvm_component;
     `uvm_component_utils(DP_SINK_coverage)
-    uvm_analysis_export #(DP_SINK_sequence) cov_export;
-    uvm_tlm_analysis_fifo #(DP_SINK_sequence) cov_fifo;
-    DP_SINK_sequence seq_item_cov;
+    uvm_analysis_export #(DP_SINK_seq_item) cov_export;
+    uvm_tlm_analysis_fifo #(DP_SINK_seq_item) cov_fifo;
+    DP_SINK_seq_item seq_item_cov;
 
     covergroup sink_cvr_grp;
 

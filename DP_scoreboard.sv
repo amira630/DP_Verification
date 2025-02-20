@@ -1,7 +1,7 @@
 package DP_scoreboard;
 import uvm_pkg::*;
-import DP_TL_sequence::*;
-import DP_SINK_sequence::*;
+import DP_TL_seq_item::*;
+import DP_SINK_seq_item::*;
 import DP_SOURCE_config_pkg::*;
 import DP_SOURCE_ref::*;
 // import shared_pkg::*;
@@ -10,16 +10,16 @@ import DP_SOURCE_ref::*;
 class DP_scoreboard extends uvm_scoreboard;
     `uvm_component_utils(DP_scoreboard)
     
-    uvm_analysis_export #(DP_TL_sequence) sb_tl_export;
-    uvm_analysis_export #(DP_SINK_sequence) sb_sink_export;
+    uvm_analysis_export #(DP_TL_seq_item) sb_tl_export;
+    uvm_analysis_export #(DP_SINK_seq_item) sb_sink_export;
     uvm_analysis_export #(DP_SOURCE_ref) sb_ref_export;
 
-    uvm_tlm_analysis_fifo #(DP_TL_sequence) sb_tl_fifo;
-    uvm_tlm_analysis_fifo #(DP_SINK_sequence) sb_sink_fifo;
+    uvm_tlm_analysis_fifo #(DP_TL_seq_item) sb_tl_fifo;
+    uvm_tlm_analysis_fifo #(DP_SINK_seq_item) sb_sink_fifo;
     uvm_tlm_analysis_fifo #(DP_SOURCE_ref) sb_ref_fifo;
 
-    DP_TL_sequence seq_item_sb_tl;
-    DP_SINK_sequence seq_item_sb_sink;
+    DP_TL_seq_item seq_item_sb_tl;
+    DP_SINK_seq_item seq_item_sb_sink;
     DP_SOURCE_ref seq_item_sb_ref;
     
     DP_SOURCE_config DP_SOURCE_config_scoreboard;
@@ -68,7 +68,7 @@ class DP_scoreboard extends uvm_scoreboard;
         end
     endtask
 
-    // task ref_model(DP_TL_sequence seq_item_chk_tl, DP_SINK_sequence seq_item_chk_sink);
+    // task ref_model(DP_TL_seq_item seq_item_chk_tl, DP_SINK_seq_item seq_item_chk_sink);
     //     if (seq_item_chk_tl.rst) begin
     //         `uvm_info("ref_model", "Reset detected, checking reset behavior.", UVM_MEDIUM);
     //     end else begin
@@ -76,7 +76,7 @@ class DP_scoreboard extends uvm_scoreboard;
     //     end
     // endtask
 
-    // task check_results(DP_TL_sequence seq_item_chk_tl, DP_SINK_sequence seq_item_chk_sink);
+    // task check_results(DP_TL_seq_item seq_item_chk_tl, DP_SINK_seq_item seq_item_chk_sink);
     //     @(negedge DP_TL_scoreboard_vif.clk);
     //     if (seq_item_chk_tl.out == seq_item_chk_sink.out && seq_item_chk_tl.leds == seq_item_chk_sink.leds) begin
     //         `uvm_info("check_results", "Transaction matches expected output.", UVM_HIGH);
