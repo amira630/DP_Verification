@@ -21,7 +21,6 @@ package DP_TL_driver_pkg;
                 seq_item_port.get_next_item(stim_seq_item);
                 DP_TL_driver_vif.reset      = stim_seq_item.reset;
                 DP_TL_driver_vif.valid_in   = stim_seq_item.valid_in;
-                DP_TL_driver_vif.ctl        = stim_seq_item.ctl;
                 DP_TL_driver_vif.a          = stim_seq_item.a;
                 DP_TL_driver_vif.b          = stim_seq_item.b;
                 DP_TL_driver_vif.cin        = stim_seq_item.cin;
