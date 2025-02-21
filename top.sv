@@ -15,10 +15,10 @@ module top();
     dp_tl_if tl_if (clk);
     dp_sink_if sink_if (clk);
 
-    dp_source DP_SOURCE_DUT (
-        .tl_if(tl_if),
-        .sink_if(sink_if)    // make sure the DP_SOURCE can take two interfaces
-    );
+    // dp_source DP_SOURCE_DUT (
+    //     .tl_if(tl_if),
+    //     .sink_if(sink_if)    // make sure the DP_SOURCE can take two interfaces
+    // );
 
     initial begin
         // add virtual interfaces for each interface to the configurations database
