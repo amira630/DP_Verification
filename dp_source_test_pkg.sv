@@ -47,17 +47,20 @@ package dp_source_test_pkg;
             super.run_phase(phase);
 
             phase.raise_objection(phase);
-            
-            // Transport Layer Sequence
-            `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
-            dp_tl_seq.start(env.tl_agt.sqr);
-            `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
-            
-            // DP Sink Sequence
-            `uvm_info("run_phase", "Sink stimulus generation started", UVM_LOW);
-            dp_sink_seq.start(env.sink_agt.sqr);
-            `uvm_info("run_phase", "Sink stimulus generation ended", UVM_LOW);
-
+            fork
+                // Transport Layer Sequence
+                begin
+                    `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
+                    dp_tl_seq.start(env.tl_agt.sqr);
+                    `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
+                end
+                // DP Sink Sequence
+                begin
+                    `uvm_info("run_phase", "Sink stimulus generation started", UVM_LOW);
+                    dp_sink_seq.start(env.sink_agt.sqr);
+                    `uvm_info("run_phase", "Sink stimulus generation ended", UVM_LOW);
+                end
+            join
             phase.drop_objection(this);
         endtask      
     endclass //className extends superClass
