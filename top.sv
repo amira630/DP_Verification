@@ -1,6 +1,9 @@
+// Standard UVM import & include:
 import uvm_pkg::*;
-import dp_source_test_pkg::*;
 `include "uvm_macros.svh"
+
+// Any further package imports:
+import dp_source_test_pkg::*;
 
 module top();
     bit clk;
