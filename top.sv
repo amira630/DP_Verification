@@ -27,6 +27,5 @@ module top();
         
         // Run the test
         run_test("dp_source_test");
-        
     end
 endmodule
