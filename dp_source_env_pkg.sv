@@ -44,6 +44,7 @@ package dp_source_env_pkg;
 
             // Transport Layer Agent → Transport Layer Coverage Collector
             tl_agt.agt_ap.connect(tl_cov.cov_export);
+            
             // Sink Agent → Sink Coverage Collector
             sink_agt.agt_ap.connect(sink_cov.cov_export);
 
