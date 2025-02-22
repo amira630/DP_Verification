@@ -1,26 +1,21 @@
-package DP_SINK_sequence_pkg;
-    import uvm_pkg::*;
-    import DP_SINK_sequence_item_pkg::*;
-    `include "uvm_macros.svh"
+class DP_SINK_SEL_sequence extends uvm_sequence #(DP_SINK_sequence_item);
+    `uvm_object_utils(DP_SINK_SEL_sequence);
 
-    class DP_SINK_SEL_sequence extends uvm_sequence #(DP_SINK_sequence_item);
-        `uvm_object_utils(DP_SINK_SEL_sequence);
+    DP_SINK_sequence_item seq_item;
 
-        DP_SINK_sequence_item seq_item;
+    function new(string name = "DP_SINK_SEL_sequence");
+        super.new(name);
+    endfunction //new()
 
-        function new(string name = "DP_SINK_SEL_sequence");
-            super.new(name);
-        endfunction //new()
-
-        task body();
-            seq_item = DP_SINK_sequence_item::type_id::create("seq_item");
-            repeat(10) begin
-                start_item(seq_item);
-                SEL_seq: assert (seq_item.randomize() with {ctl == 0;})
-                finish_item(seq_item);                
-            end
-        endtask
-    endclass //DP_SINK_SEL_sequence extends superClass
+    task body();
+        seq_item = DP_SINK_sequence_item::type_id::create("seq_item");
+        repeat(10) begin
+            start_item(seq_item);
+            SEL_seq: assert (seq_item.randomize() with {ctl == 0;})
+            finish_item(seq_item);                
+        end
+    endtask
+endclass //DP_SINK_SEL_sequence extends superClass
 
     class DP_SINK_INC_sequence extends uvm_sequence #(DP_SINK_sequence_item);
         `uvm_object_utils(DP_SINK_INC_sequence);
@@ -211,4 +206,3 @@ package DP_SINK_sequence_pkg;
             end
         endtask
     endclass //DP_SINK_RANDOM_sequence extends superClass
-endpackage
