@@ -1,9 +1,3 @@
-// package dp_tl_monitor;
-// import uvm_pkg::*;
-// import dp_tl_seq_item::*;
-// //import shared_pkg::*;
-// `include "uvm_macros.svh"
-
 class dp_tl_monitor extends uvm_monitor;
   `uvm_component_utils(dp_tl_monitor)
 
@@ -45,5 +39,4 @@ class dp_tl_monitor extends uvm_monitor;
  
 endclass
 
-endpackage
 

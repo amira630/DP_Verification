@@ -1,12 +1,3 @@
-// package dp_scoreboard;
-// import uvm_pkg::*;
-// import dp_tl_seq_item::*;
-// import dp_sink_seq_item::*;
-// import dp_source_config_pkg::*;
-// import dp_source_ref::*;
-// // import shared_pkg::*;
-// `include "uvm_macros.svh"
-
 class dp_scoreboard extends uvm_scoreboard;
     `uvm_component_utils(dp_scoreboard)
     
@@ -93,7 +84,3 @@ class dp_scoreboard extends uvm_scoreboard;
         `uvm_info("report_phase", $sformatf("Total failed transactions: %d", error_count), UVM_MEDIUM);
     endfunction
 endclass
-
-endpackage
-
-git

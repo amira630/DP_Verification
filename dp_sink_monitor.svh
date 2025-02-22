@@ -1,9 +1,3 @@
-// package dp_sink_monitor;
-// import uvm_pkg::*;
-// import dp_sink_seq_item::*;
-// //import shared_pkg::*;
-// `include "uvm_macros.svh"
-
 class dp_sink_monitor extends uvm_monitor;
   `uvm_component_utils(dp_sink_monitor)
 
@@ -36,5 +30,3 @@ class dp_sink_monitor extends uvm_monitor;
   endtask
  
 endclass
-
-endpackage
