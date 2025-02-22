@@ -20,10 +20,10 @@ class dp_sink_monitor extends uvm_monitor;
      rsp_seq_item = dp_sink_seq_item::type_id::create("rsp_seq_item");
      @(negedge dp_sink_vif.clk);
 
-     //rsp_seq_item.ctl = dp_sink_vif.ctl;
-
-     //rsp_seq_item.ctl = opcode_e'(DP_TL_vif.ctl);
-
+     rsp_seq_item.name_1 = dp_sink_vif.name_1;
+     rsp_seq_item.name_2 = dp_sink_vif.name_2;
+     rsp_seq_item.name_3 = dp_sink_vif.name_3;
+     
      mon_ap.write(rsp_seq_item);
         `uvm_info("run_phase", rsp_seq_item.convert2string_stimulus(), UVM_LOW) 
    end
