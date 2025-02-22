@@ -1,11 +1,8 @@
 interface dp_tl_if(clk);
-    logic reset, valid_in, cin, valid_out, carry, zero;    
-    logic [3:0] a, b, alu; 
-    logic valid_out_ref, carry_ref, zero_ref;
-    logic [3:0] alu_ref;
+    string name_1, name_2, name_3;
 
-    modport DUT (
-        input clk, reset, valid_in, cin, a, b,
-        output valid_out, carry, zero, alu
-    );
+    // modport DUT (
+    //     input clk, reset, valid_in, cin, a, b,
+    //     output valid_out, carry, zero, alu
+    // );
 endinterface

@@ -4,7 +4,7 @@ class dp_source_env extends uvm_env;
     dp_tl_agent tl_agt;
     dp_sink_agent sink_agt;
     dp_scoreboard sb;
-    dp_source_ref ref_model;
+    //dp_source_ref ref_model;
     dp_tl_coverage tl_cov;
     dp_sink_coverage sink_cov;
 
@@ -18,7 +18,7 @@ class dp_source_env extends uvm_env;
         tl_agt = dp_tl_agent::type_id::create("tl_agt", this);
         sink_agt = dp_sink_agent::type_id::create("sink_agt", this);
         sb = dp_scoreboard::type_id::create("sb", this);
-        ref_model = dp_source_ref::type_id::create("ref_model", this);
+        //ref_model = dp_source_ref::type_id::create("ref_model", this);
         tl_cov = dp_tl_coverage::type_id::create("tl_cov", this);
         sink_cov = dp_sink_coverage::type_id::create("sink_cov", this);
     endfunction   
@@ -41,6 +41,6 @@ class dp_source_env extends uvm_env;
         tl_agt.agt_ap.connect(ref_model.ref_model_export);
 
         // Reference Model → Scoreboard
-        ref_model.ref_ap.connect(sb.sb_ref_export);
+        //ref_model.ref_ap.connect(sb.sb_ref_export);
     endfunction
 endclass //className extends superClass
