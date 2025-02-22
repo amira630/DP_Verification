@@ -10,6 +10,7 @@ package dp_source_env_pkg;
 
     // Includes:
     //`include "dp_source_ref.svh"
+    `include "dp_source_config.svh"
     `include "dp_scoreboard.svh"
     `include "dp_tl_coverage.svh"
     `include "dp_sink_coverage.svh"

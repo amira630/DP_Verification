@@ -1,8 +1,8 @@
 class dp_sink_coverage extends uvm_component;
     `uvm_component_utils(dp_sink_coverage)
-    uvm_analysis_export #(dp_sink_seq_item) cov_export;
-    uvm_tlm_analysis_fifo #(dp_sink_seq_item) cov_fifo;
-    dp_sink_seq_item seq_item_cov;
+    uvm_analysis_export #(dp_sink_sequence_item) cov_export;
+    uvm_tlm_analysis_fifo #(dp_sink_sequence_item) cov_fifo;
+    dp_sink_sequence_item sequence_item_cov;
 
     covergroup sink_cvr_grp;
 
@@ -28,7 +28,7 @@ class dp_sink_coverage extends uvm_component;
     task run_phase(uvm_phase phase);
         super.run_phase(phase);
         forever begin
-            cov_fifo.get(seq_item_cov);
+            cov_fifo.get(sequence_item_cov);
             sink_cvr_grp.sample();
         end
     endtask
