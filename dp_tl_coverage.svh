@@ -1,17 +1,17 @@
-package DP_SINK_coverage;
-import uvm_pkg::*;
-import DP_SINK_seq_item::*;
-// import shared_pkg::*;
-`include "uvm_macros.svh"
+// package dp_tl_coverage;
+// import uvm_pkg::*;
+// import dp_tl_seq_item::*;
+// // import shared_pkg::*;
+// `include "uvm_macros.svh"
 
-class DP_SINK_coverage extends uvm_component;
-    `uvm_component_utils(DP_SINK_coverage)
-    uvm_analysis_export #(DP_SINK_seq_item) cov_export;
-    uvm_tlm_analysis_fifo #(DP_SINK_seq_item) cov_fifo;
-    DP_SINK_seq_item seq_item_cov;
+class dp_tl_coverage extends uvm_component;
+    `uvm_component_utils(dp_tl_coverage)
+    uvm_analysis_export #(dp_tl_seq_item) cov_export;
+    uvm_tlm_analysis_fifo #(dp_tl_seq_item) cov_fifo;
+    dp_tl_seq_item seq_item_cov;
 
-    covergroup sink_cvr_grp;
-
+    covergroup tl_cvr_grp;
+    
             // // Coverpoint for Reset
             // rst_cp: coverpoint trans.reset {
             //     bins asserted = {0};  // Reset active
@@ -30,11 +30,11 @@ class DP_SINK_coverage extends uvm_component;
             //     bins invalid_input = {0};
             // }
             
-            // Coverpoint for ALU control signal (ensure all operations are exercised)
-            ctl_cp: coverpoint trans.ctl {
-                bins all_ops[] = {[SEL:XOR]}; // Cover all ALU operations
-                bins invalid_op[] = {[invalid_1:invalid_2]}; // Cover invalid operations
-            }
+            // // Coverpoint for ALU control signal (ensure all operations are exercised)
+            // ctl_cp: coverpoint trans.ctl {
+            //     bins all_ops[] = {[SEL:XOR]}; // Cover all ALU operations
+            //     bins invalid_op[] = {[invalid_1:invalid_2]}; // Cover invalid operations
+            // }
 
             // // Coverpoints for ALU input values (track different data patterns)
             // a_cp: coverpoint trans.a {
@@ -53,15 +53,15 @@ class DP_SINK_coverage extends uvm_component;
             //     bins b_default = default;          // Test other values
             // }
 
-            // Coverpoint for ALU Operations
-            ALU_cp: coverpoint trans.ctl {
-                // bins Bins_shift[] = {[SHIFT_L:ROTATE_R]};
-                bins Bins_arith[] = {[ADD:SUB_b]};
-                bins Bins_B[] = {[SEL:DEC]};
-                bins Bins_bitwise[] = {[AND:XOR]};
-                illegal_bins Bins_invalid = {[invalid_1:invalid_2]};
-                bins opcode_default = default;          // Test other values
-            }            
+            // // Coverpoint for ALU Operations
+            // ALU_cp: coverpoint trans.ctl {
+            //     // bins Bins_shift[] = {[SHIFT_L:ROTATE_R]};
+            //     bins Bins_arith[] = {[ADD:SUB_b]};
+            //     bins Bins_B[] = {[SEL:DEC]};
+            //     bins Bins_bitwise[] = {[AND:XOR]};
+            //     illegal_bins Bins_invalid = {[invalid_1:invalid_2]};
+            //     bins opcode_default = default;          // Test other values
+            // }            
             
             // // Coverpoint for Carry-out
             // carry_cp: coverpoint trans.carry {
@@ -99,9 +99,9 @@ class DP_SINK_coverage extends uvm_component;
   endgroup
  
 
-    function new(string name = "DP_SINK_coverage", uvm_component parent = null);
+    function new(string name = "dp_tl_coverage", uvm_component parent = null);
         super.new(name, parent);
-        sink_cvr_grp = new();
+        tl_cvr_grp = new();
     endfunction
 
     function void build_phase(uvm_phase phase);
@@ -119,7 +119,7 @@ class DP_SINK_coverage extends uvm_component;
         super.run_phase(phase);
         forever begin
             cov_fifo.get(seq_item_cov);
-            sink_cvr_grp.sample();
+            tl_cvr_grp.sample();
         end
     endtask
 
