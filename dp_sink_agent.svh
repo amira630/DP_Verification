@@ -5,7 +5,7 @@ class dp_sink_agent extends uvm_agent;
     dp_sink_driver drv;
     dp_sink_monitor mon;
     dp_source_config dp_source_cfg;
-    uvm_analysis_port #(dp_sink_seq_item) agt_ap;
+    uvm_analysis_port #(dp_sink_sequence_item) agt_ap;
 
     function new(string name = "dp_sink_agent", uvm_component parent = null);
         super.new(name, parent);
@@ -14,7 +14,7 @@ class dp_sink_agent extends uvm_agent;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
-        if(!uvm_config_db #(dp_source_config):: get(this, "","CFG", dp_source_cfg))
+        if(!uvm_config_db #(dp_source_config):: get(this, "","CFG_sink", dp_source_cfg))
             `uvm_fatal("build_phase","Test - Unable to get configuration object");
         
         //buikding the Transport Layer sequencer, driver and monitor

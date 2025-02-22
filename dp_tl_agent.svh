@@ -5,7 +5,7 @@ class dp_tl_agent extends uvm_agent;
     dp_tl_driver drv;
     dp_tl_monitor mon;
     dp_source_config dp_source_cfg;
-    uvm_analysis_port #(dp_tl_seq_item) agt_ap;
+    uvm_analysis_port #(dp_tl_sequence_item) agt_ap;
 
     function new(string name = "dp_tl_agent", uvm_component parent = null);
         super.new(name, parent);
@@ -14,7 +14,7 @@ class dp_tl_agent extends uvm_agent;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
-        if(!uvm_config_db #(dp_source_config):: get(this, "","CFG", dp_source_cfg))
+        if(!uvm_config_db #(dp_source_config):: get(this, "","CFG_tl", dp_source_cfg))
             `uvm_fatal("build_phase","Test - Unable to get configuration object");
         
         //building the Transport Layer sequencer, driver and monitor

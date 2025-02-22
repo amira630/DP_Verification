@@ -9,6 +9,8 @@ package dp_source_test_pkg;
 
     // Includes:
     `include "dp_source_config.svh"
+    `include "dp_tl_sequence_item.svh"
+    `include "dp_sink_sequence_item.svh"
     `include "dp_tl_sequence.svh"
     `include "dp_sink_sequence.svh"
     `include "dp_source_test.svh"

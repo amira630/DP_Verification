@@ -1,4 +1,4 @@
-interface dp_tl_if(clk);
+interface dp_tl_if(input clk);
     string name_1, name_2, name_3;
 
     // modport DUT (

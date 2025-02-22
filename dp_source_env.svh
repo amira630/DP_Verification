@@ -38,7 +38,7 @@ class dp_source_env extends uvm_env;
         sink_agt.agt_ap.connect(sink_cov.cov_export);
 
         // Transport Layer Agent → Reference Model
-        tl_agt.agt_ap.connect(ref_model.ref_model_export);
+        //tl_agt.agt_ap.connect(ref_model.ref_model_export);
 
         // Reference Model → Scoreboard
         //ref_model.ref_ap.connect(sb.sb_ref_export);

@@ -13,7 +13,7 @@ class dp_scoreboard extends uvm_scoreboard;
     dp_sink_sequence_item sequence_item_sb_sink;
     // dp_source_ref sequence_item_sb_ref;
     
-    dp_source_config dp_source_config_scoreboard;
+    // dp_source_config dp_source_config_scoreboard;
     // virtual DP_TL_if DP_TL_scoreboard_vif;
     // virtual DP_SINK_if DP_SINK_scoreboard_vif;
     
@@ -35,9 +35,9 @@ class dp_scoreboard extends uvm_scoreboard;
         sb_sink_fifo = new("sb_sink_fifo", this);
         // sb_ref_fifo = new("sb_ref_fifo", this);
 
-        if (!uvm_config_db #(dp_source_config)::get(this, "", "CFG", dp_source_config_scoreboard)) begin
-            `uvm_fatal("build_phase", "Scoreboard - Unable to get configuration object")
-        end
+        // if (!uvm_config_db #(dp_source_config)::get(this, "", "CFG_tl", dp_source_config_scoreboard)) begin
+        //     `uvm_fatal("build_phase", "Scoreboard - Unable to get configuration object")
+        // end
     endfunction
 
     function void connect_phase(uvm_phase phase);
@@ -56,8 +56,8 @@ class dp_scoreboard extends uvm_scoreboard;
             sb_sink_fifo.get(sequence_item_sb_sink);
             // sb_ref_fifo.get(sequence_item_sb_ref);
 
-            `uvm_info("run_phase", sequence_item_sb_tl.convert2string(), UVM_LOW) 
-            `uvm_info("run_phase", sequence_item_sb_sink.convert2string(), UVM_LOW) 
+            `uvm_info("run_phase", sequence_item_sb_tl.convert2string(), UVM_MEDIUM) 
+            `uvm_info("run_phase", sequence_item_sb_sink.convert2string(), UVM_MEDIUM) 
         end
     endtask
 
