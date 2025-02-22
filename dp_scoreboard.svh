@@ -1,17 +1,17 @@
 class dp_scoreboard extends uvm_scoreboard;
     `uvm_component_utils(dp_scoreboard)
     
-    uvm_analysis_export #(dp_tl_seq_item) sb_tl_export;
-    uvm_analysis_export #(dp_sink_seq_item) sb_sink_export;
+    uvm_analysis_export #(dp_tl_sequence_item) sb_tl_export;
+    uvm_analysis_export #(dp_sink_sequence_item) sb_sink_export;
     // uvm_analysis_export #(dp_source_ref) sb_ref_export;
 
-    uvm_tlm_analysis_fifo #(dp_tl_seq_item) sb_tl_fifo;
-    uvm_tlm_analysis_fifo #(dp_sink_seq_item) sb_sink_fifo;
+    uvm_tlm_analysis_fifo #(dp_tl_sequence_item) sb_tl_fifo;
+    uvm_tlm_analysis_fifo #(dp_sink_sequence_item) sb_sink_fifo;
     // uvm_tlm_analysis_fifo #(dp_source_ref) sb_ref_fifo;
 
-    dp_tl_seq_item seq_item_sb_tl;
-    dp_sink_seq_item seq_item_sb_sink;
-    // dp_source_ref seq_item_sb_ref;
+    dp_tl_sequence_item sequence_item_sb_tl;
+    dp_sink_sequence_item sequence_item_sb_sink;
+    // dp_source_ref sequence_item_sb_ref;
     
     dp_source_config dp_source_config_scoreboard;
     // virtual DP_TL_if DP_TL_scoreboard_vif;
@@ -52,22 +52,22 @@ class dp_scoreboard extends uvm_scoreboard;
     task run_phase(uvm_phase phase);
         super.run_phase(phase);
         forever begin
-            sb_tl_fifo.get(seq_item_sb_tl);
-            sb_sink_fifo.get(seq_item_sb_sink);
-            // sb_ref_fifo.get(seq_item_sb_ref);
+            sb_tl_fifo.get(sequence_item_sb_tl);
+            sb_sink_fifo.get(sequence_item_sb_sink);
+            // sb_ref_fifo.get(sequence_item_sb_ref);
 
-            `uvm_info("run_phase", seq_item_sb_tl.convert2string(), UVM_LOW) 
-            `uvm_info("run_phase", seq_item_sb_sink.convert2string(), UVM_LOW) 
+            `uvm_info("run_phase", sequence_item_sb_tl.convert2string(), UVM_LOW) 
+            `uvm_info("run_phase", sequence_item_sb_sink.convert2string(), UVM_LOW) 
         end
     endtask
 
-    // task check_results(dp_tl_seq_item seq_item_chk_tl, dp_sink_seq_item seq_item_chk_sink);
+    // task check_results(dp_tl_sequence_item sequence_item_chk_tl, dp_sink_sequence_item sequence_item_chk_sink);
     //     @(negedge DP_TL_scoreboard_vif.clk);
-    //     if (seq_item_chk_tl.out == seq_item_chk_sink.out && seq_item_chk_tl.leds == seq_item_chk_sink.leds) begin
+    //     if (sequence_item_chk_tl.out == sequence_item_chk_sink.out && sequence_item_chk_tl.leds == sequence_item_chk_sink.leds) begin
     //         `uvm_info("check_results", "Transaction matches expected output.", UVM_HIGH);
     //         correct_count++;
     //     end else begin
-    //         `uvm_error("check_results", $sformatf("Mismatch detected! TL Out: %0b, Sink Out: %0b", seq_item_chk_tl.out, seq_item_chk_sink.out));
+    //         `uvm_error("check_results", $sformatf("Mismatch detected! TL Out: %0b, Sink Out: %0b", sequence_item_chk_tl.out, sequence_item_chk_sink.out));
     //         error_count++;
     //     end
     // endtask
