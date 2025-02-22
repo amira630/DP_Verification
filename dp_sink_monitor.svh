@@ -23,9 +23,9 @@ class dp_sink_monitor extends uvm_monitor;
      rsp_seq_item.name_1 = dp_sink_vif.name_1;
      rsp_seq_item.name_2 = dp_sink_vif.name_2;
      rsp_seq_item.name_3 = dp_sink_vif.name_3;
-     
+
      mon_ap.write(rsp_seq_item);
-        `uvm_info("run_phase", rsp_seq_item.convert2string_stimulus(), UVM_LOW) 
+        // `uvm_info("run_phase", rsp_seq_item.convert2string_stimulus(), UVM_LOW) 
    end
   endtask
  

@@ -25,7 +25,7 @@ class dp_tl_monitor extends uvm_monitor;
      rsp_seq_item.name_3 = dp_tl_vif.name_3;
 
      mon_ap.write(rsp_seq_item);
-        `uvm_info("run_phase", rsp_seq_item.convert2string(), UVM_LOW) 
+        // `uvm_info("run_phase", rsp_seq_item.convert2string(), UVM_LOW) 
    end
   endtask
  

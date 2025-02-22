@@ -55,7 +55,9 @@ class dp_scoreboard extends uvm_scoreboard;
             sb_tl_fifo.get(seq_item_sb_tl);
             sb_sink_fifo.get(seq_item_sb_sink);
             // sb_ref_fifo.get(seq_item_sb_ref);
-            //ref_model(seq_item_sb_tl, seq_item_sb_sink);
+
+            `uvm_info("run_phase", seq_item_sb_tl.convert2string(), UVM_LOW) 
+            `uvm_info("run_phase", seq_item_sb_sink.convert2string(), UVM_LOW) 
         end
     endtask
 
