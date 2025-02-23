@@ -15,7 +15,7 @@ class dp_sink_agent extends uvm_agent;
         super.build_phase(phase);
 
         `uvm_info("SINK AGENT", "Trying to get CFG now!", UVM_MEDIUM);
-        if (!uvm_config_db #(dp_source_config)::get(this, "", "CFG_sink", dp_source_cfg)) 
+        if (!uvm_config_db #(dp_source_config)::get(this, "", "CFG", dp_source_cfg)) 
             `uvm_fatal("build_phase","Unable to get configuration object in Sink Agent");
 
         //buikding the Transport Layer sequencer, driver and monitor
