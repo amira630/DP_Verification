@@ -1,6 +1,6 @@
 # vsim -c work.top 
-# Start time: 20:04:32 on Feb 23,2025
-# ** Note: (vsim-8009) Loading existing optimized design _opt
+# Start time: 20:22:54 on Feb 23,2025
+# ** Note: (vsim-3812) Design is being optimized...
 # //  Questa Sim-64
 # //  Version 2021.1 win64 Jan 19 2021
 # //
@@ -54,32 +54,33 @@
 # UVM_INFO dp_source_test.svh(36) @ 0: uvm_test_top [TEST] Setting CFG now!
 # UVM_INFO dp_sink_agent.svh(17) @ 0: uvm_test_top.env.sink_agt [SINK AGENT] Trying to get CFG now!
 # UVM_INFO dp_tl_agent.svh(17) @ 0: uvm_test_top.env.tl_agt [TL AGENT] Trying to get CFG now!
-# UVM_ERROR @ 0: run [TEST_DONE_NOHIER] A non-hierarchical object, 'common.run' (<unknown>) was used in a call to uvm_test_done.raise_objection(). For this objection, a sequence or component is required.
 # UVM_INFO dp_source_test.svh(48) @ 0: uvm_test_top [run_phase] TL stimulus generation started
 # UVM_INFO dp_source_test.svh(54) @ 0: uvm_test_top [run_phase] Sink stimulus generation started
 # UVM_INFO dp_scoreboard.svh(59) @ 2: uvm_test_top.env.sb [run_phase]  name_1 = 0sAya_tl, name_2 = 0sAmira_tl, name_3 = 0sM_Ayman_tl
 # UVM_INFO dp_scoreboard.svh(60) @ 2: uvm_test_top.env.sb [run_phase]  name_1 = 0sAya_sink, name_2 = 0sAmira_sink, name_3 = 0sM_Ayman_sink
 # UVM_INFO dp_source_test.svh(50) @ 2: uvm_test_top [run_phase] TL stimulus generation ended
 # UVM_INFO dp_source_test.svh(56) @ 2: uvm_test_top [run_phase] Sink stimulus generation ended
-# UVM_FATAL @ 2: run [OBJTN_ZERO] Object "uvm_test_top" attempted to drop objection 'run' count below zero
+# UVM_INFO verilog_src/uvm-1.1d/src/base/uvm_objection.svh(1267) @ 2: reporter [TEST_DONE] 'run' phase is ready to proceed to the 'extract' phase
+# UVM_INFO dp_scoreboard.svh(80) @ 2: uvm_test_top.env.sb [report_phase] Total successful transactions:           0
+# UVM_INFO dp_scoreboard.svh(81) @ 2: uvm_test_top.env.sb [report_phase] Total failed transactions:           0
 # 
 # --- UVM Report Summary ---
 # 
 # ** Report counts by severity
-# UVM_INFO :   12
+# UVM_INFO :   15
 # UVM_WARNING :    0
-# UVM_ERROR :    1
-# UVM_FATAL :    1
+# UVM_ERROR :    0
+# UVM_FATAL :    0
 # ** Report counts by id
-# [OBJTN_ZERO]     1
 # [Questa UVM]     2
 # [RNTST]     1
 # [SINK AGENT]     1
 # [TEST]     1
-# [TEST_DONE_NOHIER]     1
+# [TEST_DONE]     1
 # [TL AGENT]     1
+# [report_phase]     2
 # [run_phase]     6
-# ** Note: $finish    : D:/qsim_2021_1/win64/../verilog_src/uvm-1.1d/src/base/uvm_report_object.svh(292)
-#    Time: 2 ns  Iteration: 7  Region: /uvm_pkg::uvm_task_phase::execute
-# End time: 20:05:33 on Feb 23,2025, Elapsed time: 0:01:01
+# ** Note: $finish    : D:/qsim_2021_1/win64/../verilog_src/uvm-1.1d/src/base/uvm_root.svh(430)
+#    Time: 2 ns  Iteration: 61  Instance: /top
+# End time: 20:26:25 on Feb 23,2025, Elapsed time: 0:03:31
 # Errors: 0, Warnings: 0

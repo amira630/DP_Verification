@@ -41,7 +41,7 @@ class dp_source_test extends uvm_test;
     task run_phase(uvm_phase phase);
         super.run_phase(phase);
 
-        phase.raise_objection(phase);
+        phase.raise_objection(this);
         fork
             // Transport Layer Sequence
             begin
