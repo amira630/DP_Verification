@@ -28,11 +28,14 @@ class dp_source_test extends uvm_test;
         // add virtual interfaces for each interface to the configurations database
         if(!uvm_config_db #(virtual dp_tl_if):: get(this, "","dp_tl_vif", dp_source_cfg.dp_tl_vif))
             `uvm_fatal("build_phase","Test - Unable to get the virtual interface of the Transport Layer from the uvm_config_db");
+
         if(!uvm_config_db #(virtual dp_sink_if):: get(this, "","dp_sink_vif", dp_source_cfg.dp_sink_vif))
             `uvm_fatal("build_phase","Test - Unable to get the virtual interface of the DP Sink from the uvm_config_db"); 
+
         // pass the virtual interfaces on to the agents
-        uvm_config_db #(dp_source_config)::set(this,"*", "CFG_tl", dp_source_cfg);   
-        uvm_config_db #(dp_source_config)::set(this,"*", "CFG_sink", dp_source_cfg); 
+        `uvm_info("TEST", "Setting CFG now!", UVM_MEDIUM);
+
+        uvm_config_db #(dp_source_config)::set(this,"*", "CFG", dp_source_cfg);
     endfunction
 
     task run_phase(uvm_phase phase);

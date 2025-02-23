@@ -13,9 +13,10 @@ class dp_tl_agent extends uvm_agent;
 
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
-
-        if(!uvm_config_db #(dp_source_config):: get(this, "","CFG_tl", dp_source_cfg))
-            `uvm_fatal("build_phase","Test - Unable to get configuration object");
+        
+        `uvm_info("TL AGENT", "Trying to get CFG now!", UVM_MEDIUM);
+        if (!uvm_config_db #(dp_source_config)::get(this, "", "CFG", dp_source_cfg))
+            `uvm_fatal("build_phase","Unable to get configuration object in TL Agent");
         
         //building the Transport Layer sequencer, driver and monitor
         sqr = dp_tl_sequencer::type_id::create("sqr", this);
