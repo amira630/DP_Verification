@@ -1,8 +1,9 @@
 package test_parameters_pkg;
 
-    // typedef enums
+    // Standard UVM import & include:
+    import uvm_pkg::*;
+    `include "uvm_macros.svh"
 
-    // parameters
-
-
+    `include "test_parameters.svh"
+    
 endpackage
