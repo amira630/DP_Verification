@@ -30,6 +30,8 @@ interface dp_tl_if(input clk);
     //////////////////////// MODPORTS /////////////////////////////
     ///////////////////////////////////////////////////////////////
 
+    ////////////////////////// DUT ////////////////////////////////
+
     modport DUT (
         input clk, reset_n, 
         // SPM
@@ -80,6 +82,9 @@ interface dp_tl_if(input clk);
                EQ_Final_ADJ_BW,         // The adjusted link BW after successful link training used for sending main video stream.
                EQ_Final_ADJ_LC          // The adjusted number of lanes after successful link training, used for sending main video stream.
     );
+
+    //////////////////////// DRIVER /////////////////////////////
+
     modport DRV (
         input clk, 
         // SPM
@@ -97,6 +102,8 @@ interface dp_tl_if(input clk);
               FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC 
     );
 
+    //////////////////////// MOINTOR /////////////////////////////
+    
     modport MONITOR (
         input clk, reset_n,
         // SPM
