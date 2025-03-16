@@ -4,10 +4,11 @@
 // Parameters for DisplayPort UVM Environment
 
 // Data Rates in Gbps per lane
-    parameter int RBR  = 1620; // 1.62 Gbps/lane
-    parameter int HBR  = 2700; // 2.7 Gbps/lane
-    parameter int HBR2 = 5400; // 5.4 Gbps/lane
-    parameter int HBR3 = 8100; // 8.1 Gbps/lane
+    parameter int RBR  = 1620;          // 1.62 Gbps/lane, meaning 162MHz, which means a clock period of 6.172839506 ns
+    parameter int HBR  = 2700;          // 2.7 Gbps/lane, meaning 270MHz, which means a clock period of 3.703703704 ns
+    parameter int HBR2 = 5400;          // 5.4 Gbps/lane, meaning 540MHz, which means a clock period of 1.851851852 ns
+    parameter int HBR3 = 8100;          // 8.1 Gbps/lane, meaning 810MHz, which means a clock period of 0.1234567901 ns
+    parameter int AUX_RATE = 100000;    // 1OO KHz for AUX_CH, which means a clock period of 10us 
 
 // Lane Count
     parameter int LANE_1 = 1;
