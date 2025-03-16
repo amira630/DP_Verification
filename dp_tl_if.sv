@@ -1,6 +1,6 @@
 interface dp_tl_if(input clk);
     
-    bit reset_n;   // Reset is asynchronous active low
+    logic reset_n;   // Reset is asynchronous active low
     
     ///////////////////////////////////////////////////////////////
     /////////////////// STREAM POLICY MAKER ///////////////////////
@@ -9,7 +9,7 @@ interface dp_tl_if(input clk);
     logic [19:0] SPM_Address;
     logic [7:0]  SPM_Data, SPM_LEN, SPM_Reply_Data;
     logic [1:0]  SPM_CMD, SPM_Reply_ACK;
-    bit          SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, SPM_Transaction_VLD;
+    logic          SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, SPM_Transaction_VLD;
 
     ///////////////////////////////////////////////////////////////
     //////////////////// LINK POLICY MAKER ////////////////////////
@@ -18,13 +18,13 @@ interface dp_tl_if(input clk);
     logic [19:0] LPM_Address;
     logic [7:0]  LPM_Data, LPM_LEN, LPM_Reply_Data;
     logic [1:0]  LPM_CMD, LPM_Reply_ACK;
-    bit          LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_NATIVE_I2C,LPM_Transaction_VLD;
-    bit          HPD_Detect, HPD_IRQ;
+    logic          LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_NATIVE_I2C,LPM_Transaction_VLD;
+    logic          HPD_Detect, HPD_IRQ;
     ////////////////// LINK Training Signals //////////////////////
     logic [7:0] Link_LC_CR, Link_BW_CR, PRE, VTG, EQ_RD_Value, Lane_Align, MAX_VTG, EQ_Final_ADJ_BW;
     logic [3:0] CR_Done, EQ_CR_DN, Channel_EQ, Symbol_Lock;
     logic [1:0] EQ_Final_ADJ_LC;
-    bit         LPM_Start_CR, Driving_Param_VLD, EQ_Data_VLD, FSM_CR_Failed, EQ_Failed, EQ_LT_Pass;
+    logic         LPM_Start_CR, Driving_Param_VLD, EQ_Data_VLD, FSM_CR_Failed, EQ_Failed, EQ_LT_Pass;
 
     ///////////////////////////////////////////////////////////////
     //////////////////////// MODPORTS /////////////////////////////
@@ -35,7 +35,7 @@ interface dp_tl_if(input clk);
     modport DUT (
         input clk, reset_n, 
         // SPM
-        input SPM_Address,          // Address sent by SPM to indicate register to be written to or read from when initiating a transaction.
+              SPM_Address,          // Address sent by SPM to indicate register to be written to or read from when initiating a transaction.
               SPM_Data,             // Data written by SPM when initiating a write transaction (byte-by-byte)
               SPM_LEN,              // Length of data, in bytes, sent by SPM to be written or read for request transaction
               SPM_CMD,              // The command field sent to specify the transaction type (Read or Write).
@@ -86,7 +86,6 @@ interface dp_tl_if(input clk);
     //////////////////////// DRIVER /////////////////////////////
 
     modport DRV (
-        input clk, 
         // SPM
         output reset_n, SPM_Address, SPM_Data, SPM_LEN, SPM_CMD, SPM_Transaction_VLD, 
         // LPM      
@@ -95,7 +94,7 @@ interface dp_tl_if(input clk);
               LPM_Start_CR, CR_Done, Link_LC_CR, Link_BW_CR, PRE, VTG, Driving_Param_VLD, 
               EQ_RD_Value, EQ_CR_DN, Channel_EQ, Symbol_Lock, Lane_Align, EQ_Data_VLD, MAX_VTG,
         // SPM       
-        input SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C,         
+        input clk, SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C,         
         // LPM
               HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_Native_I2C,         
         // LPM - Link Training
