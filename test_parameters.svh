@@ -23,8 +23,8 @@
     parameter int LINK_TRAINING_TARGET_TIME             = 10000000; // 10-ms link training completion time target
 
 // AUX Transaction Types (bit 3)
-    parameter bit AUX_I2C_OVER_AUX_TRANSACTION = 1'b1;  // Bit 3 = 1
-    parameter bit AUX_NATIVE_TRANSACTION = 1'b0;        // Bit 3 = 0
+    parameter bit AUX_I2C_OVER_AUX_TRANSACTION = 1'b0;  // Bit 3 = 0
+    parameter bit AUX_NATIVE_TRANSACTION = 1'b1;        // Bit 3 = 1
   
 // MOT (Middle-of-Transaction) bit is bit 2 for I2C transactions
     parameter int MOT_BIT_POSITION = 2;
