@@ -4,7 +4,7 @@ interface dp_sink_if(input clk);
     ///////////////////// PHYSICAL LAYER //////////////////////////
     ///////////////////////////////////////////////////////////////
 
-    logic [7:0] AUX_IN_OUT, CR_ADJ_BW, EQ_ADJ_BW;
+    logic [AUX_DATA_WIDTH-1:0] AUX_IN_OUT, CR_ADJ_BW, EQ_ADJ_BW;
     logic [1:0] CR_PHY_Instruct, CR_ADJ_LC, EQ_PHY_Instruct, EQ_ADJ_LC;
     logic       START_STOP, HPD_Signal;
 
@@ -36,7 +36,7 @@ interface dp_sink_if(input clk);
               
     );
 
-    //////////////////////// MOINTOR /////////////////////////////  
+    //////////////////////// MONITOR /////////////////////////////  
     
     modport MONITOR (
         input clk, HPD_Signal, AUX_IN_OUT, START_STOP, 
