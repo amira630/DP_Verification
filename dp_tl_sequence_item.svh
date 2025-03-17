@@ -8,19 +8,19 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     ///////////////////////////////////////////////////////////////
 
     logic [AUX_ADDRESS_WIDTH-1:0] SPM_Address;
-    logic [AUX_DATA_WIDTH-1:0]  SPM_Data, SPM_LEN, SPM_Reply_Data;
-    logic [1:0]  SPM_CMD, SPM_Reply_ACK;
-    logic        SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, SPM_Transaction_VLD;
+    logic [AUX_DATA_WIDTH-1:0]    SPM_Data, SPM_LEN, SPM_Reply_Data;
+    logic [1:0]                   SPM_CMD, SPM_Reply_ACK;
+    logic                         SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, SPM_Transaction_VLD;
 
     ///////////////////////////////////////////////////////////////
     //////////////////// LINK POLICY MAKER ////////////////////////
     ///////////////////////////////////////////////////////////////
     
     logic [AUX_ADDRESS_WIDTH-1:0] LPM_Address;
-    logic [AUX_DATA_WIDTH-1:0]  LPM_Data, LPM_LEN, LPM_Reply_Data;
-    logic [1:0]  LPM_CMD, LPM_Reply_ACK;
-    logic        LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_NATIVE_I2C,LPM_Transaction_VLD;
-    logic        HPD_Detect, HPD_IRQ;
+    logic [AUX_DATA_WIDTH-1:0]    LPM_Data, LPM_LEN, LPM_Reply_Data;
+    logic [1:0]                   LPM_CMD, LPM_Reply_ACK;
+    logic                         LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_NATIVE_I2C,LPM_Transaction_VLD;
+    logic                         HPD_Detect, HPD_IRQ;
     ////////////////// LINK Training Signals //////////////////////
     logic [AUX_DATA_WIDTH-1:0] Link_LC_CR, Link_BW_CR, PRE, VTG, EQ_RD_Value, Lane_Align, MAX_VTG, EQ_Final_ADJ_BW;
     logic [3:0] CR_Done, EQ_CR_DN, Channel_EQ, Symbol_Lock;
