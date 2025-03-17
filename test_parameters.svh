@@ -30,9 +30,11 @@
     parameter int MOT_BIT_POSITION = 2;
 
 // Configuration parameters
-    parameter int AUX_MAX_PAYLOAD_BYTES = 16;  // Maximum AUX payload size
+    parameter int AUX_MAX_PAYLOAD_BYTES = 16;   // Maximum AUX payload size
 
-    parameter int AUX_ADDRESS_WIDTH = 20;      // 20-bit AUX address
+    parameter int AUX_ADDRESS_WIDTH = 20;       // 20-bit AUX address
+
+    parameter int AUX_DATA_WIDTH = 8;           // 8-bit AUX Data
 
 // typedef enums
 
