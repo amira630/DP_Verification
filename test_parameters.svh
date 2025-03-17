@@ -38,6 +38,12 @@
 
 // typedef enums
 
+// AUX Transaction Types (bit 3)
+    typedef enum bit {
+        AUX_I2C_OVER_AUX_TRANSACTION,  // Bit 3 = 0
+        AUX_NATIVE_TRANSACTION         // Bit 3 = 1
+    } AUX_TRANSACTION_TYPE_t;
+
 // Training Patterns
     typedef enum bit [2:0] {
         TPS1 = 3'b000,
