@@ -4,10 +4,11 @@
 // Parameters for DisplayPort UVM Environment
 
 // Data Rates in Gbps per lane
-    parameter int RBR  = 1620; // 1.62 Gbps
-    parameter int HBR  = 2700; // 2.7 Gbps
-    parameter int HBR2 = 5400; // 5.4 Gbps
-    parameter int HBR3 = 8100; // 8.1 Gbps
+    parameter int RBR  = 1620;          // 1.62 Gbps/lane, meaning 162MHz, which means a clock period of 6.172839506 ns
+    parameter int HBR  = 2700;          // 2.7 Gbps/lane, meaning 270MHz, which means a clock period of 3.703703704 ns
+    parameter int HBR2 = 5400;          // 5.4 Gbps/lane, meaning 540MHz, which means a clock period of 1.851851852 ns
+    parameter int HBR3 = 8100;          // 8.1 Gbps/lane, meaning 810MHz, which means a clock period of 0.1234567901 ns
+    parameter int AUX_RATE = 100000;    // 1OO KHz for AUX_CH, which means a clock period of 10us 
 
 // Lane Count
     parameter int LANE_1 = 1;
@@ -17,21 +18,13 @@
 // Timeouts and delays
     parameter int AUX_REPLY_TIMEOUT_TIMER_WITH_LTTPR    = 3200000;  // 3.2ms timeout for AUX reply (if LTTPR is supported or not)
     parameter int AUX_REPLY_TIMEOUT_TIMER_WITHOUT_LTTPR = 400000;   // 400us timeout for AUX reply (if LTTPR is not supported)
-    parameter int AUX_RESPONSE_TIMEOUT_TIMER            = 300000;   // 300us timeout for AUX reply (if LTTPR is supported or not)
+    parameter int AUX_RESPONSE_TIMEOUT_TIMER            = 300000;   // 300us timeout for AUX response (if LTTPR is supported or not)
+    parameter int AUX_TRANSACTION_MAX_TIME              = 500000;   // AUX transactions should not be longer than 500us 
+    parameter int LINK_TRAINING_TARGET_TIME             = 10000000; // 10-ms link training completion time target
 
 // AUX Transaction Types (bit 3)
-    parameter bit AUX_I2C_OVER_AUX_TRANSACTION = 1'b1;  // Bit 3 = 1
-    parameter bit AUX_NATIVE_TRANSACTION = 1'b0;        // Bit 3 = 0
-
-// AUX Request Command Definitions (bits 0-2 when bit 3 = 1, I2C-over-AUX)
-    parameter logic [3:0] AUX_I2C_WRITE               = 4'b0000;  // Bit 3=0, Bits[2:0]=000
-    parameter logic [3:0] AUX_I2C_READ                = 4'b0001;  // Bit 3=0, Bits[2:0]=001
-    parameter logic [3:0] AUX_I2C_WRITE_STATUS_UPDATE = 4'b0010;  // Bit 3=0, Bits[2:0]=010
-    parameter logic [3:0] AUX_I2C_RESERVED            = 4'b0011;  // Bit 3=0, Bits[2:0]=011
-
-// AUX Request Command Definitions (bits 0-2 when bit 3 = 0, Native AUX)
-    parameter logic [3:0] AUX_NATIVE_WRITE            = 4'b1000;  // Bit 3=1, Bits[2:0]=000
-    parameter logic [3:0] AUX_NATIVE_READ             = 4'b1001;  // Bit 3=1, Bits[2:0]=001
+    parameter bit AUX_I2C_OVER_AUX_TRANSACTION = 1'b0;  // Bit 3 = 1
+    parameter bit AUX_NATIVE_TRANSACTION = 1'b1;        // Bit 3 = 0
   
 // MOT (Middle-of-Transaction) bit is bit 2 for I2C transactions
     parameter int MOT_BIT_POSITION = 2;
@@ -41,7 +34,7 @@
 
     parameter int AUX_ADDRESS_WIDTH = 20;      // 20-bit AUX address
 
-
+    parameter int AUX_DATA_WIDTH = 8;      // 8-bit AUX data
 
 // typedef enums
 
@@ -104,27 +97,41 @@
         D2_DPRX_AUX_REPLY_CMD_PENDING = 3'b100
     } dprx_aux_ch_state_e;
 
-// Reply command for (Native AUX Replay field) based on Table 2-177 (Bit#0,1) of the replay command 
+// AUX Request Command Definitions (bits 0-2 when bit 3 = 1, Native AUX) based on Table 2-176
+    typedef enum logic [3:0] {
+        AUX_NATIVE_WRITE   = 4'b1_000,  // Bit 3=1, Bits[2:0]=000
+        AUX_NATIVE_READ    = 4'b1_001   // Bit 3=1, Bits[2:0]=001
+    } native_aux_request_cmd_e;
+
+// AUX Request Command Definitions (bits 0-1 when bit 3 = 0, I2C-over-AUX) based on Table 2-176
     typedef enum logic [1:0] {
-        AUX_ACK   = 2'b00,  // ACK
-        AUX_NACK  = 2'b01,  // NACK
-        AUX_DEFER = 2'b10,  // DEFER
-        RESERVED  = 2'b11  // Reserved
+        AUX_I2C_WRITE               = 2'b00,  // Bit 3=0, Bit 2= MOT, Bits[1:0]=00
+        AUX_I2C_READ                = 2'b01,  // Bit 3=0, Bit 2= MOT, Bits[1:0]=01
+        AUX_I2C_WRITE_STATUS_UPDATE = 2'b10,  // Bit 3=0, Bit 2= MOT, Bits[1:0]=10
+        AUX_I2C_RESERVED            = 2'b11   // Bit 3=0, Bit 2= MOT, Bits[1:0]=11
+    } i2c_aux_request_cmd_e;
+
+// Reply command for (Native AUX Reply field) based on Table 2-177 
+    typedef enum logic [3:0] {
+        AUX_ACK   = 4'b00_00,  // ACK
+        AUX_NACK  = 4'b00_01,  // NACK
+        AUX_DEFER = 4'b00_10,  // DEFER
+        RESERVED  = 4'b00_11   // Reserved
     } native_aux_reply_cmd_e;
 
-// Reply command for (I2C-over-AUX Replay field) based on Table 2-177 (Bit#2,3) of the replay command 
-    typedef enum logic [1:0] {
-        I2C_ACK   = 2'b00,  // ACK
-        I2C_NACK  = 2'b01,  // NACK
-        I2C_DEFER = 2'b10,  // DEFER
-        RESERVED  = 2'b11  // Reserved
+// Reply command for (I2C-over-AUX Reply field) based on Table 2-177
+    typedef enum logic [4:0] {
+        I2C_ACK   = 4'b00_00,  // ACK
+        I2C_NACK  = 4'b01_00,  // NACK
+        I2C_DEFER = 4'b10_00,  // DEFER
+        RESERVED  = 4'b11_00   // Reserved
     } i2c_aux_reply_cmd_e;
 
 // Link Training Phases
     typedef enum bit [1:0] {
-        CLOCK_RECOVERY = 2'b00,
-        CHANNEL_EQUALIZATION = 2'b01,
-        LINK_READY = 2'b10
+        CLOCK_RECOVERY = 2'b00,         // Clock Recovery Stage of the Link Training
+        CHANNEL_EQUALIZATION = 2'b01,   // Channel Equalization Stage of the Link Training
+        LINK_READY = 2'b10              // Link Training has been successful
     } link_training_phase_t;
 
 `endif // DP_UVM_PARAMS_SVH
