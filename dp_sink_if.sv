@@ -31,9 +31,8 @@ interface dp_sink_if(input clk);
     
     modport DRV (
         input clk, CR_PHY_Instruct, CR_ADJ_BW, CR_ADJ_LC, EQ_PHY_Instruct, EQ_ADJ_BW, EQ_ADJ_LC,
-        inout AUX_IN_OUT, START_STOP,
+        inout AUX_IN_OUT, START_STOP, // start_stop will be changed
         output HPD_Signal
-              
     );
 
     //////////////////////// MONITOR /////////////////////////////  

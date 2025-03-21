@@ -44,7 +44,7 @@ interface dp_tl_if(input clk);
               LPM_Data,             // Data written by LPM when initiating a write transaction
               LPM_Address,          // Address sent by LPM to indicate register to be written to or read from when initiating a transaction
               LPM_LEN,              // Length of data, in bytes, send by LPM to be written or read for request transaction
-              LPM_CMD,              // The command field sent to specify the transaction type (I2C-over-AUX or Native) and operation (Read or Write).
+              LPM_CMD,              // The command field sent to specify the transaction type (Read or Write).
               LPM_Transaction_VLD,  // A valid signal activated by the LPM during a request transaction.
         // LPM - Link Training
               LPM_Start_CR,         // the LPM starts link training by asserting this signal, which marks the beginning of the Clock Recovery phase.
@@ -98,7 +98,7 @@ interface dp_tl_if(input clk);
         // LPM
               HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_Native_I2C,         
         // LPM - Link Training
-              FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC 
+              FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC
     );
 
     //////////////////////// MONITOR /////////////////////////////
