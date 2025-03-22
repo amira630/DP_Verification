@@ -1,5 +1,9 @@
 class dp_sink_sequence_item extends uvm_sequence_item;
-    `uvm_object_utils(dp_sink_sequence_item);
+    `uvm_object_utils_begin(dp_sink_sequence_item)
+        `uvm_field_int(addr, UVM_ALL_ON)
+        `uvm_field_int(data, UVM_ALL_ON)
+        `uvm_field_int(read, UVM_ALL_ON)
+    `uvm_object_utils_end
 
     string name_1, name_2, name_3;
 

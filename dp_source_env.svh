@@ -7,6 +7,11 @@ class dp_source_env extends uvm_env;
     //dp_source_ref ref_model;
     dp_tl_coverage tl_cov;
     dp_sink_coverage sink_cov;
+    //Model handler
+    dp_dpcd_reg_model model;
+    //Register predictor handler
+    dp_dpcd_reg_predictor#(dp_sink_sequence_item) predictor;
+    dp_aux_reg_adapter adapter;
 
     function new(string name = "dp_source_env", uvm_component parent = null);
         super.new(name, parent);
@@ -21,9 +26,13 @@ class dp_source_env extends uvm_env;
         //ref_model = dp_source_ref::type_id::create("ref_model", this);
         tl_cov = dp_tl_coverage::type_id::create("tl_cov", this);
         sink_cov = dp_sink_coverage::type_id::create("sink_cov", this);
+        model = dp_dpcd_reg_model::type_id::create("model", this);
+        adapter = dp_aux_reg_adapter::type_id::create("adapter", this);
+        predictor = dp_dpcd_reg_predictor#(dp_sink_sequence_item)::type_id::create("predictor", this);
     endfunction   
         
     function void connect_phase(uvm_phase phase);
+
         super.connect_phase(phase);
         // Transport Layer Agent → Scoreboard
         tl_agt.agt_ap.connect(sb.sb_tl_export);
@@ -42,5 +51,15 @@ class dp_source_env extends uvm_env;
 
         // Reference Model → Scoreboard
         //ref_model.ref_ap.connect(sb.sb_ref_export);
+
+        //Configure the predictor with an address map and an adapter
+        predictor.map     = model.reg_block.default_map;
+        predictor.adapter = adapter;
+        // Sink Agent → predictor
+        sink_agt.agt_ap.connect(predictor.bus_in);
+        //Connect the Sink sequencer to the address map in order
+        //to use the API of the registers to start AUX transactions
+        model.reg_block.default_map.set_sequencer(sink_agt.sequencer, adapter);
+      
     endfunction
 endclass //className extends superClass
