@@ -2,12 +2,13 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     `uvm_object_utils(dp_sink_sequence_item);
 
     rand bit hpd_signal;
-    rand bit start_stop;
-
+    
+    bit start_stop;
     bit [7:0] aux_in_out[$];             
 
 // Reply Command Signal 
-    rand i2c_aux_reply_cmd_e i2c_aux_reply_cmd;
+    rand i2c_aux_reply_cmd_e i2c_reply_cmd;
+    rand native_aux_reply_cmd_e native_reply_cmd;
 
 // Output Signals across from DUT to the PHY Layer
     logic [1:0] cr_adj_lc, cr_phy_instruct, eq_adj_lc, eq_phy_instruct;
@@ -19,9 +20,16 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     logic [7:0] length;
     logic [7:0] data[$];  // Variable length data
 
+// Flags
+    bit is_reply;
+
 // constraints
     constraint valid_i2c_aux_reply_cmd_c {
-        i2c_aux_reply_cmd != RESERVED;  // Avoid using RESERVED value
+        i2c_reply_cmd != RESERVED;  // Avoid using RESERVED value
+    }
+
+    constraint valid_native_aux_reply_cmd_c {
+        native_reply_cmd != RESERVED;  // Avoid using RESERVED value
     }
 
     function new(string name = "dp_sink_sequence_item");
