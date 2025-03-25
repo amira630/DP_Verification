@@ -8,17 +8,12 @@ package dp_source_env_pkg;
     import dp_transactions_pkg::*;
     import dp_tl_agent_pkg::*;
     import dp_sink_agent_pkg::*;
-    import test_parameters_pkg::*;
-    import dp_dpcd_reg_pkg::*;
-    
+
     // Includes:
     //`include "dp_source_ref.svh"
     `include "dp_scoreboard.svh"
     `include "dp_tl_coverage.svh"
     `include "dp_sink_coverage.svh"
-    `include "dp_dpcd_reg_model.svh"
-    `include "dp_aux_reg_adapter.svh"
-    `include "dp_dpcd_reg_predictor.svh"
     `include "dp_source_env.svh"
 
 endpackage
