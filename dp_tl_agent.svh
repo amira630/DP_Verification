@@ -1,11 +1,11 @@
 class dp_tl_agent extends uvm_agent;
     `uvm_component_utils(dp_tl_agent)
     
-    dp_tl_sequencer sqr;
+    dp_tl_sequencer #(dp_tl_lpm_sequence_item, dp_tl_spm_sequence_item) sqr;
     dp_tl_driver drv;
     dp_tl_monitor mon;
     dp_source_config dp_source_cfg;
-    uvm_analysis_port #(dp_tl_sequence_item) agt_ap;
+    uvm_analysis_port #(dp_tl_lpm_sequence_item, dp_tl_spm_sequence_item) agt_ap;
 
     function new(string name = "dp_tl_agent", uvm_component parent = null);
         super.new(name, parent);
@@ -35,6 +35,9 @@ class dp_tl_agent extends uvm_agent;
 
         //connecting the driver TLM port to the sequencer TLM export
         drv.seq_item_port.connect(sqr.seq_item_export);
+
+        // Response port connection
+        drv.rsp_port.connect(sqr.rsp_export);
 
         //connecting the monitor analysis port to the agent analysis port
         mon.mon_ap.connect(agt_ap);

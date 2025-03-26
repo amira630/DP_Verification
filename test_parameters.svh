@@ -116,7 +116,7 @@
         AUX_ACK   = 4'b00_00,  // ACK
         AUX_NACK  = 4'b00_01,  // NACK
         AUX_DEFER = 4'b00_10,  // DEFER
-        RESERVED  = 4'b00_11   // RESERVED
+        AUX_RESERVED  = 4'b00_11   // RESERVED
     } native_aux_reply_cmd_e;
 
 // Reply command for (I2C-over-AUX Reply field) based on Table 2-177
@@ -124,7 +124,7 @@
         I2C_ACK   = 4'b00_00,  // ACK
         I2C_NACK  = 4'b01_00,  // NACK
         I2C_DEFER = 4'b10_00,  // DEFER
-        RESERVED  = 4'b11_00   // RESERVED
+        I2C_RESERVED  = 4'b11_00   // RESERVED
     } i2c_aux_reply_cmd_e;
 
 // Link Training Phases
@@ -143,8 +143,6 @@
         //I2C_WRITE     = 2'b11 
     } op_code;
 
-    typedef enum logic [1:0] {
 
-    } FLOW_FSM;
 
 `endif // DP_UVM_PARAMS_SVH

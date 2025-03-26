@@ -9,17 +9,17 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_spm_sequence_item, dp_tl_
     endfunction //new()
 
 // I2C AUX REQUEST TRANSACTION sequence
-    task i2c_request(input logic [19:0] address, [7:0] LEN, i2c_aux_request_cmd_e CMD);
+    task EDID_reading();
         seq_item_SPM = dp_tl_spm_sequence_item::type_id::create("seq_item_SPM");
         
         start_item(seq_item_SPM);
             seq_item_SPM.SPM_Address.rand_mode(0);    // randomization off
             seq_item_SPM.SPM_CMD.rand_mode(0);        // randomization off
 
-            seq_item_SPM.SPM_CMD = CMD;               // Read
+            seq_item_SPM.SPM_CMD = AUX_I2C_READ;               // Read
             seq_item_SPM.SPM_Transaction_VLD = 1'b1;  // SPM is going to request a Native transaction 
-            seq_item_SPM.SPM_Address = address;       // Address
-            seq_item_SPM.SPM_LEN = LEN;               // Length
+            seq_item_SPM.SPM_Address = 20'h0_00_00;       // Address
+            seq_item_SPM.SPM_LEN = 8'h80;               // Length
             if (CMD == AUX_I2C_WRITE) begin
                 seq_item_SPM.SPM_Data.delete();  // Clear the queue
                 assert(seq_item_SPM.randomize() with { SPM_Data.size() == LEN; });
@@ -29,7 +29,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_spm_sequence_item, dp_tl_
     endtask
 
 // NATIVE AUX REQUEST TRANSACTION sequence
-    task native_read_request(input logic [19:0] address, [7:0] LEN, native_aux_request_cmd_e CMD);
+    task native_request(input logic [19:0] address, [7:0] LEN, native_aux_request_cmd_e CMD);
         seq_item_LPM = dp_tl_lpm_sequence_item::type_id::create("seq_item_LPM");
         
         start_item(seq_item_LPM);
@@ -46,6 +46,28 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_spm_sequence_item, dp_tl_
         finish_item(seq_item_LPM);
         `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item_LPM.SPM_CMD, seq_item_LPM.SPM_Address, seq_item_LPM.SPM_LEN +1, seq_item_LPM.SPM_Transaction_VLD), UVM_MEDIUM)
     endtask
+
+// Link Training
+    task Link_INIT(port_list);
+        seq_item_SPM = dp_tl_spm_sequence_item::type_id::create("seq_item_SPM");
+        seq_item_LPM = dp_tl_lpm_sequence_item::type_id::create("seq_item_LPM");
+
+        // Wait for theHPD Detect signal to go high
+        if (seq_item_SPM.HPD_Detect) begin
+            EDID_reading();
+
+            Wait(!seq_item_SPM.SPM_NATIVE_I2C);
+
+        end
+    endtask
+
+
+
+
+
+
+
+
     // // NATIVE AUX READ REQUEST TRANSACTION
     // task native_read_req_aux(input logic [19:0] address, [7:0] LEN);
     //     seq_item_LPM = dp_tl_lpm_sequence_item::type_id::create("seq_item_LPM");
