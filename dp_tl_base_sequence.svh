@@ -66,7 +66,13 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_spm_sequence_item, dp_tl_
         `uvm_info("TL_I2C_REQ_SEQ", $sformatf("I2C AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item_SPM.SPM_CMD, seq_item_SPM.SPM_Address, seq_item_SPM.SPM_LEN +1, seq_item_SPM.SPM_Transaction_VLD), UVM_MEDIUM)
     endtask
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // NATIVE AUX REQUEST TRANSACTION sequence
+// Need to write separate task for Native AUX read and write request transactions
+// As for in case of read burst fail I will re-request the whole burst
+// for write burst i can start from the point where it failed based on the M value
     task native_request(input logic [19:0] address, [7:0] LEN, native_aux_request_cmd_e CMD);
         seq_item_LPM = dp_tl_lpm_sequence_item::type_id::create("seq_item_LPM");
 
@@ -79,18 +85,19 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_spm_sequence_item, dp_tl_
                 seq_item_LPM.LPM_Address.rand_mode(0);    // randomization off
                 seq_item_LPM.LPM_CMD.rand_mode(0);        // randomization off
 
-                seq_item_LPM.LPM_CMD = CMD;               // Read
-                seq_item_LPM.LPM_Transaction_VLD = 1'b1;  // LPM is going to request a Native transaction 
-                seq_item_LPM.LPM_Address = address + ack_count;       // Address
-                seq_item_LPM.LPM_LEN = len;               // Length
+                seq_item_LPM.LPM_CMD = CMD;                      // Read
+                seq_item_LPM.LPM_Transaction_VLD = 1'b1;         // LPM is going to request a Native transaction 
+                seq_item_LPM.LPM_Address = address;  // Address
+                seq_item_LPM.LPM_LEN = len;                      // Length
                 if (CMD == AUX_NATIVE_WRITE) begin
                     seq_item_LPM.LPM_Data.delete();  // Clear the queue
-                    assert(seq_item_LPM.randomize() with { LPM_Data.size() == LEN; });
+                    assert(seq_item_LPM.randomize() with {LPM_Data.size() == LEN;});
                 end
             finish_item(seq_item_LPM);
-            while(ack_count<LEN/8) begin
+            while(ack_count<1) begin
                 // Wait for the response from the DUT
                 get_response(seq_item_LPM);
+                //seq_item_LPM.LPM_Transaction_VLD = 1'b0;
                 if (seq_item_LPM.CTRL_Native_Failed) begin
                     `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item_LPM.LPM_CMD, seq_item_LPM.LPM_Address, seq_item_LPM.LPM_LEN +1, seq_item_LPM.LPM_Transaction_VLD), UVM_MEDIUM)
                     break;
@@ -118,12 +125,6 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_spm_sequence_item, dp_tl_
 
         end
     endtask
-
-
-
-
-
-
 
 
     // // NATIVE AUX READ REQUEST TRANSACTION

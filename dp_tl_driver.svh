@@ -83,11 +83,31 @@ class dp_tl_driver extends uvm_driver #(dp_tl_spm_sequence_item, dp_tl_lpm_seque
             seq_item_LPM.EQ_Failed = dp_tl_vif.EQ_Failed;
             seq_item_LPM.EQ_LT_Pass = dp_tl_vif.EQ_LT_Pass;
 
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////
+            //////////////////////////// Needs to be updated with the actual operation ////////////////////////////
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////
+            if(seq_item_SPM.SPM_Transaction_VLD) begin
+                case (seq_item_SPM.operation)
+                    2'b00: dp_tl_vif.read_edid(/*arguments*/);
+                    2'b01:
+                    default: begin
+                        default_case
+                    end
+                endcase
+            end
+            else if (seq_item_LPM.LPM_Transaction_VLD) begin
+                case (seq_item_LPM.operation)
+                    2'b00: dp_tl_vif.read_rx_cap(/*arguments*/);
+                    2'b01:
+                    default: begin
+                        default_case
+                    end
+                endcase
+            end
             // Send response back properly via seq_item_port
             @(negedge dp_tl_vif.clk);
             seq_item_port.item_done(seq_item_SPM);
-            seq_item_port.item_done(seq_item_LPM);
-
+            seq_item_port.item_done(seq_item_LPM);           
             `uvm_info("run_phase", $sformatf("Driver Done"), UVM_HIGH);
             `uvm_info("run_phase", seq_item_SPM.convert2string(), UVM_HIGH);
             `uvm_info("run_phase", seq_item_LPM.convert2string(), UVM_HIGH);
