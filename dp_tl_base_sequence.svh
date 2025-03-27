@@ -41,14 +41,14 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_spm_sequence_item, dp_tl_
 
                 seq_item_SPM.SPM_CMD = CMD;               // Read
                 seq_item_SPM.SPM_Transaction_VLD = 1'b1;  // SPM is going to request a Native transaction 
-                seq_item_SPM.SPM_Address = address + ack_count;       // Address
+                seq_item_SPM.SPM_Address = address;       // Address
                 seq_item_SPM.SPM_LEN = len;               // Length
                 if (CMD == AUX_I2C_WRITE) begin
                     seq_item_SPM.SPM_Data.delete();  // Clear the queue
                     assert(seq_item_SPM.randomize() with { SPM_Data.size() == LEN; });
                 end
             finish_item(seq_item_SPM);
-            while(ack_count<len) begin
+            while(ack_count<len+1) begin
                 // Wait for the response from the DUT
                 get_response(seq_item_SPM);
                 if (seq_item_SPM.CTRL_I2C_Failed) begin
@@ -72,8 +72,8 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_spm_sequence_item, dp_tl_
 
         int ack_count = 0;
         seq_item_LPM.CTRL_Native_Failed = 1;
-        while (seq_item_LPM.CTRL_I2C_Failed) begin
-            seq_item_LPM.CTRL_I2C_Failed = 0;
+        while (seq_item_LPM.CTRL_Native_Failed) begin
+            seq_item_LPM.CTRL_Native_Failed = 0;
             
             start_item(seq_item_LPM);
                 seq_item_LPM.LPM_Address.rand_mode(0);    // randomization off
