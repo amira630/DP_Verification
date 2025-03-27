@@ -8,43 +8,101 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_spm_sequence_item, dp_tl_
         super.new(name);
     endfunction //new()
 
-// I2C AUX REQUEST TRANSACTION sequence
-    task EDID_reading();
-        seq_item_SPM = dp_tl_spm_sequence_item::type_id::create("seq_item_SPM");
-        
-        start_item(seq_item_SPM);
-            seq_item_SPM.SPM_Address.rand_mode(0);    // randomization off
-            seq_item_SPM.SPM_CMD.rand_mode(0);        // randomization off
+// // function of creating sequence item of type dp_tl_spm_sequence_item
+//     function dp_tl_spm_sequence_item create_spm_item();
+//         dp_tl_spm_sequence_item seq_item;
+//         seq_item = dp_tl_spm_sequence_item::type_id::create("seq_item");
+//         return seq_item;
+//     endfunction
 
-            seq_item_SPM.SPM_CMD = AUX_I2C_READ;               // Read
-            seq_item_SPM.SPM_Transaction_VLD = 1'b1;  // SPM is going to request a Native transaction 
-            seq_item_SPM.SPM_Address = 20'h0_00_00;       // Address
-            seq_item_SPM.SPM_LEN = 8'h80;               // Length
-            if (CMD == AUX_I2C_WRITE) begin
-                seq_item_SPM.SPM_Data.delete();  // Clear the queue
-                assert(seq_item_SPM.randomize() with { SPM_Data.size() == LEN; });
+// // function of creating sequence item of type dp_tl_lpm_sequence_item
+//     function dp_tl_lpm_sequence_item create_lpm_item();
+//         dp_tl_lpm_sequence_item seq_item;
+//         seq_item = dp_tl_lpm_sequence_item::type_id::create("seq_item");
+//         return seq_item;
+//     endfunction
+
+// HPD Detect
+    task HPD_Detect_sequence ();
+
+    endtask
+// I2C AUX REQUEST TRANSACTION sequence
+    task i2c_request(input i2c_aux_request_cmd_e CMD, logic [19:0] address, [7:0] len);
+        seq_item_SPM = dp_tl_spm_sequence_item::type_id::create("seq_item_SPM");
+
+        int ack_count = 0;
+        seq_item_SPM.CTRL_I2C_Failed = 1;
+        while (seq_item_SPM.CTRL_I2C_Failed) begin
+            seq_item_SPM.CTRL_I2C_Failed = 0;
+            
+            start_item(seq_item_SPM);
+                seq_item_SPM.SPM_Address.rand_mode(0);    // randomization off
+                seq_item_SPM.SPM_CMD.rand_mode(0);        // randomization off
+
+                seq_item_SPM.SPM_CMD = CMD;               // Read
+                seq_item_SPM.SPM_Transaction_VLD = 1'b1;  // SPM is going to request a Native transaction 
+                seq_item_SPM.SPM_Address = address + ack_count;       // Address
+                seq_item_SPM.SPM_LEN = len;               // Length
+                if (CMD == AUX_I2C_WRITE) begin
+                    seq_item_SPM.SPM_Data.delete();  // Clear the queue
+                    assert(seq_item_SPM.randomize() with { SPM_Data.size() == LEN; });
+                end
+            finish_item(seq_item_SPM);
+            while(ack_count<len) begin
+                // Wait for the response from the DUT
+                get_response(seq_item_SPM);
+                if (seq_item_SPM.CTRL_I2C_Failed) begin
+                    `uvm_info("TL_I2C_REQ_SEQ", $sformatf("I2C AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item_SPM.SPM_CMD, seq_item_SPM.SPM_Address, seq_item_SPM.SPM_LEN +1, seq_item_SPM.SPM_Transaction_VLD), UVM_MEDIUM)
+                    break;
+                end
+                else if(seq_item_SPM.SPM_Reply_ACK_VLD) begin
+                    if(seq_item_SPM.SPM_Reply_ACK == I2C_ACK[3:2]) begin
+                        ack_count++;
+                    end
+                end
             end
-        finish_item(seq_item_SPM);
+        end
+        // 
         `uvm_info("TL_I2C_REQ_SEQ", $sformatf("I2C AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item_SPM.SPM_CMD, seq_item_SPM.SPM_Address, seq_item_SPM.SPM_LEN +1, seq_item_SPM.SPM_Transaction_VLD), UVM_MEDIUM)
     endtask
 
 // NATIVE AUX REQUEST TRANSACTION sequence
     task native_request(input logic [19:0] address, [7:0] LEN, native_aux_request_cmd_e CMD);
         seq_item_LPM = dp_tl_lpm_sequence_item::type_id::create("seq_item_LPM");
-        
-        start_item(seq_item_LPM);
-            seq_item_LPM.LPM_LEN.rand_mode(0);        // randomization off
 
-            seq_item_LPM.LPM_CMD = CMD;               // Read
-            seq_item_LPM.LPM_Transaction_VLD = 1'b1;  // SPM is going to request a Native transaction 
-            seq_item_LPM.LPM_Address = address;       // Address
-            seq_item_LPM.LPM_LEN = LEN;               // Length
-            if (CMD == AUX_NATIVE_WRITE) begin
-                seq_item_LPM.LPM_Data.delete();  // Clear the queue
-                assert(seq_item_LPM.randomize() with {LPM_Data.size() == LEN;});
+        int ack_count = 0;
+        seq_item_LPM.CTRL_Native_Failed = 1;
+        while (seq_item_LPM.CTRL_I2C_Failed) begin
+            seq_item_LPM.CTRL_I2C_Failed = 0;
+            
+            start_item(seq_item_LPM);
+                seq_item_LPM.LPM_Address.rand_mode(0);    // randomization off
+                seq_item_LPM.LPM_CMD.rand_mode(0);        // randomization off
+
+                seq_item_LPM.LPM_CMD = CMD;               // Read
+                seq_item_LPM.LPM_Transaction_VLD = 1'b1;  // LPM is going to request a Native transaction 
+                seq_item_LPM.LPM_Address = address + ack_count;       // Address
+                seq_item_LPM.LPM_LEN = len;               // Length
+                if (CMD == AUX_NATIVE_WRITE) begin
+                    seq_item_LPM.LPM_Data.delete();  // Clear the queue
+                    assert(seq_item_LPM.randomize() with { LPM_Data.size() == LEN; });
+                end
+            finish_item(seq_item_LPM);
+            while(ack_count<LEN/8) begin
+                // Wait for the response from the DUT
+                get_response(seq_item_LPM);
+                if (seq_item_LPM.CTRL_Native_Failed) begin
+                    `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item_LPM.LPM_CMD, seq_item_LPM.LPM_Address, seq_item_LPM.LPM_LEN +1, seq_item_LPM.LPM_Transaction_VLD), UVM_MEDIUM)
+                    break;
+                end
+                else if(seq_item_LPM.LPM_Reply_ACK_VLD) begin
+                    if(seq_item_LPM.LPM_Reply_ACK == AUX_ACK[1:0]) begin
+                        ack_count++;
+                    end
+                end
             end
-        finish_item(seq_item_LPM);
-        `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item_LPM.SPM_CMD, seq_item_LPM.SPM_Address, seq_item_LPM.SPM_LEN +1, seq_item_LPM.SPM_Transaction_VLD), UVM_MEDIUM)
+        end
+        `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item_LPM.LPM_CMD, seq_item_LPM.LPM_Address, seq_item_LPM.LPM_LEN +1, seq_item_LPM.LPM_Transaction_VLD), UVM_MEDIUM)
     endtask
 
 // Link Training
