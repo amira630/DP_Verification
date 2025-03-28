@@ -9,8 +9,7 @@ interface dp_tl_if(input clk);
     logic [AUX_ADDRESS_WIDTH-1:0] SPM_Address;
     logic [AUX_DATA_WIDTH-1:0]  SPM_Data, SPM_LEN, SPM_Reply_Data;
     logic [1:0]  SPM_CMD, SPM_Reply_ACK;
-    logic        SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, SPM_Transaction_VLD;
-    logic        CTRL_I2C_Failed;
+    logic        SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, SPM_Transaction_VLD, CTRL_I2C_Failed;
 
     ///////////////////////////////////////////////////////////////
     //////////////////// LINK POLICY MAKER ////////////////////////
@@ -20,12 +19,12 @@ interface dp_tl_if(input clk);
     logic [AUX_DATA_WIDTH-1:0]    LPM_Data, LPM_LEN, LPM_Reply_Data;
     logic [1:0]                   LPM_CMD, LPM_Reply_ACK;
     logic                         LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_NATIVE_I2C,LPM_Transaction_VLD;
-    logic                         HPD_Detect, HPD_IRQ, CTRL_Native_Failed;
+    logic                           HPD_Detect, HPD_IRQ, CTRL_Native_Failed;
     ////////////////// LINK Training Signals //////////////////////
     logic [AUX_DATA_WIDTH-1:0] Link_BW_CR, PRE, VTG, EQ_RD_Value, Lane_Align, MAX_VTG, EQ_Final_ADJ_BW;
     logic [3:0] CR_Done, EQ_CR_DN, Channel_EQ, Symbol_Lock;
-    logic [1:0] Link_LC_CR, EQ_Final_ADJ_LC;
-    logic       LPM_Start_CR, Driving_Param_VLD, EQ_Data_VLD, FSM_CR_Failed, EQ_Failed, EQ_LT_Pass;
+    logic [1:0] Link_LC_CR, EQ_Final_ADJ_LC, MAX_TPS_SUPPORTED;
+    logic       LPM_Start_CR, Driving_Param_VLD, EQ_Data_VLD, FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, TPS_VLD;
 
     ///////////////////////////////////////////////////////////////
     //////////////////////// MODPORTS /////////////////////////////
@@ -63,6 +62,8 @@ interface dp_tl_if(input clk);
               EQ_Data_VLD,          // Valid signal indicating the arrival of these data from LPM
               MAX_VTG,              // Maximum voltage swing supported by the sink capability
               MAX_PRE,              // Maximum pre-emphasis supported by the sink capability
+              MAX_TPS_SUPPORTED,    // Maximum TPS supported by the sink capability
+              TPS_VLD,              // Valid signal indicating the arrival of MAX_TPS_SUPPORTED data from LPM
         // SPM       
         output SPM_Reply_Data,          // I2C-over-AUX Reply Transaction (Data Part) for I2C-over-AUX Request Read Transaction, using I2C Transaction Method 1 (transfer 1 byte per transaction)
                SPM_Reply_ACK,           // This signal represents the status of the reply transaction whether ACK, NACK or DEFER.

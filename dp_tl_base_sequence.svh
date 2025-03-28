@@ -84,15 +84,13 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_spm_sequence_item, dp_tl_
             start_item(seq_item_LPM);
                 seq_item_LPM.LPM_Address.rand_mode(0);    // randomization off
                 seq_item_LPM.LPM_CMD.rand_mode(0);        // randomization off
+                seq_item_LPM.LPM_LEN.rand_mode(0);        // randomization off
 
-                seq_item_LPM.LPM_CMD = AUX_NATIVE_READ;                      // Read
-                seq_item_LPM.LPM_Transaction_VLD = 1'b1;         // LPM is going to request a Native transaction 
-                seq_item_LPM.LPM_Address = address;  // Address
-                seq_item_LPM.LPM_LEN = LEN;                      // Length
-                // if (CMD == AUX_NATIVE_WRITE) begin
-                //     seq_item_LPM.LPM_Data.delete();  // Clear the queue
-                //     assert(seq_item_LPM.randomize() with {LPM_Data.size() == LEN;});
-                // end
+                seq_item_LPM.LPM_CMD = AUX_NATIVE_READ;   // Read
+                seq_item_LPM.LPM_Transaction_VLD = 1'b1;  // LPM is going to request a Native transaction 
+                seq_item_LPM.LPM_Address = address;       // Address
+                seq_item_LPM.LPM_LEN = LEN;               // Length
+                seq_item_LPM.randomize();                 // Randomize the data
             finish_item(seq_item_LPM);
             while(ack_count<1) begin
                 // Wait for the response from the DUT
@@ -110,6 +108,48 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_spm_sequence_item, dp_tl_
             end
         end
         `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item_LPM.LPM_CMD, seq_item_LPM.LPM_Address, seq_item_LPM.LPM_LEN +1, seq_item_LPM.LPM_Transaction_VLD), UVM_MEDIUM)
+    endtask
+
+    task native_write_request(input logic [19:0] address, input [7:0] LEN);
+        seq_item_LPM = dp_tl_lpm_sequence_item::type_id::create("seq_item_LPM");
+    
+        int ack_count = 0;
+        seq_item_LPM.CTRL_Native_Failed = 1;
+    
+        while (seq_item_LPM.CTRL_Native_Failed) begin
+            seq_item_LPM.CTRL_Native_Failed = 0;
+    
+            start_item(seq_item_LPM);
+
+                seq_item_LPM.LPM_Address.rand_mode(0);    // randomization off
+                seq_item_LPM.LPM_CMD.rand_mode(0);        // randomization off
+                seq_item_LPM.LPM_LEN.rand_mode(0);        // randomization off
+                seq_item_LPM.LPM_Data.rand_mode(1);       // randomization on for data
+
+                seq_item_LPM.LPM_Data.delete();           // Clear the queue
+                seq_item_LPM.LPM_CMD = AUX_NATIVE_WRITE;  // Write
+                seq_item_LPM.LPM_Transaction_VLD = 1'b1;  // LPM is going to request a Native transaction
+                seq_item_LPM.LPM_Address = address;       // Address
+                seq_item_LPM.LPM_LEN = LEN;               // Length
+                seq_item_LPM.randomize();                 // Randomize the data
+            finish_item(seq_item_LPM);
+    
+            while (ack_count < 1) begin
+                // Wait for the response from the DUT
+                get_response(seq_item_LPM);
+    
+                if (seq_item_LPM.CTRL_Native_Failed) begin
+                    `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b", seq_item_LPM.LPM_CMD, seq_item_LPM.LPM_Address, seq_item_LPM.LPM_LEN + 1, seq_item_LPM.LPM_Transaction_VLD), UVM_MEDIUM)
+                    break;
+                end else if (seq_item_LPM.LPM_Reply_ACK_VLD) begin
+                    if (seq_item_LPM.LPM_Reply_ACK == AUX_ACK[1:0]) begin
+                        ack_count++;
+                    end 
+                end
+            end
+        end
+    
+        `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b", seq_item_LPM.LPM_CMD, seq_item_LPM.LPM_Address, seq_item_LPM.LPM_LEN + 1, seq_item_LPM.LPM_Transaction_VLD), UVM_MEDIUM)
     endtask
 
     task CR_LT();
@@ -200,21 +240,6 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_spm_sequence_item, dp_tl_
             end
         end
     endtask
-
-// Link Training
-    task Link_INIT(port_list);
-        seq_item_SPM = dp_tl_spm_sequence_item::type_id::create("seq_item_SPM");
-        seq_item_LPM = dp_tl_lpm_sequence_item::type_id::create("seq_item_LPM");
-
-        // Wait for theHPD Detect signal to go high
-        if (seq_item_SPM.HPD_Detect) begin
-            EDID_reading();
-
-            Wait(!seq_item_SPM.SPM_NATIVE_I2C);
-
-        end
-    endtask
-
 
     // // NATIVE AUX READ REQUEST TRANSACTION
     // task native_read_req_aux(input logic [19:0] address, [7:0] LEN);
