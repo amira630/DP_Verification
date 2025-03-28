@@ -23,10 +23,13 @@ class dp_tl_lpm_sequence_item extends uvm_sequence_item;
     ////////////////// LINK Training Signals //////////////////////
     
     // input Data to DUT
-    logic [AUX_DATA_WIDTH-1:0] Lane_Align, MAX_VTG, EQ_RD_Value, PRE, VTG, Link_BW_CR;
-    logic [3:0]                CR_Done, EQ_CR_DN, Channel_EQ, Symbol_Lock;
-    logic [1:0]                MAX_TPS_SUPPORTED, Link_LC_CR; 
-    logic                      EQ_Data_VLD, Driving_Param_VLD, LPM_Start_CR, MAX_TPS_SUPPORTED_VLD;
+    logic [AUX_DATA_WIDTH-1:0] Lane_Align, EQ_RD_Value, PRE, VTG;
+    rand logic [AUX_DATA_WIDTH-1:0] Link_BW_CR, MAX_VTG;
+    logic [3:0]                EQ_CR_DN, Channel_EQ, Symbol_Lock;
+    rand logic [3:0]           CR_Done;
+    logic [1:0]                MAX_TPS_SUPPORTED; 
+    rand logic [1:0]           Link_LC_CR;
+    bit                        EQ_Data_VLD, Driving_Param_VLD, LPM_Start_CR, MAX_TPS_SUPPORTED_VLD;
 
     // output Data from DUT
     logic [AUX_DATA_WIDTH-1:0] EQ_Final_ADJ_BW;

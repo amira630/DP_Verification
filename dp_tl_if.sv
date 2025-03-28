@@ -62,6 +62,7 @@ interface dp_tl_if(input clk);
               Lane_Align,           // The result of the Equalization phase during link training for the four lanes, found in the Status Update registers (00204h), indicating whether Lane Align achieved.
               EQ_Data_VLD,          // Valid signal indicating the arrival of these data from LPM
               MAX_VTG,              // Maximum voltage swing supported by the sink capability
+              MAX_PRE,              // Maximum pre-emphasis supported by the sink capability
         // SPM       
         output SPM_Reply_Data,          // I2C-over-AUX Reply Transaction (Data Part) for I2C-over-AUX Request Read Transaction, using I2C Transaction Method 1 (transfer 1 byte per transaction)
                SPM_Reply_ACK,           // This signal represents the status of the reply transaction whether ACK, NACK or DEFER.
