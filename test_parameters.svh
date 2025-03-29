@@ -39,11 +39,11 @@
 // typedef enums
 
 // Training Patterns
-    typedef enum bit [2:0] {
-        TPS1 = 3'b000,
-        TPS2 = 3'b001,
-        TPS3 = 3'b010,
-        TPS4 = 3'b011
+    typedef enum bit [1:0] {
+        IDLE_PATTERN = 2'b00,
+        TPS2 = 3'b01,
+        TPS3 = 3'b10,
+        TPS4 = 3'b11
     } training_pattern_t;
 
 // Voltage Swing Levels

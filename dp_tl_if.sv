@@ -21,10 +21,11 @@ interface dp_tl_if(input clk);
     logic                         LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_NATIVE_I2C,LPM_Transaction_VLD;
     logic                           HPD_Detect, HPD_IRQ, CTRL_Native_Failed;
     ////////////////// LINK Training Signals //////////////////////
-    logic [AUX_DATA_WIDTH-1:0] Link_BW_CR, PRE, VTG, EQ_RD_Value, Lane_Align, MAX_VTG, EQ_Final_ADJ_BW;
+    logic [AUX_DATA_WIDTH-1:0] Link_BW_CR, PRE, VTG, EQ_RD_Value, Lane_Align, MAX_VTG, MAX_PRE, EQ_Final_ADJ_BW;
     logic [3:0] CR_Done, EQ_CR_DN, Channel_EQ, Symbol_Lock;
     logic [1:0] Link_LC_CR, EQ_Final_ADJ_LC, MAX_TPS_SUPPORTED;
-    logic       LPM_Start_CR, Driving_Param_VLD, EQ_Data_VLD, FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, TPS_VLD;
+    logic       LPM_Start_CR, Driving_Param_VLD, EQ_Data_VLD, FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, TPS_VLD, Config_Param_VLD, CR_Done_VLD;
+    logic       EQ_CR_Failed, LPM_Start_CR_VLD;
 
     ///////////////////////////////////////////////////////////////
     //////////////////////// MODPORTS /////////////////////////////
@@ -64,6 +65,8 @@ interface dp_tl_if(input clk);
               MAX_PRE,              // Maximum pre-emphasis supported by the sink capability
               MAX_TPS_SUPPORTED,    // Maximum TPS supported by the sink capability
               TPS_VLD,              // Valid signal indicating the arrival of MAX_TPS_SUPPORTED data from LPM
+              Config_Param_VLD,     // Valid signal indicating the arrival of configuration parameters from LPM, for MAX_PRE, MAX_VTG, Link_LC_CR and Link_BW_CR          
+              CR_Done_VLD,          // Valid signal indicating the arrival of CR_Done data from LPM
         // SPM       
         output SPM_Reply_Data,          // I2C-over-AUX Reply Transaction (Data Part) for I2C-over-AUX Request Read Transaction, using I2C Transaction Method 1 (transfer 1 byte per transaction)
                SPM_Reply_ACK,           // This signal represents the status of the reply transaction whether ACK, NACK or DEFER.
@@ -85,7 +88,9 @@ interface dp_tl_if(input clk);
                EQ_Failed,               // Signal indicating the failure of the Channel Equalization phase during link training.
                EQ_LT_Pass,              // This signal represents a successful channel equalization phase which indicates successful link training process
                EQ_Final_ADJ_BW,         // The adjusted link BW after successful link training used for sending main video stream.
-               EQ_Final_ADJ_LC          // The adjusted number of lanes after successful link training, used for sending main video stream.
+               EQ_Final_ADJ_LC,         // The adjusted number of lanes after successful link training, used for sending main video stream.
+               CR_Completed,            // Signal indicating the completion of the Clock Recovery phase during link training.   
+               EQ_CR_Failed             // Signal indicating the failure of the Clock Recovery phase during EQ phase of link training.   
     );
 
     //////////////////////// DRIVER /////////////////////////////
@@ -97,13 +102,14 @@ interface dp_tl_if(input clk);
               LPM_Data, LPM_Address, LPM_LEN, LPM_CMD, LPM_Transaction_VLD, 
         // LPM - Link Training      
               LPM_Start_CR, CR_Done, Link_LC_CR, Link_BW_CR, PRE, VTG, Driving_Param_VLD, 
-              EQ_RD_Value, EQ_CR_DN, Channel_EQ, Symbol_Lock, Lane_Align, EQ_Data_VLD, MAX_VTG,
+              EQ_RD_Value, EQ_CR_DN, Channel_EQ, Symbol_Lock, Lane_Align, EQ_Data_VLD, MAX_VTG, 
+              MAX_PRE, MAX_TPS_SUPPORTED, TPS_VLD, Config_Param_VLD, CR_Done_VLD,
         // SPM       
         input clk, SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, CTRL_I2C_Failed,         
         // LPM
               HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_Native_I2C, CTRL_Native_Failed,         
         // LPM - Link Training
-              FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC
+              FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC, CR_Completed, EQ_CR_Failed
     );
 
     //////////////////////// MONITOR /////////////////////////////
@@ -117,12 +123,13 @@ interface dp_tl_if(input clk);
         // LPM - Link Training      
               LPM_Start_CR, CR_Done, Link_LC_CR, Link_BW_CR, PRE, VTG, Driving_Param_VLD, 
               EQ_RD_Value, EQ_CR_DN, Channel_EQ, Symbol_Lock, Lane_Align, EQ_Data_VLD, MAX_VTG,
+              MAX_PRE, MAX_TPS_SUPPORTED, TPS_VLD, Config_Param_VLD, CR_Done_VLD,
         // SPM       
               SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, CTRL_I2C_Failed,         
         // LPM
               HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_Native_I2C, CTRL_Native_Failed,        
         // LPM - Link Training
-              FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC 
+              FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC, CR_Completed, EQ_CR_Failed 
     );
     
 endinterface

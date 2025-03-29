@@ -23,32 +23,67 @@ class dp_tl_lpm_sequence_item extends uvm_sequence_item;
     ////////////////// LINK Training Signals //////////////////////
     
     // input Data to DUT
-    logic [AUX_DATA_WIDTH-1:0] Lane_Align, EQ_RD_Value;
+    logic [AUX_DATA_WIDTH-1:0]      Lane_Align, EQ_RD_Value;
     rand logic [AUX_DATA_WIDTH-1:0] Link_BW_CR, MAX_VTG, PRE, VTG;
-    logic [3:0]                EQ_CR_DN, Channel_EQ, Symbol_Lock;
-    rand logic [3:0]           CR_Done;
-    rand logic [1:0]           Link_LC_CR, MAX_TPS_SUPPORTED;
-    bit                        EQ_Data_VLD, Driving_Param_VLD, LPM_Start_CR, TPS_VLD;
+    logic [3:0]                     EQ_CR_DN, Channel_EQ, Symbol_Lock;
+    rand logic [3:0]                CR_Done;
+    rand logic [1:0]                Link_LC_CR;
+    rand training_pattern_t         MAX_TPS_SUPPORTED;
+    bit                             EQ_Data_VLD, Driving_Param_VLD, Config_Param_VLD, LPM_Start_CR, TPS_VLD, CR_Done_VLD;
 
     // output Data from DUT
     logic [AUX_DATA_WIDTH-1:0] EQ_Final_ADJ_BW;
     logic [1:0]                EQ_Final_ADJ_LC;
-    logic                      FSM_CR_Failed, EQ_Failed, EQ_LT_Pass;
+    bit                        FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, CR_Completed, EQ_CR_Failed;
 
-    rand op_code operation;
-    bit cr_done_reached = 0; // State variable to track if 4'b1111 has been reached
-    bit link_values_locked = 0; // State variable to lock values after first randomization
+    op_code operation;
+    bit     link_values_locked = 0; // State variable to lock values after first randomization
+    bit [AUX_DATA_WIDTH-1:0] prev_vtg;
+    bit [AUX_DATA_WIDTH-1:0] prev_pre;
+    logic [7:0] EQ_RD_Value;
+    bit cr_completed_flag = 0; // State variable to track if CR_Completed is 1
+
 
     ///////////////////////////////////////////////////////////////
     /////////////////////// CONSTRAINTS ///////////////////////////
     ///////////////////////////////////////////////////////////////
 
+    constraint rst_n_constraint {
+        rst_n dist {1'b1 := 90, 1'b0 := 10}; // 90% chance of being 1, 10% chance of being 0
+    }
+
     constraint link_bw_cr_constraint {
         Link_BW_CR inside {8'h06, 8'h0A, 8'h14, 8'h1E}; // Allowed values for Link_BW_CR
+    }
+    
+    constraint max_tps_supported_c {
+        if (Link_BW_CR == 8'h06 || Link_BW_CR == 8'h0A) { // RBR or HBR
+            MAX_TPS_SUPPORTED inside {TPS2, TPS3, TPS4};
+        } else if (Link_BW_CR == 8'h14) { // HBR2
+            MAX_TPS_SUPPORTED inside {TPS3, TPS4};
+        } else if (Link_BW_CR == 8'h1E) { // HBR3
+            MAX_TPS_SUPPORTED == TPS4;
+        }
     }
 
     constraint link_lc_cr_constraint {
         Link_LC_CR != 2'b10; // Prevent Link_LC_CR from taking the value 10b
+    }
+
+    constraint eq_cr_dn_constraint {
+        apply_distribution(EQ_CR_DN, Link_LC_CR);
+    }
+
+    constraint cr_done_constraint {
+        apply_distribution(CR_Done, Link_LC_CR);
+    }
+
+    constraint channel_eq_constraint {
+        apply_distribution(Channel_EQ, Link_LC_CR);
+    }
+
+    constraint symbol_lock_constraint {
+        apply_distribution(Symbol_Lock, Link_LC_CR);
     }
 
     constraint max_vtg_constraint {
@@ -60,11 +95,23 @@ class dp_tl_lpm_sequence_item extends uvm_sequence_item;
     constraint pre_vtg_constraint {
         foreach (PRE[i]) {
             VTG[i*2 +: 2] <= MAX_VTG[i*2 +: 2]; // VTG must be less than or equal to MAX_VTG
+            PRE[i*2 +: 2] <= MAX_PRE[i*2 +: 2]; // PRE must be less than or equal to MAX_PRE
+
+            // Lock VTG if it equals MAX_VTG and LPM_Start_CR is 0
+            if (!LPM_Start_CR && prev_vtg[i*2 +: 2] == MAX_VTG[i*2 +: 2]) {
+                VTG[i*2 +: 2] == prev_vtg[i*2 +: 2];
+            }
+            
+            // Lock PRE if it equals MAX_PRE and LPM_Start_CR is 0
+            if (!LPM_Start_CR && prev_pre[i*2 +: 2] == MAX_PRE[i*2 +: 2]) {
+                PRE[i*2 +: 2] == prev_pre[i*2 +: 2];
+            }
+            
             case (VTG[i*2 +: 2]) // Check each 2-bit slice of VTG
                 2'b00: PRE[i*2 +: 2] inside {2'b00, 2'b01, 2'b10, 2'b11}; // VTG = 0
                 2'b01: PRE[i*2 +: 2] inside {2'b00, 2'b01, 2'b10};        // VTG = 1
                 2'b10: PRE[i*2 +: 2] inside {2'b00, 2'b01};               // VTG = 2
-                2'b11: PRE[i*2 +: 2] inside {2'b00, 2'b01};               // VTG = 3
+                2'b11: PRE[i*2 +: 2] == 2'b00;                            // VTG = 3
             endcase
         }
     }
@@ -83,11 +130,7 @@ class dp_tl_lpm_sequence_item extends uvm_sequence_item;
             LPM_Data.size() == 0; // Ensure the queue is empty for other commands
         }
     }
-    constraint cr_done_constraint {
-        if (!cr_done_reached) {
-            CR_Done != 4'b1111; // Prevent CR_Done from being 4'b1111 until the state variable is set
-        }
-    }
+
     constraint link_values_lock_constraint {
         if (link_values_locked) {
             Link_BW_CR dist {Link_BW_CR := 1}; // Lock Link_BW_CR
@@ -95,15 +138,15 @@ class dp_tl_lpm_sequence_item extends uvm_sequence_item;
         }
     }
 
-    // Post-randomization logic to eventually allow 4'b1111
-    function void post_randomize();
-        if (!cr_done_reached && CR_Done == 4'b1111) begin
-            cr_done_reached = 1; // Mark that 4'b1111 has been reached
-        end
-        if (!link_values_locked) begin
-            link_values_locked = 1; // Lock the values after the first randomization
-        end
-    endfunction
+    constraint eq_rd_value_constraint {
+        EQ_RD_Value[7] == 1'b1; // Ensure the MSB is always 1
+        EQ_RD_Value[6:0] inside {7'h00, 7'h01, 7'h02, 7'h03, 7'h04}; // Allowed values for the lower 7 bits
+
+        if (!cr_completed_flag) {
+            EQ_RD_Value == EQ_RD_Value; // Maintain the current value until CR_Completed becomes 1
+        }
+    }
+
     ///////////////////////////////////////////////////////////////
     /////////////////////// CONSTRUCTOR ///////////////////////////
     ///////////////////////////////////////////////////////////////
@@ -115,6 +158,42 @@ class dp_tl_lpm_sequence_item extends uvm_sequence_item;
     ///////////////////////////////////////////////////////////////
     ///////////////////////// METHODS /////////////////////////////
     ///////////////////////////////////////////////////////////////
+
+    // Apply distribution to signal based on the Link_LC_CR value
+    // Rationale:
+    // - If Link_LC_CR is 2'b11, prioritize 4'b1111 with a weight of 60%.
+    // - If Link_LC_CR is 2'b01, prioritize 4'b0011 with a weight of 60%.
+    // - If Link_LC_CR is 2'b00, prioritize 4'b0001 with a weight of 60%.
+    // - Default weight for other values is 40%.
+    function void apply_distribution(ref logic [3:0] signal, logic [1:0] lc_cr);
+        if (lc_cr == 2'b11) {
+            signal dist {4'b1111 := 60, default := 40};
+        } else if (lc_cr == 2'b01) {
+            signal dist {4'b0011 := 60, default := 40};
+        } else if (lc_cr == 2'b00) {
+            signal dist {4'b0001 := 60, default := 40};
+        }
+    endfunction
+
+    function void pre_randomize();
+        if (LPM_Start_CR == 1) begin
+            prev_vtg = '0; // Reset prev_vtg when LPM_Start_CR is 1
+            prev_pre = '0; // Reset prev_pre when LPM_Start_CR is 1
+        end
+
+    endfunction
+
+    // Post-randomization logic to eventually allow 4'b1111
+    function void post_randomize();
+        if (!link_values_locked) begin
+            link_values_locked = 1; // Lock the values after the first randomization
+        end
+        prev_vtg = VTG; // Store current VTG for next randomization
+        prev_pre = PRE; // Store current PRE for next randomization
+        if (CR_Completed) begin
+            cr_completed_flag = 1; // Allow a new random value when CR_Completed becomes 1
+        end
+    endfunction
 
     // function string convert2string();
     //     return $sformatf("%s name_1 = %0s, name_2 = %0s, name_3 = %0s", super.convert2string(), name_1, name_2, name_3);
