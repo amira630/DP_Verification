@@ -10,6 +10,6 @@ package dp_transactions_pkg;
     `include "dp_tl_spm_sequence_item.svh"
     `include "dp_tl_lpm_sequence_item.svh"
     `include "dp_tl_sequence_item.svh"
-    `include "dp_sink_sequence_item.svh"
+    //`include "dp_sink_sequence_item.svh"
 
 endpackage

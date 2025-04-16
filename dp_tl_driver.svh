@@ -33,10 +33,10 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
                 // SPM transaction
                 case (stimulus_seq_item.spm.operation)
                     4'b0000: dp_tl_vif.Reset();                             // Reset the interface
-                    4'b0001: dp_tl_if.I2C_READ(stimulus_seq_item.spm);      // I2C READ
-                    4'b0010: dp_tl_if.I2C_WRITE(stimulus_seq_item.spm);     // I2C WRITE
+                    4'b0001: dp_tl_vif.I2C_READ(stimulus_seq_item.spm);      // I2C READ
+                    4'b0010: dp_tl_vif.I2C_WRITE(stimulus_seq_item.spm);     // I2C WRITE
                     default: begin
-                        dp_tl_if = null; // Set the interface to null if the operation is not supported
+                        dp_tl_vif = null; // Set the interface to null if the operation is not supported
                         `uvm_error("DP_TL_DRIVER", "Unsupported operation in SPM transaction")
                     end
                 endcase
@@ -45,22 +45,22 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
                 // LPM transaction
                 case (stimulus_seq_item.lpm.operation)
                     4'b0000: dp_tl_vif.Reset();
-                    4'b0011: dp_tl_if.NATIVE_READ(stimulus_seq_item.lpm);       // NATIVE READ
-                    4'b0100: dp_tl_if.NATIVE_WRITE(stimulus_seq_item.lpm);      // NATIVE WRITE
-                    4'b0101: dp_tl_if.LINK_TRAINING(stimulus_seq_item.lpm);             // CR_LT
-                    4'b0110: dp_tl_if.LINK_TRAINING(stimulus_seq_item.lpm);             // EQ_LT
+                    4'b0011: dp_tl_vif.NATIVE_READ(stimulus_seq_item.lpm);       // NATIVE READ
+                    4'b0100: dp_tl_vif.NATIVE_WRITE(stimulus_seq_item.lpm);      // NATIVE WRITE
+                    4'b0101: dp_tl_vif.LINK_TRAINING(stimulus_seq_item.lpm);             // CR_LT
+                    4'b0110: dp_tl_vif.LINK_TRAINING(stimulus_seq_item.lpm);             // EQ_LT
                     default: begin
-                        dp_tl_if = null;    // Set the interface to null if the operation is not supported
+                        dp_tl_vif = null;    // Set the interface to null if the operation is not supported
                         `uvm_error("DP_TL_DRIVER", "Unsupported operation in SPM transaction")
                     end
                 endcase
             end
             else if (stimulus_seq_item.spm.SPM_Transaction_VLD == 1 && stimulus_seq_item.lpm.LPM_Transaction_VLD == 1) begin
-                dp_tl_if = null;            // Set the interface to null if the operation is not supported
+                dp_tl_vif = null;            // Set the interface to null if the operation is not supported
                 `uvm_error("DP_TL_DRIVER", "Both SPM and LPM transactions are present")
             end
             else begin
-                dp_tl_if = null;            // Set the interface to null if the operation is not supported
+                dp_tl_vif = null;            // Set the interface to null if the operation is not supported
                 `uvm_error("DP_TL_DRIVER", "No transaction is present")
             end
 

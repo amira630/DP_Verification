@@ -92,11 +92,11 @@ interface dp_tl_if(input clk);
                EQ_Failed,               // Signal indicating the failure of the Channel Equalization phase during link training.
                EQ_LT_Pass,              // This signal represents a successful channel equalization phase which indicates successful link training process
                EQ_Final_ADJ_BW,         // The adjusted link BW after successful link training used for sending main video stream.
-               EQ_Final_ADJ_LC          // The adjusted number of lanes after successful link training, used for sending main video stream.
+               EQ_Final_ADJ_LC,         // The adjusted number of lanes after successful link training, used for sending main video stream.
                CR_Completed,            // Signal indicating the completion of the Clock Recovery phase during link training.   
                EQ_CR_Failed,            // Signal indicating the failure of the Clock Recovery phase during EQ phase of link training. 
                EQ_FSM_CR_Failed,        // Signal indicating the failure of the Clock Recovery phase during EQ phase of link training.  
-               Timer_Timeout           // Signal indicating the timeout of the timer during link training process.
+               Timer_Timeout            // Signal indicating the timeout of the timer during link training process.
     );
 
     //////////////////////// DRIVER /////////////////////////////
