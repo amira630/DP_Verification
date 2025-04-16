@@ -2,10 +2,23 @@ class dp_sink_coverage extends uvm_component;
     `uvm_component_utils(dp_sink_coverage)
     uvm_analysis_export #(dp_sink_sequence_item) cov_export;
     uvm_tlm_analysis_fifo #(dp_sink_sequence_item) cov_fifo;
-    dp_sink_sequence_item sequence_item_cov;
+    dp_sink_sequence_item cov_sink_seq_item;
 
     covergroup sink_cvr_grp;
+        // Coverpoints for the sink sequence item signals
+        HPD_Signal_c:         coverpoint cov_sink_seq_item.HPD_Signal;
+        START_STOP_c:         coverpoint cov_sink_seq_item.START_STOP;
+        AUX_IN_OUT_c:         coverpoint cov_sink_seq_item.AUX_IN_OUT;
+        CR_ADJ_LC_c:          coverpoint cov_sink_seq_item.CR_ADJ_LC;
+        CR_ADJ_BW_c:          coverpoint cov_sink_seq_item.CR_ADJ_BW;
+        CR_PHY_Instruct_c:    coverpoint cov_sink_seq_item.CR_PHY_Instruct;
+        EQ_ADJ_LC_c:          coverpoint cov_sink_seq_item.EQ_ADJ_LC;
+        EQ_ADJ_BW_c:          coverpoint cov_sink_seq_item.EQ_ADJ_BW;
+        EQ_PHY_Instruct_c:    coverpoint cov_sink_seq_item.EQ_PHY_Instruct;
 
+        // Reply Command Signals
+        i2c_reply_cmd_c:      coverpoint cov_sink_seq_item.i2c_reply_cmd;
+        native_reply_cmd_c:   coverpoint cov_sink_seq_item.native_reply_cmd;
     endgroup
  
 
@@ -28,7 +41,7 @@ class dp_sink_coverage extends uvm_component;
     task run_phase(uvm_phase phase);
         super.run_phase(phase);
         forever begin
-            cov_fifo.get(sequence_item_cov);
+            cov_fifo.get(cov_sink_seq_item);
             sink_cvr_grp.sample();
         end
     endtask

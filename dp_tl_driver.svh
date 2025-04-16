@@ -1,14 +1,11 @@
 // Standard UVM import & include:
     // import uvm_pkg::*;
-    // import dp_transactions_pkg::*;
-    // `include "uvm_macros.svh"
-
-class dp_tl_driver extends uvm_driver #(dp_tl_spm_sequence_item, dp_tl_lpm_sequence_item);
+class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
     `uvm_component_utils(dp_tl_driver);
 
     virtual dp_tl_if dp_tl_vif;
-    dp_tl_spm_sequence_item seq_item_SPM;
-    dp_tl_lpm_sequence_item seq_item_LPM;
+    dp_tl_sequence_item stimulus_seq_item;
+    dp_tl_sequence_item response_seq_item;
     
     function new(string name = "dp_tl_driver", uvm_component parent = null);
         super.new(name, parent);
@@ -17,100 +14,72 @@ class dp_tl_driver extends uvm_driver #(dp_tl_spm_sequence_item, dp_tl_lpm_seque
     task run_phase(uvm_phase phase);
         super.run_phase(phase);
         forever begin
-    // SPM
             // Get sequence item from sequencer
-            seq_item_SPM = dp_tl_spm_sequence_item::type_id::create("seq_item_SPM");
-            seq_item_port.get_next_item(seq_item_SPM);
+            stimulus_seq_item = dp_tl_sequence_item::type_id::create("stimulus_seq_item");
+            seq_item_port.get_next_item(stimulus_seq_item);
 
-            // Signals from SPM to the DUT
-            dp_tl_vif.SPM_CMD = seq_item_SPM.SPM_CMD;
-            dp_tl_vif.SPM_Address = seq_item_SPM.SPM_Address;
-            dp_tl_vif.SPM_LEN = seq_item_SPM.SPM_LEN;
-            dp_tl_vif.SPM_Transaction_VLD = seq_item_SPM.SPM_Transaction_VLD;
-            dp_tl_vif.SPM_Data = seq_item_SPM.SPM_Data;
+            // Check if the interface is available
+            if (dp_tl_vif == null) begin
+                `uvm_fatal("DP_TL_DRIVER", "Virtual interface is not set")
+            end
+            // Check if the sequence item is valid
+            if (stimulus_seq_item == null) begin
+                `uvm_fatal("DP_TL_DRIVER", "Sequence item is not set")
+            end
 
-            // Signals from DUT to SPM
-            seq_item_SPM.SPM_Reply_Data = dp_tl_vif.SPM_Reply_Data;
-            seq_item_SPM.SPM_Reply_ACK = dp_tl_vif.SPM_Reply_ACK;
-            seq_item_SPM.SPM_NATIVE_I2C = dp_tl_vif.SPM_NATIVE_I2C;
-            seq_item_SPM.SPM_Reply_Data_VLD = dp_tl_vif.SPM_Reply_Data_VLD;
-            seq_item_SPM.SPM_Reply_ACK_VLD = dp_tl_vif.SPM_Reply_ACK_VLD;
-            seq_item_SPM.CTRL_I2C_Failed = dp_tl_vif.CTRL_I2C_Failed;
-            seq_item_SPM.HPD_Detect = dp_tl_vif.HPD_Detect;
-
-    // LPM
-            // Get sequence item from sequencer
-            seq_item_LPM = dp_tl_lpm_sequence_item::type_id::create("seq_item_LPM");
-            seq_item_port.get_next_item(seq_item_LPM);
-
-            // Signals from LPM to the DUT
-            dp_tl_vif.LPM_CMD = seq_item_LPM.LPM_CMD;
-            dp_tl_vif.LPM_Address = seq_item_LPM.LPM_Address;
-            dp_tl_vif.LPM_LEN = seq_item_LPM.LPM_LEN;
-            dp_tl_vif.LPM_Transaction_VLD = seq_item_LPM.LPM_Transaction_VLD;
-            dp_tl_vif.LPM_Data = seq_item_LPM.LPM_Data;
-                // Link Training Signals
-            dp_tl_vif.Lane_Align = seq_item_LPM.Lane_Align;
-            dp_tl_vif.MAX_VTG = seq_item_LPM.MAX_VTG;
-            dp_tl_vif.EQ_RD_Value = seq_item_LPM.EQ_RD_Value;
-            dp_tl_vif.PRE = seq_item_LPM.PRE;
-            dp_tl_vif.VTG = seq_item_LPM.VTG;
-            dp_tl_vif.Link_BW_CR = seq_item_LPM.Link_BW_CR;
-            dp_tl_vif.CR_Done = seq_item_LPM.CR_Done;
-            dp_tl_vif.EQ_CR_DN = seq_item_LPM.EQ_CR_DN;
-            dp_tl_vif.Channel_EQ = seq_item_LPM.Channel_EQ;
-            dp_tl_vif.Symbol_Lock = seq_item_LPM.Symbol_Lock;
-            dp_tl_vif.MAX_TPS_SUPPORTED = seq_item_LPM.MAX_TPS_SUPPORTED;
-            dp_tl_vif.Link_LC_CR = seq_item_LPM.Link_LC_CR;
-            dp_tl_vif.EQ_Data_VLD = seq_item_LPM.EQ_Data_VLD;
-            dp_tl_vif.Driving_Param_VLD = seq_item_LPM.Driving_Param_VLD;
-            dp_tl_vif.LPM_Start_CR = seq_item_LPM.LPM_Start_CR;
-            dp_tl_vif.MAX_TPS_SUPPORTED_VLD = seq_item_LPM.MAX_TPS_SUPPORTED_VLD;
-
-            // Signals from DUT to LPM
-            seq_item_LPM.LPM_Reply_Data = dp_tl_vif.LPM_Reply_Data;
-            seq_item_LPM.LPM_Reply_ACK = dp_tl_vif.LPM_Reply_ACK;
-            seq_item_LPM.LPM_NATIVE_I2C = dp_tl_vif.LPM_NATIVE_I2C;
-            seq_item_LPM.LPM_Reply_Data_VLD = dp_tl_vif.LPM_Reply_Data_VLD;
-            seq_item_LPM.LPM_Reply_ACK_VLD = dp_tl_vif.LPM_Reply_ACK_VLD;
-            seq_item_LPM.CTRL_Native_Failed = dp_tl_vif.CTRL_Native_Failed;
-            seq_item_LPM.HPD_Detect = dp_tl_vif.HPD_Detect;
-            seq_item_LPM.HPD_IRQ = dp_tl_vif.HPD_IRQ;
-                // Link Training Signals
-            seq_item_LPM.EQ_Final_ADJ_BW = dp_tl_vif.EQ_Final_ADJ_BW;
-            seq_item_LPM.EQ_Final_ADJ_LC = dp_tl_vif.EQ_Final_ADJ_LC;
-            seq_item_LPM.FSM_CR_Failed = dp_tl_vif.FSM_CR_Failed;
-            seq_item_LPM.EQ_Failed = dp_tl_vif.EQ_Failed;
-            seq_item_LPM.EQ_LT_Pass = dp_tl_vif.EQ_LT_Pass;
-
-            ///////////////////////////////////////////////////////////////////////////////////////////////////////
-            //////////////////////////// Needs to be updated with the actual operation ////////////////////////////
-            ///////////////////////////////////////////////////////////////////////////////////////////////////////
-            if(seq_item_SPM.SPM_Transaction_VLD) begin
-                case (seq_item_SPM.operation)
-                    2'b00: dp_tl_vif.read_edid(/*arguments*/);
-                    2'b01:
+            // Check if the sequence item is SPM or LPM then drive the values to the interface according to the operation
+            @(posedge dp_tl_vif.clk);
+            if(stimulus_seq_item.spm.SPM_Transaction_VLD == 1 && stimulus_seq_item.lpm.LPM_Transaction_VLD == 0) begin
+                // SPM transaction
+                case (stimulus_seq_item.spm.operation)
+                    4'b0000: dp_tl_vif.Reset();                             // Reset the interface
+                    4'b0001: dp_tl_if.I2C_READ(stimulus_seq_item.spm);      // I2C READ
+                    4'b0010: dp_tl_if.I2C_WRITE(stimulus_seq_item.spm);     // I2C WRITE
                     default: begin
-                        default_case
+                        dp_tl_if = null; // Set the interface to null if the operation is not supported
+                        `uvm_error("DP_TL_DRIVER", "Unsupported operation in SPM transaction")
                     end
                 endcase
             end
-            else if (seq_item_LPM.LPM_Transaction_VLD) begin
-                case (seq_item_LPM.operation)
-                    2'b00: dp_tl_vif.read_rx_cap(/*arguments*/);
-                    2'b01:
+            else if (stimulus_seq_item.spm.SPM_Transaction_VLD == 0 && stimulus_seq_item.lpm.LPM_Transaction_VLD == 1) begin
+                // LPM transaction
+                case (stimulus_seq_item.lpm.operation)
+                    4'b0000: dp_tl_vif.Reset();
+                    4'b0011: dp_tl_if.NATIVE_READ(stimulus_seq_item.lpm);       // NATIVE READ
+                    4'b0100: dp_tl_if.NATIVE_WRITE(stimulus_seq_item.lpm);      // NATIVE WRITE
+                    4'b0101: dp_tl_if.LINK_TRAINING(stimulus_seq_item.lpm);             // CR_LT
+                    4'b0110: dp_tl_if.LINK_TRAINING(stimulus_seq_item.lpm);             // EQ_LT
                     default: begin
-                        default_case
+                        dp_tl_if = null;    // Set the interface to null if the operation is not supported
+                        `uvm_error("DP_TL_DRIVER", "Unsupported operation in SPM transaction")
                     end
                 endcase
             end
+            else if (stimulus_seq_item.spm.SPM_Transaction_VLD == 1 && stimulus_seq_item.lpm.LPM_Transaction_VLD == 1) begin
+                dp_tl_if = null;            // Set the interface to null if the operation is not supported
+                `uvm_error("DP_TL_DRIVER", "Both SPM and LPM transactions are present")
+            end
+            else begin
+                dp_tl_if = null;            // Set the interface to null if the operation is not supported
+                `uvm_error("DP_TL_DRIVER", "No transaction is present")
+            end
+
+            // Copy the values from the stimulus to the response sequence item
+            // This is done to ensure that the response sequence item has the same values as the stimulus
+            response_seq_item = stimulus_seq_item.clone("response_seq_item");
+
+            // Wait for DUT reponse
+            wait(dp_tl_vif.ready == 1)
+            
+            // Copy the values from the DUT to the response sequence item
+            response_seq_item.copy_from_vif(dp_tl_vif);
+
             // Send response back properly via seq_item_port
             @(negedge dp_tl_vif.clk);
-            seq_item_port.item_done(seq_item_SPM);
-            seq_item_port.item_done(seq_item_LPM);           
+            seq_item_port.item_done(response_seq_item);
+
             `uvm_info("run_phase", $sformatf("Driver Done"), UVM_HIGH);
-            `uvm_info("run_phase", seq_item_SPM.convert2string(), UVM_HIGH);
-            `uvm_info("run_phase", seq_item_LPM.convert2string(), UVM_HIGH);
+            `uvm_info("run_phase", stimulus_seq_item.convert2string(), UVM_HIGH);
         end
     endtask
 endclass

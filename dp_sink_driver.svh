@@ -16,11 +16,14 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
             stim_seq_item = dp_sink_sequence_item::type_id::create("stim_seq_item");
             seq_item_port.get_next_item(stim_seq_item);
 
-            // Create response sequence item to capture interface signals
-            response_seq_item = dp_sink_sequence_item::type_id::create("response_seq_item");
-
-            // Copy request to response (to preserve transaction ID and other fields)
-            response_seq_item.copy(stim_seq_item);
+            // Check if the interface is available
+            if (dp_sink_vif == null) begin
+                `uvm_fatal("DP_SINK_DRIVER", "Virtual interface is not set")
+            end
+            // Check if the sequence item is valid
+            if (stim_seq_item == null) begin
+                `uvm_fatal("DP_SINK_DRIVER", "Sequence item is not set")
+            end
 
             // Clear previous aux data
             response_seq_item.aux_in_out.delete();
@@ -49,9 +52,6 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
                 @(posedge dp_sink_vif.clk);  // Wait for next clock cycle
             end
 
-            // Send response back to sequence with captured aux_in_out queue
-            // rsp_port.write(response_seq_item);  بدلتها بسطر 69 كتبت response_seq_item جوا القوسين
-
             // Create and send updated stimulus based on captured data
             // stim_seq_item.hpd_signal = response_seq_item.aux_in_out.size() > 0;  // Example logic
             // stim_seq_item.i2c_aux_reply_cmd = determine_reply_cmd(response_seq_item.aux_in_out);
@@ -64,8 +64,16 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
             //    @(posedge dp_sink_vif.clk);
             // end
 
-            // End of reply
-            // dp_sink_vif.START_STOP = 1'b0;
+            // Copy the values from the stimulus to the response sequence item
+            // This is done to ensure that the response sequence item has the same values as the stimulus
+            response_seq_item = stim_seq_item.clone("response_seq_item");
+
+            // Wait for DUT response
+            wait(dp_sink_vif.PHY_START_STOP == 1);
+
+
+            // Copy the values from the DUT to the response sequence item
+            response_seq_item.copy_from_vif(dp_sink_vif);
 
             // Send response back properly via seq_item_port
             @(negedge dp_sink_vif.clk);

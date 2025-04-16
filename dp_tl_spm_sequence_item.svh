@@ -60,7 +60,7 @@ class dp_tl_spm_sequence_item extends uvm_sequence_item;
     ///////////////////////////////////////////////////////////////
 
     function string convert2string();
-        return $sformatf("%s Operation: %0s, SPM_DATA = %0b, SPM_ADDRESS = %0b, SPM_LENGTH = %0b, SPM_CMD = %0b, SPM_TRANS_VALID = %0b,SPM_REPLY_DATA = %0b, SPM_REPLY_ACK = %0b, SPM_REPLY_DATA_VALID = %0b, SPM_REPLY_ACK_VALID = %0b, SPM_NATIVE_I2C = %0b", super.convert2string(), operation, SPM_Data, SPM_Address, SPM_LEN, SPM_CMD, SPM_Transaction_VLD, SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_Data_VLD, SPM_Reply_ACK_VLD, SPM_NATIVE_I2C);
+        return $sformatf("%s Operation: %0s, SPM_DATA = %0b, SPM_ADDRESS = %0b, SPM_LENGTH = %0b, SPM_CMD = %0b, SPM_TRANS_VALID = %0b,SPM_REPLY_DATA = %0b, SPM_REPLY_ACK = %0b, SPM_REPLY_DATA_VALID = %0b, SPM_REPLY_ACK_VALID = %0b, SPM_NATIVE_I2C = %0bو CTRL_I2C_Failed = %0b, HPD_Detect = %0b", super.convert2string(), operation, SPM_Data, SPM_Address, SPM_LEN, SPM_CMD, SPM_Transaction_VLD, SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_Data_VLD, SPM_Reply_ACK_VLD, SPM_NATIVE_I2C, TRL_I2C_Failed, HPD_Detect);
     endfunction
 
 endclass //dp_tl_spm_sequence_item extends superClass

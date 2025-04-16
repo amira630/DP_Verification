@@ -11,6 +11,7 @@ class dp_source_test extends uvm_test;
     
     // Sequences
     dp_tl_sequence dp_tl_seq;
+    dp_tl_i2c_sequence dp_tl_i2c_seq;
     dp_sink_sequence dp_sink_seq;
 
     function new(string name = "dp_source_test", uvm_component parent = null);
@@ -22,8 +23,10 @@ class dp_source_test extends uvm_test;
         // building the environment, TL_sequence, Sink_sequence and configurations object
         env = dp_source_env::type_id::create("env",this);
         dp_source_cfg = dp_source_config::type_id::create("dp_source_cfg");
-        dp_tl_seq = dp_tl_sequence::type_id::create("dp_tl_seq", this);
-        dp_sink_seq = dp_sink_sequence::type_id::create("dp_sink_seq", this);
+        
+        dp_tl_i2c_seq = dp_tl_i2c_sequence::type_id::create("dp_tl_i2c_seq", this);
+        //dp_tl_seq = dp_tl_sequence::type_id::create("dp_tl_seq", this);
+        //dp_sink_seq = dp_sink_sequence::type_id::create("dp_sink_seq", this);
         
         // add virtual interfaces for each interface to the configurations database
         if(!uvm_config_db #(virtual dp_tl_if):: get(this, "","dp_tl_vif", dp_source_cfg.dp_tl_vif))
@@ -43,18 +46,25 @@ class dp_source_test extends uvm_test;
 
         phase.raise_objection(this);
         fork
-            // Transport Layer Sequence
+            // DP Transport Layer I2C Sequence (Read EDID)
             begin
-                `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
-                dp_tl_seq.start(env.tl_agt.sqr);
-                `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
+                `uvm_info("run_phase", "TL I2C stimulus generation started", UVM_LOW);
+                dp_tl_i2c_seq.start(env.tl_agt.sqr);
+                `uvm_info("run_phase", "TL I2C stimulus generation ended", UVM_LOW);
             end
-            // DP Sink Sequence
-            begin
-                `uvm_info("run_phase", "Sink stimulus generation started", UVM_LOW);
-                dp_sink_seq.start(env.sink_agt.sqr);
-                `uvm_info("run_phase", "Sink stimulus generation ended", UVM_LOW);
-            end
+
+            // // Transport Layer Sequence
+            // begin
+            //     `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
+            //     dp_tl_seq.start(env.tl_agt.sqr);
+            //     `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
+            // end
+            // // DP Sink Sequence
+            // begin
+            //     `uvm_info("run_phase", "Sink stimulus generation started", UVM_LOW);
+            //     dp_sink_seq.start(env.sink_agt.sqr);
+            //     `uvm_info("run_phase", "Sink stimulus generation ended", UVM_LOW);
+            // end
         join
         phase.drop_objection(this);
     endtask      

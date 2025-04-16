@@ -11,7 +11,7 @@ module top();
     // start the clock
     initial begin
         forever
-            #1 clk = ~clk;
+            #0 clk = ~clk;
     end
 
     // Create the interfaces for Transport Layer and the Sink Link Layer

@@ -39,11 +39,11 @@
 // typedef enums
 
 // Training Patterns
-    typedef enum bit [2:0] {
-        TPS1 = 3'b000,
-        TPS2 = 3'b001,
-        TPS3 = 3'b010,
-        TPS4 = 3'b011
+    typedef enum bit [1:0] {
+        IDLE_PATTERN = 2'b00,
+        TPS2 = 2'b01,
+        TPS3 = 2'b10,
+        TPS4 = 2'b11
     } training_pattern_t;
 
 // Voltage Swing Levels
@@ -134,15 +134,17 @@
         LINK_READY = 2'b10              // Link Training has been successful
     } link_training_phase_t;
 
+// AUX Channel Operation
     typedef enum logic [3:0] {
-        NATIVE_WRITE = 4'b0000,  
-        NATIVE_READ  = 4'b0001,
-        I2C_WRITE    = 4'b0010,
-        I2C_READ     = 4'b0011,
-        INIT         = 4'b0100
-        //I2C_WRITE     = 2'b11 
+        Reset           = 4'b0000,  
+        I2C_READ        = 4'b0001,
+        I2C_WRITE       = 4'b0010,
+        NATIVE_READ     = 4'b0011,
+        NATIVE_WRITE    = 4'b0100,
+        CR_LT           = 4'b0101,
+        EQ_LT           = 4'b0110
     } op_code;
 
-
+    // 
 
 `endif // DP_UVM_PARAMS_SVH
