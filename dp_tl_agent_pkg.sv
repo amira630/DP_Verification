@@ -8,7 +8,6 @@ package dp_tl_agent_pkg;
     import dp_transactions_pkg::*;
 
     // Includes:
-    `include "dp_tl_sequencer.svh"
     `include "dp_tl_driver.svh"
     `include "dp_tl_monitor.svh"
     `include "dp_tl_agent.svh"

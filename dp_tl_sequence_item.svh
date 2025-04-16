@@ -1,6 +1,5 @@
-// dp_tl_combined_sequence_item.sv
 class dp_tl_sequence_item extends uvm_sequence_item;
-  `uvm_object_utils(dp_tl_sequence_item)
+  `uvm_object_utils(dp_tl_sequence_item);
 
   dp_tl_spm_sequence_item spm;
   dp_tl_lpm_sequence_item lpm;
@@ -8,6 +7,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
   function new(string name = "dp_tl_sequence_item");
     super.new(name);
+    `uvm_info(get_type_name(), "dp_tl_sequence_item constructor called", UVM_LOW)
     spm = dp_tl_spm_sequence_item::type_id::create("spm");
     lpm = dp_tl_lpm_sequence_item::type_id::create("lpm");
   endfunction

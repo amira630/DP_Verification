@@ -3,7 +3,7 @@ class dp_source_env extends uvm_env;
 
     dp_tl_agent tl_agt;
     //dp_sink_agent sink_agt;
-    dp_scoreboard sb;
+    //dp_scoreboard sb;
     //dp_source_ref ref_model;
     dp_tl_coverage tl_cov;
     //dp_sink_coverage sink_cov;

@@ -2,8 +2,9 @@ package dp_transactions_pkg;
 
     // Standard UVM import & include:
     import uvm_pkg::*;
-    import test_parameters_pkg::*;
     `include "uvm_macros.svh"
+
+    import test_parameters_pkg::*;
     
     // Includes:
     `include "dp_source_config.svh"
