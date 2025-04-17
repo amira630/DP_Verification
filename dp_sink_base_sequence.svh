@@ -25,6 +25,24 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         
         // Get the response back
         get_response(rsp_item);
+
+        // Wait for AUX_START_STOP = 1 (beginning of transaction)
+            // Collect data until START_STOP = 0
+            // Sample interface signals based on aux_start_stop signal
+            while (dp_sink_vif.AUX_START_STOP) begin
+                // Capture the current aux_in_out value from interface
+                response_seq_item.aux_in_out.push_back(dp_sink_vif.AUX_IN_OUT);
+                
+                // Capture other signals as needed
+                response_seq_item.cr_adj_lc = dp_sink_vif.CR_ADJ_LC;
+                response_seq_item.cr_phy_instruct = dp_sink_vif.CR_PHY_Instruct;
+                response_seq_item.eq_adj_lc = dp_sink_vif.EQ_ADJ_LC;
+                response_seq_item.eq_phy_instruct = dp_sink_vif.EQ_PHY_Instruct;
+                response_seq_item.cr_adj_bw = dp_sink_vif.CR_ADJ_BW;
+                response_seq_item.eq_adj_bw = dp_sink_vif.EQ_ADJ_BW;
+                
+                @(posedge dp_sink_vif.clk);  // Wait for next clock cycle
+            end
         
         // Process the received AUX data
         if (rsp_item.aux_in_out.size() > 0) begin

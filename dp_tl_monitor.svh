@@ -22,74 +22,70 @@ class dp_tl_monitor extends uvm_monitor;
      
     // Read the signals from the DUT and assign them to the sequence item
     
-    // LPM signals
-      
-      // Input Data to DUT
-    rsp_seq_item.lpm.rst_n = dp_tl_vif.rst_n;
-    rsp_seq_item.lpm.LPM_Address = dp_tl_vif.LPM_Address;
-    rsp_seq_item.lpm.LPM_LEN = dp_tl_vif.LPM_LEN;
-    rsp_seq_item.lpm.LPM_Data = dp_tl_vif.LPM_Data;
-    rsp_seq_item.lpm.LPM_CMD = dp_tl_vif.LPM_CMD;
-    rsp_seq_item.lpm.LPM_Transaction_VLD = dp_tl_vif.LPM_Transaction_VLD;
-
-    rsp_seq_item.lpm.Lane_Align = dp_tl_vif.Lane_Align;
-    rsp_seq_item.lpm.MAX_VTG = dp_tl_vif.MAX_VTG;
-    rsp_seq_item.lpm.MAX_PRE = dp_tl_vif.MAX_PRE;
-    rsp_seq_item.lpm.EQ_RD_Value = dp_tl_vif.EQ_RD_Value;
-    rsp_seq_item.lpm.PRE = dp_tl_vif.PRE;
-    rsp_seq_item.lpm.VTG = dp_tl_vif.VTG;
-    rsp_seq_item.lpm.Link_BW_CR = dp_tl_vif.Link_BW_CR;
-    rsp_seq_item.lpm.CR_DONE = dp_tl_vif.CR_DONE;
-    rsp_seq_item.lpm.CR_DONE_VLD = dp_tl_vif.CR_DONE_VLD;
-    rsp_seq_item.lpm.EQ_CR_DN = dp_tl_vif.EQ_CR_DN;
-    rsp_seq_item.lpm.Channel_EQ = dp_tl_vif.Channel_EQ;
-    rsp_seq_item.lpm.Symbol_Lock = dp_tl_vif.Symbol_Lock;
-    rsp_seq_item.lpm.MAX_TPS_SUPPORTED = dp_tl_vif.MAX_TPS_SUPPORTED;
-    rsp_seq_item.lpm.Link_LC_CR = dp_tl_vif.Link_LC_CR;
-    rsp_seq_item.lpm.EQ_Data_VLD = dp_tl_vif.EQ_Data_VLD;
-    rsp_seq_item.lpm.Driving_Param_VLD = dp_tl_vif.Driving_Param_VLD;
-    rsp_seq_item.lpm.Config_Param_VLD = dp_tl_vif.Config_Param_VLD;
-    rsp_seq_item.lpm.LPM_Start_CR = dp_tl_vif.LPM_Start_CR;
-    rsp_seq_item.lpm.MAX_TPS_SUPPORTED_VLD = dp_tl_vif.MAX_TPS_SUPPORTED_VLD;
-
-      // Output Data from DUT
-    rsp_seq_item.lpm.LPM_Reply_ACK = dp_tl_vif.LPM_Reply_ACK;
-    rsp_seq_item.lpm.LPM_Reply_ACK_VLD = dp_tl_vif.LPM_Reply_ACK_VLD;
-    rsp_seq_item.lpm.LPM_Reply_Data = dp_tl_vif.LPM_Reply_Data;
-    rsp_seq_item.lpm.LPM_Reply_Data_VLD = dp_tl_vif.LPM_Reply_Data_VLD;
-    rsp_seq_item.lpm.LPM_NATIVE_I2C = dp_tl_vif.LPM_NATIVE_I2C;
-    rsp_seq_item.lpm.HPD_Detect = dp_tl_vif.HPD_Detect;
-    rsp_seq_item.lpm.HPD_IRQ = dp_tl_vif.HPD_IRQ;
-    rsp_seq_item.lpm.CTRL_Native_Failed = dp_tl_vif.CTRL_Native_Failed;
-    rsp_seq_item.lpm.Timer_Timeout = dp_tl_vif.Timer_Timeout;
-
-    rsp_seq_item.lpm.EQ_Final_ADJ_BW = dp_tl_vif.EQ_Final_ADJ_BW;
-    rsp_seq_item.lpm.EQ_Final_ADJ_LC = dp_tl_vif.EQ_Final_ADJ_LC;
-    rsp_seq_item.lpm.FSM_CR_Failed = dp_tl_vif.FSM_CR_Failed;
-    rsp_seq_item.lpm.EQ_Failed = dp_tl_vif.EQ_Failed;
-    rsp_seq_item.lpm.EQ_LT_Pass = dp_tl_vif.EQ_LT_Pass;
-    rsp_seq_item.lpm.CR_Completed = dp_tl_vif.CR_Completed;
-    rsp_seq_item.lpm.EQ_FSM_CR_Failed = dp_tl_vif.EQ_FSM_CR_Failed;
-
-
     // SPM signals
       
       // Input Data to DUT
-    rsp_spm_seq_item.spm.rst_n = dp_tl_vif.rst_n;
-    rsp_spm_seq_item.spm.SPM_Address = dp_tl_vif.SPM_Address;
-    rsp_spm_seq_item.spm.SPM_LEN = dp_tl_vif.SPM_LEN;
-    rsp_spm_seq_item.spm.SPM_Data = dp_tl_vif.SPM_Data;
-    rsp_spm_seq_item.spm.SPM_CMD = dp_tl_vif.SPM_CMD;
-    rsp_spm_seq_item.spm.SPM_Transaction_VLD = dp_tl_vif.SPM_Transaction_VLD;
+    rsp_seq_item.rst_n = dp_tl_vif.rst_n;
+    rsp_spm_seq_item.SPM_Address = dp_tl_vif.SPM_Address;
+    rsp_spm_seq_item.SPM_LEN = dp_tl_vif.SPM_LEN;
+    rsp_spm_seq_item.SPM_Data = dp_tl_vif.SPM_Data;
+    rsp_spm_seq_item.SPM_CMD = dp_tl_vif.SPM_CMD;
+    rsp_spm_seq_item.SPM_Transaction_VLD = dp_tl_vif.SPM_Transaction_VLD;
 
       // Output Data from DUT
-    rsp_spm_seq_item.spm.SPM_Reply_ACK = dp_tl_vif.SPM_Reply_ACK;
-    rsp_spm_seq_item.spm.SPM_Reply_ACK_VLD = dp_tl_vif.SPM_Reply_ACK_VLD;
-    rsp_spm_seq_item.spm.SPM_Reply_Data = dp_tl_vif.SPM_Reply_Data;
-    rsp_spm_seq_item.spm.SPM_Reply_Data_VLD = dp_tl_vif.SPM_Reply_Data_VLD;
-    rsp_spm_seq_item.spm.SPM_NATIVE_I2C = dp_tl_vif.SPM_NATIVE_I2C;
-    rsp_spm_seq_item.spm.CTRL_I2C_Failed = dp_tl_vif.CTRL_I2C_Failed;
-    rsp_spm_seq_item.spm.HPD_Detect = dp_tl_vif.HPD_Detect;
+    rsp_spm_seq_item.SPM_Reply_ACK = dp_tl_vif.SPM_Reply_ACK;
+    rsp_spm_seq_item.SPM_Reply_ACK_VLD = dp_tl_vif.SPM_Reply_ACK_VLD;
+    rsp_spm_seq_item.SPM_Reply_Data = dp_tl_vif.SPM_Reply_Data;
+    rsp_spm_seq_item.SPM_Reply_Data_VLD = dp_tl_vif.SPM_Reply_Data_VLD;
+    rsp_spm_seq_item.SPM_NATIVE_I2C = dp_tl_vif.SPM_NATIVE_I2C;
+    rsp_spm_seq_item.CTRL_I2C_Failed = dp_tl_vif.CTRL_I2C_Failed;
+    // LPM signals
+      
+      // Input Data to DUT
+    rsp_seq_item.LPM_Address = dp_tl_vif.LPM_Address;
+    rsp_seq_item.LPM_LEN = dp_tl_vif.LPM_LEN;
+    rsp_seq_item.LPM_Data = dp_tl_vif.LPM_Data;
+    rsp_seq_item.LPM_CMD = dp_tl_vif.LPM_CMD;
+    rsp_seq_item.LPM_Transaction_VLD = dp_tl_vif.LPM_Transaction_VLD;
+
+    rsp_seq_item.Lane_Align = dp_tl_vif.Lane_Align;
+    rsp_seq_item.MAX_VTG = dp_tl_vif.MAX_VTG;
+    rsp_seq_item.MAX_PRE = dp_tl_vif.MAX_PRE;
+    rsp_seq_item.EQ_RD_Value = dp_tl_vif.EQ_RD_Value;
+    rsp_seq_item.PRE = dp_tl_vif.PRE;
+    rsp_seq_item.VTG = dp_tl_vif.VTG;
+    rsp_seq_item.Link_BW_CR = dp_tl_vif.Link_BW_CR;
+    rsp_seq_item.CR_DONE = dp_tl_vif.CR_DONE;
+    rsp_seq_item.CR_DONE_VLD = dp_tl_vif.CR_DONE_VLD;
+    rsp_seq_item.EQ_CR_DN = dp_tl_vif.EQ_CR_DN;
+    rsp_seq_item.Channel_EQ = dp_tl_vif.Channel_EQ;
+    rsp_seq_item.Symbol_Lock = dp_tl_vif.Symbol_Lock;
+    rsp_seq_item.MAX_TPS_SUPPORTED = dp_tl_vif.MAX_TPS_SUPPORTED;
+    rsp_seq_item.Link_LC_CR = dp_tl_vif.Link_LC_CR;
+    rsp_seq_item.EQ_Data_VLD = dp_tl_vif.EQ_Data_VLD;
+    rsp_seq_item.Driving_Param_VLD = dp_tl_vif.Driving_Param_VLD;
+    rsp_seq_item.Config_Param_VLD = dp_tl_vif.Config_Param_VLD;
+    rsp_seq_item.LPM_Start_CR = dp_tl_vif.LPM_Start_CR;
+    rsp_seq_item.MAX_TPS_SUPPORTED_VLD = dp_tl_vif.MAX_TPS_SUPPORTED_VLD;
+
+      // Output Data from DUT
+    rsp_seq_item.LPM_Reply_ACK = dp_tl_vif.LPM_Reply_ACK;
+    rsp_seq_item.LPM_Reply_ACK_VLD = dp_tl_vif.LPM_Reply_ACK_VLD;
+    rsp_seq_item.LPM_Reply_Data = dp_tl_vif.LPM_Reply_Data;
+    rsp_seq_item.LPM_Reply_Data_VLD = dp_tl_vif.LPM_Reply_Data_VLD;
+    rsp_seq_item.LPM_NATIVE_I2C = dp_tl_vif.LPM_NATIVE_I2C;
+    rsp_seq_item.HPD_Detect = dp_tl_vif.HPD_Detect;
+    rsp_seq_item.HPD_IRQ = dp_tl_vif.HPD_IRQ;
+    rsp_seq_item.CTRL_Native_Failed = dp_tl_vif.CTRL_Native_Failed;
+    rsp_seq_item.Timer_Timeout = dp_tl_vif.Timer_Timeout;
+
+    rsp_seq_item.EQ_Final_ADJ_BW = dp_tl_vif.EQ_Final_ADJ_BW;
+    rsp_seq_item.EQ_Final_ADJ_LC = dp_tl_vif.EQ_Final_ADJ_LC;
+    rsp_seq_item.FSM_CR_Failed = dp_tl_vif.FSM_CR_Failed;
+    rsp_seq_item.EQ_Failed = dp_tl_vif.EQ_Failed;
+    rsp_seq_item.EQ_LT_Pass = dp_tl_vif.EQ_LT_Pass;
+    rsp_seq_item.CR_Completed = dp_tl_vif.CR_Completed;
+    rsp_seq_item.EQ_FSM_CR_Failed = dp_tl_vif.EQ_FSM_CR_Failed;
 
     mon_ap.write(rsp_seq_item);
     `uvm_info("run_phase", rsp_seq_item.convert2string(), UVM_LOW) 

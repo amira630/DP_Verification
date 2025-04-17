@@ -39,21 +39,21 @@ class dp_tl_spm_sequence_item extends uvm_sequence_item;
     /////////////////////// CONSTRAINTS ///////////////////////////
     ///////////////////////////////////////////////////////////////
     
-    // constraint spm_data_write_constraint {
-    //     if (SPM_CMD == AUX_I2C_WRITE) {
-    //         SPM_Data inside {[0:255]}; // Full range of SPM_Data
-    //     } else {
-    //         SPM_Data == 8'bx; // Default value when not AUX_I2C_WRITE
-    //     }
-    // }
+    constraint spm_data_write_constraint {
+        if (SPM_CMD == AUX_I2C_WRITE) {
+            SPM_Data inside {[0:255]}; // Full range of SPM_Data
+        } else {
+            SPM_Data == 8'bx; // Default value when not AUX_I2C_WRITE
+        }
+    }
     
-    // constraint spm_cmd_read_only_constraint {
-    //     SPM_CMD == AUX_I2C_READ; // Force SPM_CMD to always be AUX_I2C_READ
-    // }
+    constraint spm_cmd_read_only_constraint {
+        SPM_CMD == AUX_I2C_READ; // Force SPM_CMD to always be AUX_I2C_READ
+    }
 
-    // constraint operation_type_dist {
-    //     operation inside {[I2C_WRITE:I2C_READ]};
-    // }
+    constraint operation_type_dist {
+       operation inside {[Reset:EQ_LT]};
+    }
 
     ///////////////////////////////////////////////////////////////
     ///////////////////////// METHODS /////////////////////////////

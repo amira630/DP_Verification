@@ -145,6 +145,12 @@
         EQ_LT           = 4'b0110
     } op_code;
 
+// Sink Driver Operation
+    typedef enum logic [1:0] {
+        HPD_operation   = 2'b00,  
+        Reply_operation = 2'b01
+    } sink_op_code;
+
     // 
 
 `endif // DP_UVM_PARAMS_SVH

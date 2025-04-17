@@ -24,14 +24,13 @@ class dp_sink_monitor extends uvm_monitor;
       // Input Data to DUT
       rsp_sink_seq_item.rst_n = dp_sink_vif.rst_n;
       rsp_sink_seq_item.HPD_Signal = dp_sink_vif.HPD_Signal;
-      rsp_sink_seq_item.START_STOP = dp_sink_vif.START_STOP;
+      rsp_sink_seq_item.AUX_START_STOP = dp_sink_vif.AUX_START_STOP;
+      rsp_sink_seq_item.PHY_START_STOP = dp_sink_vif.PHY_START_STOP;
       rsp_sink_seq_item.AUX_IN_OUT = dp_sink_vif.AUX_IN_OUT;
-      rsp_sink_seq_item.CR_ADJ_LC = dp_sink_vif.CR_ADJ_LC;
-      rsp_sink_seq_item.CR_PHY_Instruct = dp_sink_vif.CR_PHY_Instruct;
-      rsp_sink_seq_item.EQ_ADJ_LC = dp_sink_vif.EQ_ADJ_LC;
-      rsp_sink_seq_item.EQ_PHY_Instruct = dp_sink_vif.EQ_PHY_Instruct;
-      rsp_sink_seq_item.CR_ADJ_BW = dp_sink_vif.CR_ADJ_BW;
-      rsp_sink_seq_item.EQ_ADJ_BW = dp_sink_vif.EQ_ADJ_BW;
+      rsp_sink_seq_item.PHY_ADJ_LC = dp_sink_vif.PHY_ADJ_LC;
+      rsp_sink_seq_item.PHY_ADJ_BW = dp_sink_vif.PHY_ADJ_BW;
+      rsp_sink_seq_item.PHY_Instruct = dp_sink_vif.PHY_Instruct;
+      rsp_sink_seq_item.PHY_Instruct_VLD = dp_sink_vif.PHY_Instruct_VLD;
 
      mon_ap.write(rsp_sink_seq_item);
         // `uvm_info("run_phase", rsp_sink_seq_item.convert2string_stimulus(), UVM_LOW) 

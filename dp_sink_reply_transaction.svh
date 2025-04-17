@@ -4,7 +4,7 @@ class dp_sink_reply_transaction extends dp_sink_base_sequence;
     function new(string name = "dp_sink_reply_transaction");
         super.new(name);
     endfunction
-    
+ 
     task body();
         `uvm_info(get_type_name(), "Starting Reply Transaction", UVM_MEDIUM)
 
@@ -16,8 +16,10 @@ class dp_sink_reply_transaction extends dp_sink_base_sequence;
         end
         
         // Call the reply_transaction task with the sequence item signals
+        sink_operation = Reply_operation; // Set the operation type to REPLY
         reply_transaction();
 
         `uvm_info(get_type_name(), "Completed Reply Transaction", UVM_MEDIUM)
     endtask
+    
 endclass

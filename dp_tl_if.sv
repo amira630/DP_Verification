@@ -29,7 +29,7 @@ interface dp_tl_if(input clk);
     logic [3:0] CR_DONE, EQ_CR_DN, Channel_EQ, Symbol_Lock;
     logic [1:0] Link_LC_CR, EQ_Final_ADJ_LC, MAX_TPS_SUPPORTED, MAX_VTG, MAX_PRE;
     logic       LPM_Start_CR, Driving_Param_VLD, EQ_Data_VLD, FSM_CR_Failed, EQ_FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, Config_Param_VLD, CR_DONE_VLD;
-    logic       EQ_CR_Failed, LPM_Start_CR_VLD, CR_Completed, MAX_TPS_SUPPORTED_VLD, Timer_Timeout;
+    logic       LPM_Start_CR_VLD, CR_Completed, MAX_TPS_SUPPORTED_VLD, Timer_Timeout;
 
     ///////////////////////////////////////////////////////////////
     //////////////////////// MODPORTS /////////////////////////////
@@ -94,7 +94,6 @@ interface dp_tl_if(input clk);
                EQ_Final_ADJ_BW,         // The adjusted link BW after successful link training used for sending main video stream.
                EQ_Final_ADJ_LC,         // The adjusted number of lanes after successful link training, used for sending main video stream.
                CR_Completed,            // Signal indicating the completion of the Clock Recovery phase during link training.   
-               EQ_CR_Failed,            // Signal indicating the failure of the Clock Recovery phase during EQ phase of link training. 
                EQ_FSM_CR_Failed,        // Signal indicating the failure of the Clock Recovery phase during EQ phase of link training.  
                Timer_Timeout            // Signal indicating the timeout of the timer during link training process.
     );
@@ -115,7 +114,7 @@ interface dp_tl_if(input clk);
         // LPM
             HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_Native_I2C, CTRL_Native_Failed,         
         // LPM - Link Training
-            FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC, CR_Completed, EQ_CR_Failed, EQ_FSM_CR_Failed, Timer_Timeout
+            FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC, CR_Completed, EQ_FSM_CR_Failed, Timer_Timeout
       );
 
     //////////////////////// MONITOR /////////////////////////////
@@ -135,7 +134,7 @@ interface dp_tl_if(input clk);
         // LPM
               HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_Native_I2C, CTRL_Native_Failed,        
         // LPM - Link Training
-              FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC, CR_Completed, EQ_CR_Failed , EQ_FSM_CR_Failed, Timer_Timeout
+              FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC, CR_Completed , EQ_FSM_CR_Failed, Timer_Timeout
       );
     
       // RESET task
@@ -147,7 +146,7 @@ interface dp_tl_if(input clk);
       endtask
 
       // I2C_READ task
-      task I2C_READ(input dp_tl_spm_sequence_item SPM);
+      task I2C_READ(input dp_tl_sequence_item SPM);
             // Set SPM-related signals to perform a read operation
             SPM_Address = SPM.SPM_Address;
             SPM_CMD     = SPM.SPM_CMD;
@@ -160,7 +159,7 @@ interface dp_tl_if(input clk);
       endtask
     
       // I2C_WRITE task
-      task I2C_WRITE(input dp_tl_spm_sequence_item SPM);
+      task I2C_WRITE(input dp_tl_sequence_item SPM);
             // Set SPM-related signals to perform a write operation
             SPM_Address = SPM.SPM_Address;
             SPM_CMD     = SPM.SPM_CMD;
@@ -173,7 +172,7 @@ interface dp_tl_if(input clk);
       endtask
 
       // NATIVE_READ task
-      task NATIVE_READ(input dp_tl_lpm_sequence_item LPM);
+      task NATIVE_READ(input dp_tl_sequence_item LPM);
             // Set LPM-related signals to perform a read operation
             LPM_Address = LPM.LPM_Address;
             LPM_CMD     = LPM.LPM_CMD;
@@ -186,7 +185,7 @@ interface dp_tl_if(input clk);
       endtask
 
       // NATIVE_WRITE task
-      task NATIVE_WRITE(input dp_tl_lpm_sequence_item LPM);
+      task NATIVE_WRITE(input dp_tl_sequence_item LPM);
             // Set LPM-related signals to perform a write operation
             LPM_Address = LPM.LPM_Address;
             LPM_CMD     = LPM.LPM_CMD;
@@ -200,7 +199,7 @@ interface dp_tl_if(input clk);
 
       //////////////////////////// LINK TRAINING ////////////////////////////
 
-      task LINK_TRAINING (input dp_tl_lpm_sequence_item LPM);
+      task LINK_TRAINING (input dp_tl_sequence_item LPM);
             // Set LPM-related signals for Clock Recovery Link Training
             LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
             LPM_Start_CR = LPM.LPM_Start_CR;
