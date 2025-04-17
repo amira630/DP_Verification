@@ -26,7 +26,7 @@ class dp_source_test extends uvm_test;
         
         dp_tl_i2c_seq = dp_tl_i2c_sequence::type_id::create("dp_tl_i2c_seq", this);
         //dp_tl_seq = dp_tl_sequence::type_id::create("dp_tl_seq", this);
-        dp_sink_seq = dp_sink_sequence::type_id::create("dp_sink_seq", this);
+        //dp_sink_seq = dp_sink_sequence::type_id::create("dp_sink_seq", this);
         
         // add virtual interfaces for each interface to the configurations database
         if(!uvm_config_db #(virtual dp_tl_if):: get(this, "","dp_tl_vif", dp_source_cfg.dp_tl_vif))
@@ -59,7 +59,8 @@ class dp_source_test extends uvm_test;
             //     dp_tl_seq.start(env.tl_agt.sqr);
             //     `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
             // end
-            // // DP Sink Sequence
+            
+            // DP Sink Sequence
             // begin
             //     `uvm_info("run_phase", "Sink stimulus generation started", UVM_LOW);
             //     dp_sink_seq.start(env.sink_agt.sqr);
