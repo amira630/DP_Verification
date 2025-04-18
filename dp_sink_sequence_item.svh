@@ -1,3 +1,6 @@
+import uvm_pkg::*;
+    `include "uvm_macros.svh"
+    `include "test_parameters.svh"
 class dp_sink_sequence_item extends uvm_sequence_item;
     `uvm_object_utils(dp_sink_sequence_item);
 
@@ -5,7 +8,9 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     rand bit HPD_Signal;
     
     bit AUX_START_STOP, PHY_START_STOP;
-    bit [7:0] AUX_IN_OUT;             
+    bit [7:0] AUX_IN_OUT;  
+
+    bit clk;        // Clock signal           
 
 // Reply Command Signal 
     rand i2c_aux_reply_cmd_e i2c_reply_cmd;

@@ -19,7 +19,7 @@ class dp_sink_agent extends uvm_agent;
             `uvm_fatal("build_phase","Unable to get configuration object in Sink Agent");
 
         //buikding the Transport Layer sequencer, driver and monitor
-        sqr = uvm_sequencer::type_id::create("sqr", this);
+        sqr = uvm_sequencer#(dp_sink_sequence_item)::type_id::create("sqr", this);
         drv = dp_sink_driver::type_id::create("drv", this);
         mon = dp_sink_monitor::type_id::create("mon", this);
         // building the Transport Layer agent analysis port
@@ -35,6 +35,9 @@ class dp_sink_agent extends uvm_agent;
 
         //connecting the drive TLM port to the sequencer TLM export
         drv.seq_item_port.connect(sqr.seq_item_export);
+
+        // Response port connection
+        drv.rsp_port.connect(sqr.rsp_export);
         
         //connecting the monitor analysis port to the agent analysis port
         mon.mon_ap.connect(agt_ap);

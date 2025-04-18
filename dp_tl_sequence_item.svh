@@ -1,3 +1,6 @@
+import uvm_pkg::*;
+    `include "uvm_macros.svh"
+    `include "test_parameters.svh"
 class dp_tl_sequence_item extends uvm_sequence_item;
   `uvm_object_utils(dp_tl_sequence_item);
   
@@ -28,7 +31,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     logic [AUX_ADDRESS_WIDTH-1:0]      LPM_Address;
     rand logic [AUX_DATA_WIDTH-1:0]    LPM_LEN;
     rand logic [AUX_DATA_WIDTH-1:0]    LPM_Data[$];
-    native_aux_request_cmd_e           LPM_CMD; // 00 Write and 01 Read
+    rand native_aux_request_cmd_e      LPM_CMD; // 00 Write and 01 Read
     bit                                LPM_Transaction_VLD;
 
     // output Data from DUT
@@ -41,9 +44,9 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     ////////////////// LINK Training Signals //////////////////////
     
     // input Data to DUT
-    logic [AUX_DATA_WIDTH-1:0]      Lane_Align, EQ_RD_Value;
+    rand logic [AUX_DATA_WIDTH-1:0] Lane_Align, EQ_RD_Value;
     rand logic [AUX_DATA_WIDTH-1:0] Link_BW_CR, PRE, VTG;
-    logic [3:0]                     EQ_CR_DN, Channel_EQ, Symbol_Lock;
+    rand logic [3:0]                EQ_CR_DN, Channel_EQ, Symbol_Lock;
     rand logic [3:0]                CR_DONE;
     rand training_pattern_t         MAX_TPS_SUPPORTED;
     rand logic [1:0]                Link_LC_CR, MAX_PRE, MAX_VTG; 
@@ -107,20 +110,63 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         Link_LC_CR != 2'b10; // Prevent Link_LC_CR from taking the value 10b
     }
 
+    // Apply distribution to signal based on the Link_LC_CR value
+    // Rationale:
+    // - If Link_LC_CR is 2'b11, prioritize 4'b1111 with a weight of 60%.
+    // - If Link_LC_CR is 2'b01, prioritize 4'b0011 with a weight of 60%.
+    // - If Link_LC_CR is 2'b00, prioritize 4'b0001 with a weight of 60%.
+    // - Default weight for other values is 40%.
+    
     constraint eq_cr_dn_constraint {
-        apply_distribution(EQ_CR_DN, Link_LC_CR);
+        if (Link_LC_CR == 2'b11) {
+            // For 2'b11, prioritize 4'b1111 with 60% weight
+            EQ_CR_DN dist {4'b1111 := 60, [0:$] := 40};
+        } else if (Link_LC_CR == 2'b01) {
+            // For 2'b01, prioritize 4'b0011 with 60% weight
+            EQ_CR_DN dist {4'b0011 := 60, [0:$] := 40};
+            // For 2'b00, prioritize 4'b0001 with 60% weight
+        } else if (Link_LC_CR == 2'b00) {
+            EQ_CR_DN dist {4'b0001 := 60, [0:$] := 40};
+        }
     }
 
     constraint cr_done_constraint {
-        apply_distribution(CR_DONE, Link_LC_CR);
+        if (Link_LC_CR == 2'b11) {
+            // For 2'b11, prioritize 4'b1111 with 60% weight
+            CR_DONE dist {4'b1111 := 60, [0:$] := 40};
+        } else if (Link_LC_CR == 2'b01) {
+            // For 2'b01, prioritize 4'b0011 with 60% weight
+            CR_DONE dist {4'b0011 := 60, [0:$] := 40};
+            // For 2'b00, prioritize 4'b0001 with 60% weight
+        } else if (Link_LC_CR == 2'b00) {
+            CR_DONE dist {4'b0001 := 60, [0:$] := 40};
+        }
     }
 
     constraint channel_eq_constraint {
-        apply_distribution(Channel_EQ, Link_LC_CR);
+        if (Link_LC_CR == 2'b11) {
+            // For 2'b11, prioritize 4'b1111 with 60% weight
+            Channel_EQ dist {4'b1111 := 60, [0:$] := 40};
+        } else if (Link_LC_CR == 2'b01) {
+            // For 2'b01, prioritize 4'b0011 with 60% weight
+            Channel_EQ dist {4'b0011 := 60, [0:$] := 40};
+            // For 2'b00, prioritize 4'b0001 with 60% weight
+        } else if (Link_LC_CR == 2'b00) {
+            Channel_EQ dist {4'b0001 := 60, [0:$] := 40};
+        }
     }
 
     constraint symbol_lock_constraint {
-        apply_distribution(Symbol_Lock, Link_LC_CR);
+        if (Link_LC_CR == 2'b11) {
+            // For 2'b11, prioritize 4'b1111 with 60% weight
+            Symbol_Lock dist {4'b1111 := 60, [0:$] := 40};
+        } else if (Link_LC_CR == 2'b01) {
+            // For 2'b01, prioritize 4'b0011 with 60% weight
+            Symbol_Lock dist {4'b0011 := 60, [0:$] := 40};
+            // For 2'b00, prioritize 4'b0001 with 60% weight
+        } else if (Link_LC_CR == 2'b00) {
+            Symbol_Lock dist {4'b0001 := 60, [0:$] := 40};
+        }
     }
 
     constraint max_vtg_constraint {
@@ -143,21 +189,22 @@ class dp_tl_sequence_item extends uvm_sequence_item;
             if (!LPM_Start_CR && prev_pre[i*2 +: 2] == MAX_PRE[i*2 +: 2]) {
                 PRE[i*2 +: 2] == prev_pre[i*2 +: 2];
             }
+        }
+    }
             
-            case (VTG[i*2 +: 2]) // Check each 2-bit slice of VTG
-                2'b00: begin 
-                  PRE[i*2 +: 2] inside {2'b00, 2'b01, 2'b10, 2'b11}; // VTG = 0
-                end
-                2'b01: begin
-                  PRE[i*2 +: 2] inside {2'b00, 2'b01, 2'b10};        // VTG = 1
-                end
-                2'b10: begin
-                  PRE[i*2 +: 2] inside {2'b00, 2'b01};               // VTG = 2
-                end
-                2'b11: begin 
-                  PRE[i*2 +: 2] == 2'b00;                            // VTG = 3
-                end
-            endcase
+    constraint vtg_pre_relationship {
+        foreach (VTG[i]) {
+            if ((i*2 + 1) < AUX_DATA_WIDTH) { // Ensure we don't go out of bounds
+                if (VTG[i*2 +: 2] == 2'b00) { 
+                    PRE[i*2 +: 2] inside {2'b00, 2'b01, 2'b10, 2'b11}; // VTG = 0
+                } else if (VTG[i*2 +: 2] == 2'b01) {
+                    PRE[i*2 +: 2] inside {2'b00, 2'b01, 2'b10};        // VTG = 1
+                } else if (VTG[i*2 +: 2] == 2'b10) {
+                    PRE[i*2 +: 2] inside {2'b00, 2'b01};               // VTG = 2
+                } else if (VTG[i*2 +: 2] == 2'b11) {
+                    PRE[i*2 +: 2] == 2'b00;                            // VTG = 3
+                }
+            }
         }
     }
 
@@ -168,11 +215,14 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     constraint lpm_data_constraint {
         if (LPM_CMD == AUX_NATIVE_WRITE) {
             LPM_Data.size() == LPM_LEN + 1; // Ensure the queue size matches LPM_LEN + 1
-            foreach (LPM_Data[i]) {
-                LPM_Data[i] inside {0, 1, ..., (1 << AUX_DATA_WIDTH) - 1}; // Randomize valid values
-            }
         } else {
             LPM_Data.size() == 0; // Ensure the queue is empty for other commands
+        }
+    }
+
+    constraint lpm_data_values {
+        foreach (LPM_Data[i]) {
+                LPM_Data[i] inside {[0:(1 << AUX_DATA_WIDTH) - 1]}; // Randomize valid values
         }
     }
 
@@ -205,23 +255,6 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     ///////////////////////// METHODS /////////////////////////////
     ///////////////////////////////////////////////////////////////
 
-    // Apply distribution to signal based on the Link_LC_CR value
-    // Rationale:
-    // - If Link_LC_CR is 2'b11, prioritize 4'b1111 with a weight of 60%.
-    // - If Link_LC_CR is 2'b01, prioritize 4'b0011 with a weight of 60%.
-    // - If Link_LC_CR is 2'b00, prioritize 4'b0001 with a weight of 60%.
-    // - Default weight for other values is 40%.
-
-    function void apply_distribution(ref logic [3:0] signal, logic [1:0] lc_cr);
-        if (lc_cr == 2'b11) {
-            signal dist {4'b1111 := 60, default := 40};
-        } else if (lc_cr == 2'b01) {
-            signal dist {4'b0011 := 60, default := 40};
-        } else if (lc_cr == 2'b00) {
-            signal dist {4'b0001 := 60, default := 40};
-        }
-    endfunction
-
     function void pre_randomize();
         if (LPM_Start_CR == 1) begin
             prev_vtg = '0; // Reset prev_vtg when LPM_Start_CR is 1
@@ -246,6 +279,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     // This function is used to initialize the sequence item with values from the DUT
     // It is called by the driver to get the current state of the DUT
     // and store it in the sequence item for later use
+    
     // function void copy_from_vif(virtual dp_tl_if vif);
 
     //     // Signals from DUT to LPM

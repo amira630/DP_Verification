@@ -26,19 +26,19 @@ class dp_tl_monitor extends uvm_monitor;
       
       // Input Data to DUT
     rsp_seq_item.rst_n = dp_tl_vif.rst_n;
-    rsp_spm_seq_item.SPM_Address = dp_tl_vif.SPM_Address;
-    rsp_spm_seq_item.SPM_LEN = dp_tl_vif.SPM_LEN;
-    rsp_spm_seq_item.SPM_Data = dp_tl_vif.SPM_Data;
-    rsp_spm_seq_item.SPM_CMD = dp_tl_vif.SPM_CMD;
-    rsp_spm_seq_item.SPM_Transaction_VLD = dp_tl_vif.SPM_Transaction_VLD;
+    rsp_seq_item.SPM_Address = dp_tl_vif.SPM_Address;
+    rsp_seq_item.SPM_LEN = dp_tl_vif.SPM_LEN;
+    rsp_seq_item.SPM_Data = dp_tl_vif.SPM_Data;
+    rsp_seq_item.SPM_CMD = dp_tl_vif.SPM_CMD;
+    rsp_seq_item.SPM_Transaction_VLD = dp_tl_vif.SPM_Transaction_VLD;
 
       // Output Data from DUT
-    rsp_spm_seq_item.SPM_Reply_ACK = dp_tl_vif.SPM_Reply_ACK;
-    rsp_spm_seq_item.SPM_Reply_ACK_VLD = dp_tl_vif.SPM_Reply_ACK_VLD;
-    rsp_spm_seq_item.SPM_Reply_Data = dp_tl_vif.SPM_Reply_Data;
-    rsp_spm_seq_item.SPM_Reply_Data_VLD = dp_tl_vif.SPM_Reply_Data_VLD;
-    rsp_spm_seq_item.SPM_NATIVE_I2C = dp_tl_vif.SPM_NATIVE_I2C;
-    rsp_spm_seq_item.CTRL_I2C_Failed = dp_tl_vif.CTRL_I2C_Failed;
+    rsp_seq_item.SPM_Reply_ACK = dp_tl_vif.SPM_Reply_ACK;
+    rsp_seq_item.SPM_Reply_ACK_VLD = dp_tl_vif.SPM_Reply_ACK_VLD;
+    rsp_seq_item.SPM_Reply_Data = dp_tl_vif.SPM_Reply_Data;
+    rsp_seq_item.SPM_Reply_Data_VLD = dp_tl_vif.SPM_Reply_Data_VLD;
+    rsp_seq_item.SPM_NATIVE_I2C = dp_tl_vif.SPM_NATIVE_I2C;
+    rsp_seq_item.CTRL_I2C_Failed = dp_tl_vif.CTRL_I2C_Failed;
     // LPM signals
       
       // Input Data to DUT

@@ -18,7 +18,6 @@ class dp_sink_coverage extends uvm_component;
         command_c:              coverpoint cov_sink_seq_item.command;
         address_c:              coverpoint cov_sink_seq_item.address;
         length_c:               coverpoint cov_sink_seq_item.length;
-        data_c:                 coverpoint cov_sink_seq_item.data;
 
         // Reply Command Signals
         i2c_reply_cmd_c:        coverpoint cov_sink_seq_item.i2c_reply_cmd;

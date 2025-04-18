@@ -19,7 +19,7 @@ class dp_tl_agent extends uvm_agent;
             `uvm_fatal("build_phase","Unable to get configuration object in TL Agent");
         
         //building the Transport Layer sequencer, driver and monitor
-        sqr = uvm_sequencer#(uvm_sequencer)::type_id::create("sqr", this);
+        sqr = uvm_sequencer#(dp_tl_sequence_item)::type_id::create("sqr", this);
         drv = dp_tl_driver::type_id::create("drv", this);
         mon = dp_tl_monitor::type_id::create("mon", this);
         // building the Transport Layer agent analysis port

@@ -1,3 +1,8 @@
+import uvm_pkg::*;
+    `include "uvm_macros.svh"
+
+import dp_transactions_pkg::*;
+
 class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
     `uvm_object_utils(dp_tl_base_sequence);
 
@@ -18,9 +23,9 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
 
 // I2C AUX REQUEST TRANSACTION sequence
     task i2c_request(input i2c_aux_request_cmd_e CMD, logic [19:0] address);
+        int ack_count = 0;
         seq_item = dp_tl_sequence_item::type_id::create("seq_item");
 
-        int ack_count = 0;
         seq_item.CTRL_I2C_Failed = 1;
 
         while (seq_item.CTRL_I2C_Failed) begin
@@ -63,18 +68,14 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
 // As for in case of read burst fail I will re-request the whole burst
 // for write burst i can start from the point where it failed based on the M value
     task native_read_request(input logic [19:0] address, [7:0] LEN);
+        int ack_count = 0;
         seq_item = dp_tl_sequence_item::type_id::create("seq_item");
 
-        int ack_count = 0;
         seq_item.CTRL_Native_Failed = 1;
         while (seq_item.CTRL_Native_Failed) begin
             seq_item.CTRL_Native_Failed = 0;
             
             start_item(seq_item);
-                seq_item.LPM_Address.rand_mode(0);    // randomization off
-                seq_item.LPM_CMD.rand_mode(0);        // randomization off
-                seq_item.LPM_LEN.rand_mode(0);        // randomization off
-
                 seq_item.LPM_CMD = AUX_NATIVE_READ;   // Read
                 seq_item.LPM_Transaction_VLD = 1'b1;  // LPM is going to request a Native transaction 
                 seq_item.LPM_Address = address;       // Address
@@ -102,19 +103,15 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
 //////////////////////////////////// NATIVE AUX WRITE REQUEST TRANSACTION /////////////////////////////////////////
 
     task native_write_request(input logic [19:0] address, input [7:0] LEN);
+        int ack_count = 0;
         seq_item = dp_tl_sequence_item::type_id::create("seq_item");
     
-        int ack_count = 0;
         seq_item.CTRL_Native_Failed = 1;
     
         while (seq_item.CTRL_Native_Failed) begin
             seq_item.CTRL_Native_Failed = 0;
     
             start_item(seq_item);
-
-                seq_item.LPM_Address.rand_mode(0);    // randomization off
-                seq_item.LPM_CMD.rand_mode(0);        // randomization off
-                seq_item.LPM_LEN.rand_mode(0);        // randomization off
                 seq_item.LPM_Data.rand_mode(1);       // randomization on for data
 
                 seq_item.LPM_Data.delete();           // Clear the queue
@@ -225,7 +222,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                 seq_item.Driving_Param_VLD = 1'b1;
                 seq_item.LPM_Start_CR = 0;
                 seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
-                seq_item.randomize();
+                seq_item.rand_mode(1);
                 finish_item(seq_item);
                 // Wait for 103 to 106 to be written
                 while(ack_count<1) begin
@@ -252,7 +249,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
 /////////////////////////////////////////// LINK TRAINING EQ /////////////////////////////////////////
 
     task CR_LT_eq();
-        ack_count = 0;
+        int ack_count = 0;
         seq_item.FSM_CR_Failed = 1;
         while (seq_item.FSM_CR_Failed) begin
             seq_item.FSM_CR_Failed = 0;
@@ -366,7 +363,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
             seq_item.rand_mode(0);                      // Disable randomization for all fields
             seq_item.LPM_Transaction_VLD = 1'b1;        // Mark transaction as valid
             seq_item.EQ_Data_VLD = 0;                   // Indicate that EQ data is not valid
-            seq_item.TPS_VLD = 1;                       // Indicate change of max TPS
+            seq_item.MAX_TPS_SUPPORTED_VLD = 1;                       // Indicate change of max TPS
             seq_item.MAX_TPS_SUPPORTED.rand_mode(1);    // Randomize the max TPS value
             seq_item.VTG.rand_mode(1);
             seq_item.PRE.rand_mode(1);
@@ -391,7 +388,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
             start_item(seq_item);
             seq_item.rand_mode(0);
             seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
-            seq_item.TPS_VLD = 0; // Indicate change of max TPS
+            seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate change of max TPS
             seq_item.LPM_Transaction_VLD = 1'b1; // LPM is on
             seq_item.EQ_Data_VLD = 0; // Indicate that EQ data is not valid
             seq_item.Driving_Param_VLD = 1'b0;
@@ -425,7 +422,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                 seq_item.Channel_EQ.rand_mode(1);
                 seq_item.Symbol_Locked.rand_mode(1);
                 seq_item.EQ_CR_DN.rand_mode(1);
-                seq_item.TPS_VLD = 0; // Indicate change of max TPS
+                seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate change of max TPS
                 seq_item.LPM_Transaction_VLD = 1'b1;
                 seq_item.EQ_Data_VLD = 1;
                 seq_item.Driving_Param_VLD = 1'b1;
@@ -462,7 +459,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
     // Step 6: Write 00h to offset 0x00102 to disable Link Training
         start_item(seq_item);
         seq_item.rand_mode(0);
-        seq_item.TPS_VLD = 0; // Indicate no TPS
+        seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate no TPS
         seq_item.LPM_Transaction_VLD = 1'b0;
         seq_item.Driving_Param_VLD = 1'b0;
         seq_item.EQ_Data_VLD = 1'b0; // Indicate that EQ data is not valid

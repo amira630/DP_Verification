@@ -28,30 +28,34 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
             // Clear previous aux data
             response_seq_item.aux_in_out.delete();
 
+            response_seq_item.clk = dp_sink_vif.clk;
+
             // Drive the values to the interface according to the operation
             @(posedge dp_sink_vif.clk);
             case (stim_seq_item.sink_operation)
-                2'b00: begin
+                HPD_operation: begin
                     // HPD operation
-                    dp_sink_vif.drive_hpd_signal(stim_seq_item.hpd_signal);
+                    `uvm_info("DP_SINK_DRIVER", $sformatf("Driving HPD_Signal = %0b", stim_seq_item.HPD_Signal), UVM_MEDIUM);
+                    dp_sink_vif.drive_hpd_signal(stim_seq_item.HPD_Signal);
                 end
-                2'b01: begin
+                Reply_operation: begin
                     // Reply operation
                     dp_sink_vif.drive_aux_in_out(stim_seq_item.AUX_IN_OUT);
                 end
                 default: 
                     begin
                         dp_sink_vif = null; // Set the interface to null if the operation is not supported
+                        `uvm_warning("DP_SINK_DRIVER", "Unknown sink_operation type.")
                         `uvm_error("DP_SINK_DRIVER", "Unsupported operation in sink transaction")
                     end
             endcase
 
             // Copy the values from the stimulus to the response sequence item
             // This is done to ensure that the response sequence item has the same values as the stimulus
-            response_seq_item = stim_seq_item.clone("response_seq_item");
+            $cast(response_seq_item, stim_seq_item.clone());
 
             // Wait for DUT response
-            wait(dp_sink_vif.PHY_START_STOP == 1);
+            wait(dp_sink_vif.AUX_START_STOP == 1);
 
             // Copy the values from the DUT to the response sequence item
             // response_seq_item.copy_from_vif(dp_sink_vif);

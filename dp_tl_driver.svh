@@ -13,6 +13,8 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
         forever begin
             // Get sequence item from sequencer
             stimulus_seq_item = dp_tl_sequence_item::type_id::create("stimulus_seq_item");
+            response_seq_item = dp_tl_sequence_item::type_id::create("response_seq_item");
+            // Get the next sequence item from the sequencer
             seq_item_port.get_next_item(stimulus_seq_item);
 
             // Check if the interface is available
@@ -63,7 +65,7 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
 
             // Copy the values from the stimulus to the response sequence item
             // This is done to ensure that the response sequence item has the same values as the stimulus
-            response_seq_item = stimulus_seq_item.clone("response_seq_item");
+            $cast(response_seq_item, stimulus_seq_item.clone());
 
             // Wait for DUT reponse
             wait(dp_tl_vif.ready == 1)

@@ -1,5 +1,6 @@
 interface dp_sink_if(input clk);
 
+    logic rst_n;
     ///////////////////////////////////////////////////////////////
     ///////////////////// PHYSICAL LAYER //////////////////////////
     ///////////////////////////////////////////////////////////////
@@ -59,6 +60,7 @@ interface dp_sink_if(input clk);
     // It takes a 1-bit value as input and drives the HPD_Signal with that value
     task drive_hpd_signal(input bit hpd);
         HPD_Signal = hpd;  // Drive the HPD_Signal with the specified value
+        `uvm_info("DP_SINK_INTERFACE", $sformatf("Driving HPD_Signal = %0b", seq_item.HPD_Signal), UVM_MEDIUM);
     endtask
 
     // TASK: drive_aux_in_out
@@ -67,6 +69,7 @@ interface dp_sink_if(input clk);
     task drive_aux_in_out(input [7:0] value);
         AUX_IN_OUT = value;  // Drive the AUX_IN_OUT signal with the specified value
         PHY_START_STOP = 1'b1;  // Start the PHY operation
+        `uvm_info("DP_SINK_DRIVER", "Finished driving AUX_IN_OUT", UVM_MEDIUM);
         @(posedge clk);  // Wait for the next clock edge
         PHY_START_STOP = 1'b0;  // Stop the PHY operation
     endtask
