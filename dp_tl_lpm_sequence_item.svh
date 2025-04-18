@@ -19,22 +19,24 @@ class dp_tl_lpm_sequence_item extends uvm_sequence_item;
     logic                              LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_NATIVE_I2C;
     logic [AUX_DATA_WIDTH-1:0]         LPM_Reply_Data;
     logic                              HPD_Detect, HPD_IRQ, CTRL_Native_Failed;
+    logic                              Timer_Timeout;
 
     ////////////////// LINK Training Signals //////////////////////
     
     // input Data to DUT
     logic [AUX_DATA_WIDTH-1:0]      Lane_Align, EQ_RD_Value;
-    rand logic [AUX_DATA_WIDTH-1:0] Link_BW_CR, MAX_VTG, PRE, VTG;
+    rand logic [AUX_DATA_WIDTH-1:0] Link_BW_CR, PRE, VTG;
     logic [3:0]                     EQ_CR_DN, Channel_EQ, Symbol_Lock;
-    rand logic [3:0]                CR_Done;
-    rand logic [1:0]                Link_LC_CR;
-    rand training_pattern_t         MAX_TPS_SUPPORTED;
-    bit                             EQ_Data_VLD, Driving_Param_VLD, Config_Param_VLD, LPM_Start_CR, TPS_VLD, CR_Done_VLD;
+    rand logic [3:0]                CR_DONE;
+    rand training_pattern_t         MAX_TPS_SUPPORTED, 
+    rand logic [1:0]                Link_LC_CR, MAX_PRE, MAX_VTG; 
+    bit                             EQ_Data_VLD, Driving_Param_VLD, Config_Param_VLD, LPM_Start_CR, CR_DONE_VLD, MAX_TPS_SUPPORTED_VLD;
 
     // output Data from DUT
     logic [AUX_DATA_WIDTH-1:0] EQ_Final_ADJ_BW;
     logic [1:0]                EQ_Final_ADJ_LC;
-    bit                        FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, CR_Completed, EQ_CR_Failed;
+    bit                        FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, CR_Completed, EQ_FSM_CR_Failed;
+
 
     op_code operation;
     bit     link_values_locked = 0; // State variable to lock values after first randomization
@@ -42,7 +44,6 @@ class dp_tl_lpm_sequence_item extends uvm_sequence_item;
     bit [AUX_DATA_WIDTH-1:0] prev_pre;
     logic [7:0] EQ_RD_Value;
     bit cr_completed_flag = 0; // State variable to track if CR_Completed is 1
-
 
     ///////////////////////////////////////////////////////////////
     /////////////////////// CONSTRAINTS ///////////////////////////
@@ -165,6 +166,7 @@ class dp_tl_lpm_sequence_item extends uvm_sequence_item;
     // - If Link_LC_CR is 2'b01, prioritize 4'b0011 with a weight of 60%.
     // - If Link_LC_CR is 2'b00, prioritize 4'b0001 with a weight of 60%.
     // - Default weight for other values is 40%.
+
     function void apply_distribution(ref logic [3:0] signal, logic [1:0] lc_cr);
         if (lc_cr == 2'b11) {
             signal dist {4'b1111 := 60, default := 40};
@@ -195,8 +197,9 @@ class dp_tl_lpm_sequence_item extends uvm_sequence_item;
         end
     endfunction
 
-    // function string convert2string();
-    //     return $sformatf("%s name_1 = %0s, name_2 = %0s, name_3 = %0s", super.convert2string(), name_1, name_2, name_3);
-    // endfunction
+    // Convert the sequence item to a string representation
+    function string convert2string();
+        return $sformatf("%s Operation: %0s, LPM_Data = %0b, LPM_ADDRESS = %0b, LPM_LENGTH = %0b, LPM_CMD = %0b, LPM_TRANS_VALID = %0b,LPM_REPLY_DATA = %0b, LPM_REPLY_ACK = %0b, LPM_REPLY_DATA_VALID = %0b, LPM_REPLY_ACK_VALID = %0b, LPM_NATIVE_I2C = %0bو CTRL_Native_Failed = %0b, HPD_Detect = %0b, HPD_IRQ = %0b", super.convert2string(), operation, LPM_Data, LPM_Address, LPM_LEN, LPM_CMD, LPM_Transaction_VLD, LPM_Reply_Data, LPM_Reply_ACK, LPM_Reply_Data_VLD, LPM_Reply_ACK_VLD, LPM_NATIVE_I2C, CTRL_Native_Failed, HPD_Detect, HPD_IRQ);
+    endfunction
 
 endclass //dp_tl_lpm_sequence_item extends superClass
