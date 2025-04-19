@@ -655,19 +655,19 @@ class dp_reference_model extends uvm_component;
         address = (override_address != 20'h00000) ? override_address : received_transaction.LPM_Address;
         length = (override_length != 8'h00) ? override_length : received_transaction.LPM_LEN;
     
-        // while (ack_count < 1) begin
+        while (ack_count < 1) begin
             // Wait for the next transaction
-            // ref_model_in_port.get(received_transaction);
+            ref_model_in_port.get(received_transaction);
     
-            // // Copy the received transaction
-            // expected_transaction.copy(received_transaction);
+            // Copy the received transaction
+            expected_transaction.copy(received_transaction);
     
-            // // Initialize outputs
-            // expected_transaction.LPM_Reply_ACK = 1'b0;
-            // expected_transaction.LPM_Reply_ACK_VLD = 1'b0;
-            // expected_transaction.LPM_Reply_DATA = 8'h00;
-            // expected_transaction.LPM_Reply_DATA_VLD = 1'b0;
-            // expected_transaction.LPM_Native_I2C = 1'b0;
+            // Initialize outputs
+            expected_transaction.LPM_Reply_ACK = 1'b0;
+            expected_transaction.LPM_Reply_ACK_VLD = 1'b0;
+            expected_transaction.LPM_Reply_DATA = 8'h00;
+            expected_transaction.LPM_Reply_DATA_VLD = 1'b0;
+            expected_transaction.LPM_Native_I2C = 1'b0;
     
             // Check if the transaction is valid
             if (received_transaction.LPM_Transaction_VLD) begin
@@ -734,7 +734,7 @@ class dp_reference_model extends uvm_component;
                                 ref_model_out_port.write(expected_transaction);
                             end
     
-                            // ack_count = 1; // Increment the ack_count to exit the loop
+                            ack_count = 1; // Increment the ack_count to exit the loop
     
                             // Log the data being sent
                             `uvm_info(get_type_name(), $sformatf("Sending AUX_ACK Response: data_size=%0d", data.size()), UVM_LOW);
@@ -799,13 +799,13 @@ class dp_reference_model extends uvm_component;
                 // Transaction not valid
                 `uvm_warning(get_type_name(), "LPM_Transaction_VLD is not asserted");
             end
-        // end
+        end
     
         // Log the generated expected transaction
         `uvm_info(get_type_name(), $sformatf("Generated expected transaction: %s", expected_transaction.convert2string()), UVM_LOW);
     endfunction
 
-    //to be added: nack and defer conditions
+
 
     // Function to generate the expected transaction for Native AUX Write Transaction
     function void generate_native_aux_write_transaction(
@@ -829,19 +829,19 @@ class dp_reference_model extends uvm_component;
     length = (override_length != 8'h00) ? override_length : received_transaction.LPM_LEN;
     data = (override_data.size() > 0) ? override_data : {received_transaction.LPM_Data};
 
-    // while (ack_count < 1) begin
-    // //     // Wait for the next transaction
-    //     ref_model_in_port.get(received_transaction); //Lpm_seq_item
+    while (ack_count < 1) begin
+        // Wait for the next transaction
+        ref_model_in_port.get(received_transaction);
 
-        // // Copy the received transaction
-        // expected_transaction.copy(received_transaction);
+        // Copy the received transaction
+        expected_transaction.copy(received_transaction);
 
-        // // Initialize outputs
-        // expected_transaction.LPM_Reply_ACK = 1'b0;
-        // expected_transaction.LPM_Reply_ACK_VLD = 1'b0;
-        // expected_transaction.LPM_Reply_DATA = 8'h00;
-        // expected_transaction.LPM_Reply_DATA_VLD = 1'b0;
-        // expected_transaction.LPM_Native_I2C = 1'b0;
+        // Initialize outputs
+        expected_transaction.LPM_Reply_ACK = 1'b0;
+        expected_transaction.LPM_Reply_ACK_VLD = 1'b0;
+        expected_transaction.LPM_Reply_DATA = 8'h00;
+        expected_transaction.LPM_Reply_DATA_VLD = 1'b0;
+        expected_transaction.LPM_Native_I2C = 1'b0;
 
         // Check if the transaction is valid
         if (received_transaction.LPM_Transaction_VLD) begin
@@ -878,7 +878,7 @@ class dp_reference_model extends uvm_component;
                 end
 
                 // Wait for the next transaction
-                ref_model_in_port.get(received_transaction); //Sink_seq_item
+                ref_model_in_port.get(received_transaction);
 
                 // Extract the command
                 command = received_transaction.aux_in_out[3:0]; // Second 4 bits
@@ -897,7 +897,7 @@ class dp_reference_model extends uvm_component;
                         // Send the expected transaction to the scoreboard
                         ref_model_out_port.write(expected_transaction);
 
-                        // ack_count = 1; // Increment the ack_count to exit the loop
+                        ack_count = 1; // Increment the ack_count to exit the loop
 
                         // Log the data being sent
                         `uvm_info(get_type_name(), $sformatf("Sending AUX_ACK Response: data_size=%0d", data.size()), UVM_LOW);
@@ -962,376 +962,114 @@ class dp_reference_model extends uvm_component;
             // Transaction not valid
             `uvm_warning(get_type_name(), "LPM_Transaction_VLD is not asserted");
         end
-    // end
+    end
 
     // Log the generated expected transaction
     `uvm_info(get_type_name(), $sformatf("Generated expected transaction: %s", expected_transaction.convert2string()), UVM_LOW);
 endfunction
 
 
-function bit generate_clock_recovery_phase(
-    input dp_transaction received_transaction,
-    output dp_transaction expected_transaction
-);
+    // Function to generate the expected transaction for Clock Recovery Phase
+    function bit generate_clock_recovery_phase(
+        input dp_transaction received_transaction,
+        output dp_transaction expected_transaction
+    );
+        bit CR_DONE = 0;
+        bit [3:0] command;       // First 4 bits: Command
+        bit [7:0] length;        // Next 8 bits: Length
+        bit [7:0] data[$];       // Remaining bits: Data
+        bit ack_count = 0;  //Ack counter
 
-    typedef enum logic [2:0] {
-       IDLE,
-       WRITE_LINK_CONFIG,
-       ENABLE_TRAINING_PATTERN,
-       CONFIGURE_DRIVING_SETTINGS,
-       READ_TRAINING_INTERVAL,
-       WAIT_AND_READ_LINK_STATUS,
-       FAILURE,
-       SUCCESS
-    } fsm_state_e;
+        // need to understand better
+        // need to handle how to get Link_BW_CR and Link_LC_CR
+        // Step 1: Writing to the Link Configuration field (offsets 0x00100–0x00101) to set the Link Bandwidth and Lane Count  clears register 0x00102 to 00h in the same write 
+        //transaction.
 
-    bit CR_DONE = 0;
-    fsm_state_e current_state, next_state;
-    bit ack_count = 0;  //Ack counter
-    bit [1:0]  MAX_VTG_temp, MAX_PRE_temp; // Temporary variables for max values
-    bit [3:0]  full_loop_counter = 4'b0000;
-    bit [3:0]  same_parameters_repeated_counter = 4'b0000;
-    bit [3:0]  CURRENT_LANE_COUNT = 2'b00; // Current lane count
-    bit [7:0]  CURRENT_LINK_RATE = 8'h00; // Current link rate
-
-    // Initialize the FSM
-    current_state = IDLE;
-
-    forever begin
-        case (current_state)
-            IDLE: begin
-                // Wait for the next transaction
-                ref_model_in_port.get(received_transaction); //Lpm_seq_item
-
-                // Store the important values
-                MAX_VTG_temp = received_transaction.MAX_VTG;
-                MAX_PRE_temp = received_transaction.MAX_PRE;
-                CURRENT_LANE_COUNT = received_transaction.Link_LC_CR;
-                CURRENT_LINK_RATE = received_transaction.Link_BW_CR;
-
-                if (received_transaction.LPM_Start_CR && received_transaction.Driving_Param_VLD && received_transaction.Config_Param_VLD)
-                // Start the clock recovery process
-                `uvm_info(get_type_name(), "Starting Clock Recovery Phase", UVM_LOW);
-                next_state = WRITE_LINK_CONFIG;
-                else begin
-                    next_state = IDLE; // Stay in IDLE if not valid
-                end
-            end
-
-            IDLE_WITH_UPDATED_BW_OR_LC: begin
-                // Wait for the next transaction
-                ref_model_in_port.get(received_transaction); //Lpm_seq_item
-
-                // Store the important values
-                CURRENT_LANE_COUNT = received_transaction.Link_LC_CR;
-                CURRENT_LINK_RATE = received_transaction.Link_BW_CR;
-
-                if (received_transaction.LPM_Start_CR && received_transaction.Driving_Param_VLD && received_transaction.Config_Param_VLD)
-                // Start the clock recovery process
-                `uvm_info(get_type_name(), "Repeatinf Clock Recovery Phase with Updated Parameters", UVM_LOW);
-                next_state = WRITE_LINK_CONFIG;
-                else begin
-                    next_state = IDLE_WITH_UPDATED_BW_OR_LC; // Stay in IDLE if not valid
-                end
-            end
-
-            WRITE_LINK_CONFIG: begin
-                // Step 1: Write to the Link Configuration field
-                `uvm_info(get_type_name(), "Writing to Link Configuration field", UVM_LOW);
+                // Assign the encoded value to aux_in_out
+                // Encoded value: 1000|0000 -> 00000001 -> 00000000 -> 00000010 -> Link_BW_CR -> Link_LC_CR -> 00000000
                 
+                // Call the Native aux write function to handle the transaction
                 generate_native_aux_write_transaction(
                     received_transaction,       // Input transaction
                     expected_transaction,       // Output transaction
                     4'b1000,                    // Override command (AUX_NATIVE_WRITE)
                     20'h00100,                  // Override address (0x00100)
-                    8'h03,                      // Override length (3 byte(s))
-                    '{received_transaction.CURRENT_LINK_RATE, {3'b100, 5'(received_transaction.CURRENT_LANE_COUNT + 5'b01)}, 8'h00} // Override data
+                    8'h03,                      // Override length (3 byte(s)) (length + 1)
+                    '{8'Link_BW_CR, 8'Link_LC_CR, 8'h00}      // Override data
                 );
-                
-                next_state = ENABLE_TRAINING_PATTERN;
-            end
-            
-            // need manual implementation of the function to generate the expected transaction for training pattern
-            ENABLE_TRAINING_PATTERN: begin
-                // Step 2: Enable Training Pattern 1 and disable scrambling
-                `uvm_info(get_type_name(), "Enabling Training Pattern 1 and disabling scrambling", UVM_LOW);
 
-                expected_transaction.PHY_Instruct = 2'b00; // Training pattern 1
-                expected_transaction.PHY_Instruct_VLD = 1'b1; // Set PHY_Instruct_VLD to 1
-                // expected_transaction.PHY_ADJ_BW = received_transaction.Link_BW_CR
-                // expected_transaction.PHY_ADJ_LC = received_transaction.Link_LC_CR
+        // to be added: add PHY_Instruct && PHY_ADJ_BW && PHY_ADJ_LC?
+        // Step 2: Enable Training Pattern 1 and disable scrambling
+        `uvm_info(get_type_name(), "Enabling Training Pattern 1 for Clock Recovery and Disabling Scrambling", UVM_LOW);
 
+                // Assign the encoded value to aux_in_out
+                // Encoded value: 1000|0000 -> 00000001 -> 00000010 -> 00000000 -> 00000000(don't know what for now)
+
+                // Call the Native aux write function to handle the transaction
                 generate_native_aux_write_transaction(
                     received_transaction,       // Input transaction
                     expected_transaction,       // Output transaction
                     4'b1000,                    // Override command (AUX_NATIVE_WRITE)
                     20'h00102,                  // Override address (0x00102)
-                    8'h00,                      // Override length (1 byte)
-                    8'h21                      // Override data
+                    8'h00,                      // Override length (3 byte(s)) (length + 1)
+                    8'h00     // Override data (Don't know what with)
+                );
+    
+        // Step 3: Configure initial driving settings (minimum voltage and 0 dB pre-emphasis) from 0x00103 to 0x00106
+        `uvm_info(get_type_name(), "Configuring initial driving settings for Clock Recovery", UVM_LOW);
+
+
+                // Assign the encoded value to aux_in_out
+                // Encoded value: 1000|0000 -> 00000001 -> 00000011 -> 00000000 -> 00000000 x4 times (don't know what for now)
+                
+                // Call the Native aux write function to handle the transaction
+                generate_native_aux_write_transaction(
+                    received_transaction,       // Input transaction
+                    expected_transaction,       // Output transaction
+                    4'b1000,                    // Override command (AUX_NATIVE_WRITE)
+                    20'h00103,                  // Override address (0x00103)
+                    8'h03,                      // Override length (4 byte(s)) (length + 1)
+                    '{8'h00, 8'h00, 8'h00, 8'h00}      // Override data (Don't know what with)
                 );
 
-                expected_transaction.PHY_Instruct_VLD = 1'b1; // Set PHY_Instruct_VLD to 1
-
-                next_state = CONFIGURE_DRIVING_SETTINGS;
-            end
-
-            // add if conditions
-                 CONFIGURE_DRIVING_SETTINGS: begin
-                // Step 3: Configure initial driving settings
-                `uvm_info(get_type_name(), "Configuring initial driving settings", UVM_LOW);
-            
-                if (received_transaction.Link_LC_CR == 2'b00) begin
-                    // Configure Lane 0
-                    generate_native_aux_write_transaction(
-                        received_transaction,       // Input transaction
-                        expected_transaction,       // Output transaction
-                        4'b1000,                    // Override command (AUX_NATIVE_WRITE)
-                        20'h00103,                  // Override address (0x00103)
-                        8'h00,                      // Override length (1 byte)
-                        '{(received_transaction.VTG[1:0] == received_transaction.MAX_VTG && received_transaction.PRE[1:0] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[1:0], 1'b1, received_transaction.VTG[1:0]} :
-                          (received_transaction.VTG[1:0] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[1:0], 1'b1, received_transaction.VTG[1:0]} :
-                          (received_transaction.PRE[1:0] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[1:0], 1'b0, received_transaction.VTG[1:0]} :
-                          {2'b00, 1'b0, received_transaction.PRE[1:0], 1'b0, received_transaction.VTG[1:0]}} // Override data
-                    );
-                end else if (received_transaction.Link_LC_CR == 2'b01) begin
-                    // Configure Lanes 0 and 1
-                    generate_native_aux_write_transaction(
-                        received_transaction,       // Input transaction
-                        expected_transaction,       // Output transaction
-                        4'b1000,                    // Override command (AUX_NATIVE_WRITE)
-                        20'h00103,                  // Override address (0x00103)
-                        8'h01,                      // Override length (2 bytes)
-                        '{(received_transaction.VTG[1:0] == received_transaction.MAX_VTG && received_transaction.PRE[1:0] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[1:0], 1'b1, received_transaction.VTG[1:0]} :
-                          (received_transaction.VTG[1:0] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[1:0], 1'b1, received_transaction.VTG[1:0]} :
-                          (received_transaction.PRE[1:0] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[1:0], 1'b0, received_transaction.VTG[1:0]} :
-                          {2'b00, 1'b0, received_transaction.PRE[1:0], 1'b0, received_transaction.VTG[1:0]},
-                          (received_transaction.VTG[3:2] == received_transaction.MAX_VTG && received_transaction.PRE[3:2] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[3:2], 1'b1, received_transaction.VTG[3:2]} :
-                          (received_transaction.VTG[3:2] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[3:2], 1'b1, received_transaction.VTG[3:2]} :
-                          (received_transaction.PRE[3:2] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[3:2], 1'b0, received_transaction.VTG[3:2]} :
-                          {2'b00, 1'b0, received_transaction.PRE[3:2], 1'b0, received_transaction.VTG[3:2]}} // Override data
-                    );
-                end else begin
-                    // Configure Lanes 0, 1, 2, and 3
-                    generate_native_aux_write_transaction(
-                        received_transaction,       // Input transaction
-                        expected_transaction,       // Output transaction
-                        4'b1000,                    // Override command (AUX_NATIVE_WRITE)
-                        20'h00103,                  // Override address (0x00103)
-                        8'h03,                      // Override length (4 bytes)
-                        '{(received_transaction.VTG[1:0] == received_transaction.MAX_VTG && received_transaction.PRE[1:0] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[1:0], 1'b1, received_transaction.VTG[1:0]} :
-                          (received_transaction.VTG[1:0] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[1:0], 1'b1, received_transaction.VTG[1:0]} :
-                          (received_transaction.PRE[1:0] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[1:0], 1'b0, received_transaction.VTG[1:0]} :
-                          {2'b00, 1'b0, received_transaction.PRE[1:0], 1'b0, received_transaction.VTG[1:0]},
-                          (received_transaction.VTG[3:2] == received_transaction.MAX_VTG && received_transaction.PRE[3:2] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[3:2], 1'b1, received_transaction.VTG[3:2]} :
-                          (received_transaction.VTG[3:2] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[3:2], 1'b1, received_transaction.VTG[3:2]} :
-                          (received_transaction.PRE[3:2] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[3:2], 1'b0, received_transaction.VTG[3:2]} :
-                          {2'b00, 1'b0, received_transaction.PRE[3:2], 1'b0, received_transaction.VTG[3:2]},
-                          (received_transaction.VTG[5:4] == received_transaction.MAX_VTG && received_transaction.PRE[5:4] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[5:4], 1'b1, received_transaction.VTG[5:4]} :
-                          (received_transaction.VTG[5:4] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[5:4], 1'b1, received_transaction.VTG[5:4]} :
-                          (received_transaction.PRE[5:4] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[5:4], 1'b0, received_transaction.VTG[5:4]} :
-                          {2'b00, 1'b0, received_transaction.PRE[5:4], 1'b0, received_transaction.VTG[5:4]},
-                          (received_transaction.VTG[7:6] == received_transaction.MAX_VTG && received_transaction.PRE[7:6] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[7:6], 1'b1, received_transaction.VTG[7:6]} :
-                          (received_transaction.VTG[7:6] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[7:6], 1'b1, received_transaction.VTG[7:6]} :
-                          (received_transaction.PRE[7:6] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[7:6], 1'b0, received_transaction.VTG[7:6]} :
-                          {2'b00, 1'b0, received_transaction.PRE[7:6], 1'b0, received_transaction.VTG[7:6]}} // Override data
-                    );
-                end
-
-                next_state = READ_TRAINING_INTERVAL;
-            end
-
-            READ_TRAINING_INTERVAL: begin
-                // Step 4: Read TRAINING_AUX_RD_INTERVAL
-                `uvm_info(get_type_name(), "Reading TRAINING_AUX_RD_INTERVAL", UVM_LOW);
+        // Step 4: Read TRAINING_AUX_RD_INTERVAL (Address 0x0000E)
+        `uvm_info(get_type_name(), "Reading TRAINING_AUX_RD_INTERVAL", UVM_LOW);
+    
+                // Assign the encoded value to aux_in_out
+                // Encoded value: 1001|0000 -> 00000001 -> 00001110 -> 00000000
+                
+                // Call the Native aux read function to handle the transaction
                 generate_native_aux_read_transaction(
                     received_transaction,       // Input transaction
                     expected_transaction,       // Output transaction
-                    4'b1001,                    // Override command (AUX_NATIVE_READ)
-                    20'h0000E,                  // Override address (0x0000E)
-                    8'h01                       // Override length (1 byte)
+                    4'b1000,                    // Override command (AUX_NATIVE_WRITE)
+                    20'h0010E,                  // Override address (0x00103)
+                    8'h00,                      // Override length (1 byte(s)) (length + 1)
                 );
-                next_state = WAIT_AND_READ_LINK_STATUS;
-            end
 
-            WAIT_AND_READ_LINK_STATUS: begin
-       
-    //     constraint eq_rd_value_constraint {
-    //     EQ_RD_Value[7] == 1'b1; // Ensure the MSB is always 1
-    //     EQ_RD_Value[6:0] inside {7'h00, 7'h01, 7'h02, 7'h03, 7'h04}; // Allowed values for the lower 7 bits
+        // haven't figured out how to wait
+        // Step 5: Wait for the interval and read Link Status registers (0x00202 : 0x00207)
+        `uvm_info(get_type_name(), "Waiting for TRAINING_AUX_RD_INTERVAL and reading Link Status registers", UVM_LOW);
+    
+                // Assign the encoded value to aux_in_out
+                // Encoded value: 1001|0000 -> 00000010 -> 00000010 -> 00000101 
 
-                // Step 5: Wait for the interval and read Link Status registers
-                ref_model_in_port.get(received_transaction); //Lpm_seq_item
-                // Wait EQ_RD_Value
-                `uvm_info(get_type_name(), "Waiting for TRAINING_AUX_RD_INTERVAL and reading Link Status registers", UVM_LOW);
+                // Call the Native aux read function to handle the transaction
                 generate_native_aux_read_transaction(
                     received_transaction,       // Input transaction
                     expected_transaction,       // Output transaction
                     4'b1001,                    // Override command (AUX_NATIVE_READ)
                     20'h00202,                  // Override address (0x00202)
-                    8'h05                       // Override length (6 byte(s))
+                    8'h05,                      // Override length (6 byte(s)) (length + 1)
                 );
-
-            end
-            
-            // Need to maybe store Link_LC_CR in a temp variable
-            // Step 6: Check for CR_DONE and CR_DONE_VLD
-            CR_DONE_CHECK: begin
-            
-            same_parameters_repeated_counter = same_parameters_repeated_counter + 1;
-
-            // Wait for the next transaction
-            ref_model_in_port.get(received_transaction); //Lpm_seq_item
-
-		    if((received_transaction.Link_LC_CR == 'b11) && (&received_transaction.CR_DONE))
-             begin
-              next_state = SUCCESS;			
-             end
-            else if((received_transaction.Link_LC_CR == 'b01) && (&received_transaction.CR_DONE[1:0]))
-             begin
-              next_state = SUCCESS;			
-             end
-            else if((received_transaction.Link_LC_CR == 'b00) && (received_transaction.CR_DONE[0]))
-             begin
-              next_state = SUCCESS;			
-             end
-            else if(received_transaction.Link_LC_CR == 'b10)   // Error Value of LC so it goes to the IDLE STATE 
-             begin
-              next_state = IDLE_STATE;			
-             end
-			     else
-			      begin
-              next_state = READ_ADJUSTED_DRIVING_PARAMETERS; 	
-            end	
-            end
-
-            // Read Adjusted Training Parameters
-            READ_ADJUSTED_DRIVING_PARAMETERS: begin
-
-            `uvm_info(get_type_name(), "Reading Adjusted Training Parameters", UVM_LOW);
-
-                generate_native_aux_read_transaction(
-                    received_transaction,       // Input transaction
-                    expected_transaction,       // Output transaction
-                    4'b1001,                    // Override command (AUX_NATIVE_READ)
-                    20'h00206,                  // Override address (0x00202)
-                    8'h01                       // Override length (2 byte(s))
-                );
-
-                next_state = CHECK_NEW_CONDITIONS; 
-
-            end
-        // Conditions: 1. MAX_VTG = VTG 2. full_loop_counter > 10 3. same_parameters_repeated_counter > 5
-        // Note: Should be 3 conditions but don't know
-            CHECK_NEW_CONDITIONS: begin
-          ref_model_in_port.get(received_transaction); //Lpm_seq_item
-
-           if ((full_loop_counter == 'd11) || (same_parameters_repeated_counter == 'd6) || (received_transaction.VTG == MAX_VTG_temp))
-            begin
-             next_state = CHECK_IF_RBR;
-            end
-           else
-            begin
-             next_state = CONFIGURE_DRIVING_SETTINGS; // Repeat from step 3
-            end
-          end
-
-            // Check if RBR is used
-            CHECK_IF_RBR: begin
-
-           if (CURRENT_LINK_RATE == == 8'h06) // is Bandwidth used is RBR?
-            begin
-             next_state = CHECK_IF_ONE_LANE_USED;
-            end
-           else
-            begin
-             next_state = REDUCE_LINK_RATE;
-            end
-
-            end
-
-            // Check if one lane is used
-            CHECK_IF_ONE_LANE_USED: begin
-              if (CURRENT_LANE_COUNT == 2'b00) // is one lane used?
-            begin
-             next_state = FAILURE;
-            end
-              else
-            begin
-             next_state = REDUCE_LANE_COUNT;
-            end
-            end
-            
-            // Reduce Lane Count
-            REDUCE_LANE_COUNT: begin
-            if (CURRENT_LANE_COUNT == 2'b11)
-            begin
-             CURRENT_LANE_COUNT = 2'b01;
-            end
-            else
-            begin
-             CURRENT_LANE_COUNT = 2'b01;
-            end  
-            next_state = IDLE_WITH_UPDATED_BW_OR_LC; // Reset to IDLE for the next phase  
-            end
-
-            // Reduce Link Count
-            REDUCE_LINK_RATE: begin
-          if (CURRENT_LINK_RATE == 8'h1E)               // HBR3
-           begin
-             CURRENT_LINK_RATE = 8'h14;          // HBR2
-           end
-          else if (CURRENT_LINK_RATE == 8'h14)          // HBR2
-           begin
-             CURRENT_LINK_RATE = 8'h0A;          // HBR
-           end
-          else if (CURRENT_LINK_RATE == 8'h0A)          // HBR
-           begin
-              CURRENT_LINK_RATE = 8'h06;          // RBR
-           end
-          else                                       // Default
-           begin
-              CURRENT_LINK_RATE = 8'h06;          // RBR
-           end 
-            next_state = IDLE_WITH_UPDATED_BW_OR_LC; // Reset to IDLE for the next phase 
-            end
-
-            SUCCESS: begin
-                // Clock Recovery successful
-                `uvm_info(get_type_name(), "Clock Recovery successful", UVM_LOW);
-                expected_transaction.CR_Completed = 1'b1;
-                 ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
-                CR_DONE = 1;
-                next_state = IDLE; // Reset to IDLE for the next phase
-                break;
-            end
-               FSM_CR_Failed,           // A Signal indicating the failure of the Clock Recovery phase during link training, meaning the sink failed to acquire the clock frequency during the training process
-            FAILURE: begin
-                // Clock Recovery failed
-                `uvm_error(get_type_name(), "Clock Recovery failed", UVM_LOW);
-                expected_transaction.FSM_CR_Failed = 1'b1;
-                ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
-                // CR_DONE = 0;
-                next_state = IDLE; // Reset to IDLE for the next phase
-                break;      
-            end
-
-            default: begin
-                // Default state
-                next_state = IDLE;
-            end
-        endcase
-
-        // Update the current state
-        current_state = next_state;
-
-        // Exit the loop if the process is complete
-        if (current_state == IDLE && (CR_DONE || next_state == FAILURE)) begin
-            break;
+    
+        // Step 6: Handle failure
+        if (!CR_DONE) begin
+            `uvm_error(get_type_name(), "Clock Recovery failed after retries");
         end
-    end
-
-    return CR_DONE;
-endfunction
+    
+        return CR_DONE;
+    endfunction
 
 
     // Function to generate the expected transaction for Channel Equalization Phase
@@ -1339,7 +1077,7 @@ endfunction
         input dp_transaction received_transaction,
         output dp_transaction expected_transaction
     );
-        // bit EQ_DONE = 0;
+        bit EQ_DONE = 0;
     
         // Step 1: Enable Training Pattern 2 and disable scrambling
         `uvm_info(get_type_name(), "Enabling Training Pattern 2 for Channel Equalization", UVM_LOW);
