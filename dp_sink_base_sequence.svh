@@ -1,3 +1,8 @@
+import uvm_pkg::*;
+    `include "uvm_macros.svh"
+
+import dp_transactions_pkg::*;
+
 class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
     `uvm_object_utils(dp_sink_base_sequence);
 
@@ -18,6 +23,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         // Create and configure sequence item
         seq_item = dp_sink_sequence_item::type_id::create("seq_item");
         rsp_item = dp_sink_sequence_item::type_id::create("rsp_item");
+        reply_seq_item = dp_sink_sequence_item::type_id::create("reply_seq_item");s
 
         // Phase 1: HPD operation
         start_item(seq_item);
@@ -27,10 +33,76 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         finish_item(seq_item);                          // Send the sequence item to the driver
         `uvm_info(get_type_name(), "finish HPD phase", UVM_MEDIUM)
 
-        get_response(rsp_item);                        // Get the response from the driver
-        `uvm_info(get_type_name(), "Received HPD response", UVM_MEDIUM)
 
-        // ADDRESS-ONLY transaction
+        // Phase 2: EDID Reading transaction
+        edid_reading_transaction(rsp_item);         // Call the EDID reading transaction
+
+        // Phase 3: DPCD transaction
+        //dpcd_reading_transaction(rsp_item);         // Call the DPCD reading transaction
+
+
+        `uvm_info(get_type_name(), "Finished Link_INIT transaction", UVM_MEDIUM)
+    endtask
+
+
+
+
+    // Helper function to process AUX data from response
+    function void process_aux_data(ref dp_sink_sequence_item rsp_item);
+        // Check if the AUX data is valid
+        if (rsp_item.aux_in_out.size() < 3) begin
+            `uvm_error(get_type_name(), "AUX data too short, cannot process request")
+            return;
+        end
+
+        // Clear previous values
+        rsp_item.command = 0;
+        rsp_item.address = 0;
+        rsp_item.length = 0;
+        rsp_item.data.delete();
+        
+        bit [7:0] aux_data = 0; 
+
+        int i = 0;
+
+        // Extract fields:
+        for (i = 0; i < rsp_item.aux_in_out.size(); i++) begin
+            aux_data = rsp_item.aux_in_out[i];
+            if (i == 0) begin
+                rsp_item.command = aux_data[7:4]; 
+                rsp_item.address = aux_data[3:0]; 
+            end 
+            else if (i == 1 || i == 2) begin
+                rsp_item.address = {rsp_item.address, aux_data[7:0]};
+            end
+            else if (i == 3) begin
+                rsp_item.length = aux_data[7:0]; 
+            end
+            else begin
+                rsp_item.data.push_back(aux_data); 
+            end
+        end
+        
+        rsp_item.aux_in_out.delete();
+
+        `uvm_info(get_type_name(), $sformatf("process_aux_data - Processed AUX: cmd=0x%h, addr=0x%h, len=0x%h, data_size=%0d", 
+                  rsp_item.command, rsp_item.address, rsp_item.length, rsp_item.data.size()), UVM_MEDIUM)
+    endfunction
+
+    // Helper function to Receive a Request transaction
+    // This function is used to receive a request transaction from the driver and store it in the response sequence item then process it
+    function void receive_transaction(ref dp_sink_sequence_item rsp_item);
+        get_response(rsp_item);                        // Get the response from the driver
+
+        // Check if the response is valid
+        if (rsp_item == null) begin
+            `uvm_error(get_type_name(), "Received empty response, cannot process request")
+            return;
+        end
+
+        `uvm_info(get_type_name(), "Received Byte 0 in new sequence", UVM_MEDIUM)
+
+
         while (rsp_item.AUX_START_STOP) begin
             // Check if the response is valid
             if (rsp_item == null) begin
@@ -46,16 +118,8 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
             finish_item(seq_item);                          // Send the sequence item to the driver
 
             get_response(rsp_item);                        // Get the response from the driver
-            `uvm_info(get_type_name(), "Receive address-only", UVM_MEDIUM)
+            //`uvm_info(get_type_name(), "Receive ", UVM_MEDIUM)
         end
-
-        // After the last loop the rsp_item has the address-only transaction data and ready to be processed
-        // Check if the response is valid
-        if (rsp_item == null) begin
-            `uvm_error(get_type_name(), "Received empty response, cannot process request")
-            return;
-        end
-
 
         // Process the response
         if (rsp_item.aux_in_out.size() > 0) begin
@@ -66,131 +130,74 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
             `uvm_error(get_type_name(), "Received empty AUX data, cannot process request")
         end
         
+    endfunction
 
-        int flag = 1;                       // Flag to go in/out the loop
-        int i = 0;                          // Loop counter
+    function void edid_reading_transaction(ref dp_sink_sequence_item rsp_item);
+        // ADDRESS-ONLY transaction
+        `uvm_info(get_type_name(), "Received HPD response", UVM_MEDIUM)
+        receive_transaction(rsp_item);                        // Receive the request transaction from the driver
 
-        // EDID 
-        while (i<128) begin
-            while (flag) begin
-                flag = 0;                // Reset the flag
-                get_response(rsp_item);                        // Get the response from the driver
-                `uvm_info(get_type_name(), "Received HPD response", UVM_MEDIUM)
+        // NOW: the rsp_item has the command and address of the transaction
+        start_item(reply_seq_item);                          // Start the response item
+        `uvm_info(get_type_name(), "Start address-only Reply", UVM_MEDIUM)
+        reply_seq_item.sink_operation = Reply_operation;     // Set the operation type to Reply
+        reply_seq_item.PHY_START_STOP = 1'b1;                // Set the PHY_START_STOP signal to high
+        reply_seq_item.AUX_IN_OUT = 8'h00;                   // Set the AUX_IN_OUT signal to 0
+        finish_item(reply_seq_item);                         // Send the sequence item to the driver
+        `uvm_info(get_type_name(), "Finish address-only Reply", UVM_MEDIUM)
 
-                // Check if the response is valid
-                if (rsp_item == null) begin
-                    `uvm_error(get_type_name(), "Received empty response, cannot process request")
-                    return;
-                end
-
-                // Store the response data in the response sequence item
-                rsp_item.aux_in_out.push_back(rsp_item.AUX_IN_OUT);
-
-                if (rsp_item.AUX_START_STOP == 1) begin
-                    flag = 1;                               // Set the flag tos go in the loop
-                    `uvm_info(get_type_name(), "AUX_START_STOP signal is high, continue processing", UVM_MEDIUM)
-                end
-                else begin
-                    `uvm_info(get_type_name(), "AUX_START_STOP signal is low, stop processing", UVM_MEDIUM)
-                end
-                //@(posedge dp_sink_vif.clk);                 // Wait for the next clock edge
-            end
-
-            // Process the response
-            if (rsp_item.aux_in_out.size() > 0) begin
-                process_aux_data(rsp_item);                 // Process the AUX data from the response
-                `uvm_info(get_type_name(), $sformatf("Processed AUX: cmd=0x%h, addr=0x%h, len=0x%h", 
-                    rsp_item.command, rsp_item.address, rsp_item.length), UVM_MEDIUM)
-            end else begin
-                `uvm_error(get_type_name(), "Received empty AUX data, cannot process request")
-            end
-
-
-            // Phase 2: Reply operation
-            // Create and configure sequence item for reply operation
-            reply_seq_item = dp_sink_sequence_item::type_id::create("reply_seq_item");
-
-            // Check if we have valid response data to reply to
-            if (rsp_item == null) begin
-                `uvm_error(get_type_name(), "Cannot send reply - no request data available in the reply_transaction task")
-                return;
-            end
-
-
-            $cast(reply_seq_item, rsp_item.clone());                            // Clone the response item to the reply item
-
-            int j = 0;
-            // Loop to send the reply operation
-
-            repeat(2) begin
-                start_item(reply_seq_item);
-                `uvm_info(get_type_name(), "Start reply phase", UVM_MEDIUM)
-                reply_seq_item.sink_operation = Reply_operation;                    // Set the operation type to Reply
-                if (i == 0) begin                                                   // Address-only transaction 
-                    reply_seq_item.PHY_START_STOP = 1'b1;                           // Set the PHY_START_STOP signal to high
-                    reply_seq_item.AUX_IN_OUT = 8'h00;                              // Set the AUX_IN_OUT signal to 0
-                end
-
-            end 
+        // NOW: Sink is ready to send/receive the 128 bytes of data
+        // Phase 3: EDID 128 bytes data transaction
+        int k = 0;                          // Loop counter
+        while (k<128 && rsp_item.command[2] == 1) begin
+            `uvm_info(get_type_name(), "Received sequence to start EDID", UVM_MEDIUM)
+            receive_transaction(rsp_item);                        // Receive the request transaction from the driver
             
-            // else begin                                                          // Data transaction
-            //     while () begin
-                    
-            //     end
-            // end
-            
-            end_item(reply_seq_item);                                           // Send the sequence item to the driver
-            `uvm_info(get_type_name(), "Finish reply phase", UVM_MEDIUM)
-                
-        i++;                                                            // Increment the loop counter
+            int index = 0;                       // Index to loop through the response data
+            repeat(1+(rsp_item.length+1)) begin
+                if (index == 0) begin
+                    start_item(reply_seq_item);                          // Start the response item
+                    `uvm_info(get_type_name(), "Start address-only Reply", UVM_MEDIUM)
+                    reply_seq_item.rand_mode(0);                         // Disable randomization for the first byte
+                    reply_seq_item.sink_operation = Reply_operation;     // Set the operation type to Reply
+                    reply_seq_item.PHY_START_STOP = 1'b1;                // Set the PHY_START_STOP signal to high
+                    reply_seq_item.i2c_reply_cmd = I2C_ACK;              // Set the I2C reply command to ACK
+                    reply_seq_item.AUX_IN_OUT = {reply_seq_item.i2c_reply_cmd, 4'h0};   // I2C_ACK|AUX_ACK
+                    finish_item(reply_seq_item);                         // Send the sequence item to the driver
+                    `uvm_info(get_type_name(), "Finish address-only Reply", UVM_MEDIUM)
+                end else begin
+                    start_item(reply_seq_item);                          // Start the response item
+                    `uvm_info(get_type_name(), "Start address-only Reply", UVM_MEDIUM)
+                    reply_seq_item.sink_operation = Reply_operation;     // Set the operation type to Reply
+                    reply_seq_item.PHY_START_STOP = 1'b1;                // Set the PHY_START_STOP signal to high
+                    reply_seq_item.reply_data.randomize();               // Enable randomization for the data byte 
+                    reply_seq_item.AUX_IN_OUT = reply_data;              // Set the AUX_IN_OUT signal to the data byte
+                    finish_item(reply_seq_item);                         // Send the sequence item to the driver
+                    `uvm_info(get_type_name(), "Finish address-only Reply", UVM_MEDIUM)
+                end
+                index++;                                    // Increment the loop counter 
+            end
+            k++;                                    // Increment the loop counter
         end
-        `uvm_info(get_type_name(), "Finished Link_INIT transaction", UVM_MEDIUM)
 
-    endtask
+        // Last Sequence to know that the EDID Reading is finished
+        receive_transaction(rsp_item);                        // Receive the request transaction from the driver
 
-
-
-
-    // Helper function to process AUX data from response
-    function void process_aux_data(ref dp_sink_sequence_item rsp_item);
-        // Check if the AUX data is valid
-        if (rsp_item.aux_in_out.size() < 3) begin
-            `uvm_error(get_type_name(), "AUX data too short, cannot process request")
+        if (rsp_item.command[2] == 0) begin                     // Indicate that the EDID Reading is finished
+            start_item(reply_seq_item);                          // Start the response item
+            `uvm_info(get_type_name(), "Start EDID-Finish Reply", UVM_MEDIUM)
+            reply_seq_item.sink_operation = Reply_operation;     // Set the operation type to Reply
+            reply_seq_item.PHY_START_STOP = 1'b1;                // Set the PHY_START_STOP signal to high
+            reply_seq_item.AUX_IN_OUT = 8'h00;                   // Set the AUX_IN_OUT signal to 0
+            finish_item(reply_seq_item);                         // Send the sequence item to the driver
+            `uvm_info(get_type_name(), "Finish EDID-Finish Reply", UVM_MEDIUM) 
+        end 
+        else begin
+            `uvm_error(get_type_name(), "ERROR, EDID Reading is not finished")
             return;
         end
-
-        bit [31:0] combined_data = 0;
-        int bit_index = 0;
+        `uvm_info(get_type_name(), "Finished EDID transaction", UVM_MEDIUM)
         
-        // Clear previous values
-        rsp_item.command = 0;
-        rsp_item.address = 0;
-        rsp_item.length = 0;
-        rsp_item.data.delete();
-        
-        // Combine the first 4 bytes into a 32-bit value
-        for (int i = 0; i < rsp_item.aux_in_out.size(); i++) begin
-            combined_data[bit_index+:8] = aux_in_out[i]; 
-            bit_index += 8;
-        end
-        
-        // Extract fields:
-        // First 4 bits (0-3) = command
-        rsp_item.command = combined_data[3:0];
-        
-        // Next 20 bits (4-23) = address
-        rsp_item.address = combined_data[23:4];
-        
-        // Next 8 bits (24-31) = length
-        rsp_item.length = combined_data[31:24];
-        
-        // Remaining bytes are data
-        for (int i = 4; i < aux_in_out.size(); i++) begin
-            rsp_item.data.push_back(aux_in_out[i]);
-        end
-        
-        `uvm_info(get_type_name(), $sformatf("process_aux_data - Processed AUX: cmd=0x%h, addr=0x%h, len=0x%h, data_size=%0d", 
-                  rsp_item.command, rsp_item.address, rsp_item.length, rsp_item.data.size()), UVM_MEDIUM)
     endfunction
     
 // // Reply Transaction task

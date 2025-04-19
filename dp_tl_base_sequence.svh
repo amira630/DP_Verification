@@ -80,7 +80,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                 seq_item.LPM_Transaction_VLD = 1'b1;  // LPM is going to request a Native transaction 
                 seq_item.LPM_Address = address;       // Address
                 seq_item.LPM_LEN = LEN;               // Length
-                seq_item.randomize();                 // Randomize the data
+                assert(seq_item.randomize());                 // Randomize the data
             finish_item(seq_item);
             while(ack_count<1) begin
                 // Wait for the response from the DUT
@@ -119,7 +119,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                 seq_item.LPM_Transaction_VLD = 1'b1;  // LPM is going to request a Native transaction
                 seq_item.LPM_Address = address;       // Address
                 seq_item.LPM_LEN = LEN;               // Length
-                seq_item.randomize();                 // Randomize the data
+                assert(seq_item.randomize());                 // Randomize the data
             finish_item(seq_item);
     
             while (ack_count < 1) begin
@@ -162,7 +162,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
             seq_item.CR_DONE_VLD = 0;    
             seq_item.Driving_Param_VLD = 1'b1;   // Driving parameters are valid
             seq_item.Config_Param_VLD = 1'b1;    // Config parameters are valid
-            seq_item.randomize();
+            assert(seq_item.randomize());
             finish_item(seq_item);
             // Now LL is supposed to native write all the configurations to the Sink (3 writes and 1 read)
                 // Wait for the response from the DUT
@@ -186,7 +186,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
             seq_item.LPM_Start_CR = 0; 
             seq_item.CR_DONE_VLD = 0; 
             seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
-            seq_item.randomize();
+            assert(seq_item.randomize());
             finish_item(seq_item);
             ack_count = 0;
             // Waiting for DPCD reg 0000E to be read and value be returned
@@ -211,6 +211,9 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                 ack_count = 0;
                 if (seq_item.CR_Completed) begin
                     continue; // Exit the loop if CR is completed
+                end
+                else if(seq_item.FSM_CR_Failed) begin
+                    break; // Exit the loop if CR is failed
                 end
                 start_item(seq_item);
                 seq_item.rand_mode(0);
@@ -242,6 +245,9 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                     end
                 end
                 ack_count = 0;
+                if(seq_item.FSM_CR_Failed) begin
+                    break; // Exit the loop if CR is failed
+                end
             end
         end
     endtask
@@ -263,7 +269,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
             seq_item.CR_DONE_VLD = 0;    
             seq_item.Driving_Param_VLD = 1'b1;   // Driving parameters are valid
             seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
-            seq_item.randomize();
+            assert(seq_item.randomize());
             finish_item(seq_item);
             // Now LL is supposed to native write all the configurations to the Sink (3 writes and 1 read)
                 // Wait for the response from the DUT
@@ -287,7 +293,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
             seq_item.LPM_Start_CR = 1'b0; 
             seq_item.CR_DONE_VLD = 1'b0; 
             seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
-            seq_item.randomize();
+            assert(seq_item.randomize());
             finish_item(seq_item);
             ack_count = 0;
             // Waiting for DPCD reg 0000E to be read and value be returned
@@ -313,6 +319,9 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                 if (seq_item.CR_Completed) begin
                     continue; // Exit the loop if CR is completed
                 end
+                else if(seq_item.FSM_CR_Failed) begin
+                    break; // Exit the loop if CR is failed
+                end
                 start_item(seq_item);
                 seq_item.rand_mode(0);
                 seq_item.VTG.rand_mode(1);
@@ -323,7 +332,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                 seq_item.Driving_Param_VLD = 1'b1;
                 seq_item.LPM_Start_CR = 0;
                 seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
-                seq_item.randomize();
+                assert(seq_item.randomize());
                 finish_item(seq_item);
                 // Wait for 103 to 106 to be written
                 while(ack_count<1) begin
@@ -343,6 +352,9 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                     end
                 end
                 ack_count = 0;
+                if(seq_item.FSM_CR_Failed) begin
+                    break; // Exit the loop if CR is failed
+                end
             end
         end
     endtask
@@ -369,7 +381,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
             seq_item.PRE.rand_mode(1);
             seq_item.Driving_Param_VLD = 1'b1;   // Driving parameters are valid
 
-            seq_item.randomize(); // Randomize enabled fields
+            assert(seq_item.randomize()); // Randomize enabled fields
             finish_item(seq_item); // Finish transaction
             // Wait for acknowledgment from the DUT for 2 writes and 1 read transactions
             while(ack_count<3) begin
@@ -392,7 +404,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
             seq_item.LPM_Transaction_VLD = 1'b1; // LPM is on
             seq_item.EQ_Data_VLD = 0; // Indicate that EQ data is not valid
             seq_item.Driving_Param_VLD = 1'b0;
-            seq_item.randomize();
+            assert(seq_item.randomize());
             finish_item(seq_item);
             ack_count = 0;
             // wait for dut to receive EQ_RD_Value
@@ -420,7 +432,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                 seq_item.rand_mode(0);
                 seq_item.Lane_Align.rand_mode(1);
                 seq_item.Channel_EQ.rand_mode(1);
-                seq_item.Symbol_Locked.rand_mode(1);
+                seq_item.Symbol_Lock.rand_mode(1);
                 seq_item.EQ_CR_DN.rand_mode(1);
                 seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate change of max TPS
                 seq_item.LPM_Transaction_VLD = 1'b1;
@@ -428,7 +440,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                 seq_item.Driving_Param_VLD = 1'b1;
                 seq_item.VTG.rand_mode(1);
                 seq_item.PRE.rand_mode(1);
-                seq_item.randomize();
+                assert(seq_item.randomize());
                 finish_item(seq_item);
                 
                 get_response(seq_item);
@@ -452,10 +464,10 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                 end
                 ack_count = 0; // Reset acknowledgment count
             end
+            if (restart) begin 
+                continue; // Restart the loop if needed
+            end
         end   
-        if (restart) begin 
-            continue; // Restart the loop if needed
-        end
     // Step 6: Write 00h to offset 0x00102 to disable Link Training
         start_item(seq_item);
         seq_item.rand_mode(0);
@@ -463,7 +475,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         seq_item.LPM_Transaction_VLD = 1'b0;
         seq_item.Driving_Param_VLD = 1'b0;
         seq_item.EQ_Data_VLD = 1'b0; // Indicate that EQ data is not valid
-        seq_item.randomize();
+        assert(seq_item.randomize());
         finish_item(seq_item);
         
         get_response(seq_item);

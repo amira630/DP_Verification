@@ -16,6 +16,9 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     rand i2c_aux_reply_cmd_e i2c_reply_cmd;
     rand native_aux_reply_cmd_e native_reply_cmd;
 
+// Reply Data Signal
+    rand bit [7:0] reply_data; // Reply data from the PHY Layer
+
 // Output Signals across from DUT to the PHY Layer
     logic [1:0] PHY_ADJ_LC, PHY_Instruct;
     logic [7:0] PHY_ADJ_BW;
@@ -38,9 +41,9 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     constraint valid_i2c_aux_reply_cmd_c {
         i2c_reply_cmd dist {
             // Strongly prefer ACK, but occasionally allow NACK or DEFER
-            I2C_ACK      := 90,  // 90% of the time
-            I2C_NACK     := 5,   // 5% of the time
-            I2C_DEFER    := 5    // 5% of the time
+            I2C_ACK      := 96,  // 90% of the time
+            I2C_NACK     := 2,   // 5% of the time
+            I2C_DEFER    := 2    // 5% of the time
         };
     }
 
