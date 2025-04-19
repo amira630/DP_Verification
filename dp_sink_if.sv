@@ -2,12 +2,23 @@ interface dp_sink_if(input clk);
 
     logic rst_n;
     ///////////////////////////////////////////////////////////////
-    ///////////////////// PHYSICAL LAYER //////////////////////////
+    //////////////////// AUXILIARY CHANNEL ////////////////////////
     ///////////////////////////////////////////////////////////////
 
-    logic [7:0] AUX_IN_OUT, PHY_ADJ_BW;
-    logic [1:0] PHY_ADJ_LC, PHY_Instruct;
-    logic       HPD_Signal, AUX_START_STOP, PHY_START_STOP, PHY_Instruct_VLD;
+    ///////////////////// PHYSICAL LAYER //////////////////////////
+
+    logic [AUX_DATA_WIDTH-1:0] AUX_IN_OUT, PHY_ADJ_BW;
+    logic [1:0]                PHY_ADJ_LC, PHY_Instruct;
+    logic                      HPD_Signal, AUX_START_STOP, PHY_START_STOP, PHY_Instruct_VLD;
+
+    ///////////////////////////////////////////////////////////////
+    ////////////////// ISOCHRONOUS TRANSPORT //////////////////////
+    ///////////////////////////////////////////////////////////////
+
+    ///////////////////// PHYSICAL LAYER //////////////////////////
+
+    logic [AUX_DATA_WIDTH-1:0] ISO_symbols_lane0, ISO_symbols_lane1, ISO_symbols_lane2, ISO_symbols_lane3;
+    logic                      Control_sym_flag_lane0, Control_sym_flag_lane1, Control_sym_flag_lane2, Control_sym_flag_lane3;
 
     ///////////////////////////////////////////////////////////////
     //////////////////////// MODPORTS /////////////////////////////
@@ -24,7 +35,16 @@ interface dp_sink_if(input clk);
                PHY_Instruct,        // A signal which instructs the physical layer to begin sending a specific link training pattern (TPS1, 2, 3, 4) during the link training process.
                PHY_ADJ_BW,          // The value of the BW during the link training.
                PHY_ADJ_LC,          // The value of the Lane Count during the link training.
-               PHY_Instruct_VLD     // The PHY_Instruct_VLD signal indicates the validity of the PHY_Instruct signal.
+               PHY_Instruct_VLD,    // The PHY_Instruct_VLD signal indicates the validity of the PHY_Instruct signal.
+               ISO_symbols_lane0,   // Four 8-bit signals carry the processed main video stream data output from the Isochronous Transport Services Block. They are transmitted over the active lanes with the selected video format.
+               ISO_symbols_lane1, 
+               ISO_symbols_lane2, 
+               ISO_symbols_lane3,
+               Control_sym_flag_lane0, // This signal is asserted when the block outputs control symbols, enabling the Physical Layer to distinguish between control and data symbols.
+               Control_sym_flag_lane1,
+               Control_sym_flag_lane2,
+               Control_sym_flag_lane3
+               
     );
 
     //////////////////////// DRIVER /////////////////////////////
@@ -32,19 +52,20 @@ interface dp_sink_if(input clk);
     modport DRV (
         input clk, AUX_START_STOP, PHY_Instruct, PHY_ADJ_BW, PHY_ADJ_LC, PHY_Instruct_VLD,
         inout AUX_IN_OUT,           // start_stop will be changed
-        output HPD_Signal , PHY_START_STOP       
+        output HPD_Signal, PHY_START_STOP       
     );
 
     //////////////////////// MOINTOR /////////////////////////////  
     
     modport MONITOR (
         input clk, HPD_Signal, AUX_IN_OUT, AUX_START_STOP, PHY_START_STOP,
-              PHY_Instruct, PHY_ADJ_BW, PHY_ADJ_LC, PHY_Instruct_VLD
+              PHY_Instruct, PHY_ADJ_BW, PHY_ADJ_LC, PHY_Instruct_VLD,ISO_symbols_lane0,   // Four 8-bit signals carry the processed main video stream data output from the Isochronous Transport Services Block. They are transmitted over the active lanes with the selected video format.
+              ISO_symbols_lane0, ISO_symbols_lane1, ISO_symbols_lane2, ISO_symbols_lane3, Control_sym_flag_lane0,Control_sym_flag_lane1, Control_sym_flag_lane2, Control_sym_flag_lane3
     );  
 
 
     ///////////////////////////////////////////////////////////////
-    /////////////////////// TASKS AND FUNCTIONS ///////////////////
+    /////////////////// TASKS AND FUNCTIONS ///////////////////////
     ///////////////////////////////////////////////////////////////
     
     // RESET task
