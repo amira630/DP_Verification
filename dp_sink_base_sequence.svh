@@ -23,7 +23,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         // Create and configure sequence item
         seq_item = dp_sink_sequence_item::type_id::create("seq_item");
         rsp_item = dp_sink_sequence_item::type_id::create("rsp_item");
-        reply_seq_item = dp_sink_sequence_item::type_id::create("reply_seq_item");s
+        reply_seq_item = dp_sink_sequence_item::type_id::create("reply_seq_item");
 
         // Phase 1: HPD operation
         start_item(seq_item);
@@ -33,13 +33,37 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         finish_item(seq_item);                          // Send the sequence item to the driver
         `uvm_info(get_type_name(), "finish HPD phase", UVM_MEDIUM)
 
+        // Reply Operation in forever loop 
+        // This is used to send the reply to the driver
+        forever begin
+            // wait for recieive transaction to be called
+            receive_transaction(rsp_item);                        // Receive the request transaction from the driver
 
-        // Phase 2: EDID Reading transaction
-        edid_reading_transaction(rsp_item);         // Call the EDID reading transaction
-
-        // Phase 3: DPCD transaction
-        //dpcd_reading_transaction(rsp_item);         // Call the DPCD reading transaction
-
+            // According to the command, set the operation type to Reply
+            case (rsp_item.command[3:0])
+                4'b0000: begin          // EDID Finished
+                    start_item(reply_seq_item);                          // Start the response item
+                    `uvm_info(get_type_name(), "Start EDID-Finish Reply", UVM_MEDIUM)
+                    reply_seq_item.sink_operation = Reply_operation;     // Set the operation type to Reply
+                    reply_seq_item.PHY_START_STOP = 1'b1;                // Set the PHY_START_STOP signal to high
+                    reply_seq_item.AUX_IN_OUT = 8'h00;                   // Set the AUX_IN_OUT signal to 0
+                    finish_item(reply_seq_item);                         // Send the sequence item to the driver
+                    `uvm_info(get_type_name(), "Finish EDID-Finish Reply", UVM_MEDIUM) 
+                end
+                4'b0101: begin          // I2C Read Request (EDID)
+                    edid_reading_transaction(rsp_item);
+                end
+                4'b1000: begin          // Native Write Request
+                    
+                end
+                4'b1001: begin          // Native Read Request
+                    
+                end
+                default: begin
+                    `uvm_error(get_type_name(), "Unknown command type (Invalid command)")
+                end
+            endcase
+        end
 
         `uvm_info(get_type_name(), "Finished Link_INIT transaction", UVM_MEDIUM)
     endtask
@@ -133,9 +157,9 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
     endfunction
 
     function void edid_reading_transaction(ref dp_sink_sequence_item rsp_item);
+        int k = 0; 
+        int index = 0; 
         // ADDRESS-ONLY transaction
-        `uvm_info(get_type_name(), "Received HPD response", UVM_MEDIUM)
-        receive_transaction(rsp_item);                        // Receive the request transaction from the driver
 
         // NOW: the rsp_item has the command and address of the transaction
         start_item(reply_seq_item);                          // Start the response item
@@ -148,12 +172,10 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
 
         // NOW: Sink is ready to send/receive the 128 bytes of data
         // Phase 3: EDID 128 bytes data transaction
-        int k = 0;                          // Loop counter
         while (k<128 && rsp_item.command[2] == 1) begin
             `uvm_info(get_type_name(), "Received sequence to start EDID", UVM_MEDIUM)
             receive_transaction(rsp_item);                        // Receive the request transaction from the driver
             
-            int index = 0;                       // Index to loop through the response data
             repeat(1+(rsp_item.length+1)) begin
                 if (index == 0) begin
                     start_item(reply_seq_item);                          // Start the response item
@@ -170,7 +192,10 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                     `uvm_info(get_type_name(), "Start address-only Reply", UVM_MEDIUM)
                     reply_seq_item.sink_operation = Reply_operation;     // Set the operation type to Reply
                     reply_seq_item.PHY_START_STOP = 1'b1;                // Set the PHY_START_STOP signal to high
-                    reply_seq_item.reply_data.randomize();               // Enable randomization for the data byte 
+                    if (!std::randomize(reply_data)) begin
+                        `uvm_error(get_type_name(), "Failed to randomize reply data")
+                        reply_data = 8'h00;  // Default value if randomization fails
+                    end
                     reply_seq_item.AUX_IN_OUT = reply_data;              // Set the AUX_IN_OUT signal to the data byte
                     finish_item(reply_seq_item);                         // Send the sequence item to the driver
                     `uvm_info(get_type_name(), "Finish address-only Reply", UVM_MEDIUM)

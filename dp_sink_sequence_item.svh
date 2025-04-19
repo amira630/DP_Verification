@@ -10,8 +10,6 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     bit AUX_START_STOP, PHY_START_STOP;
     bit [7:0] AUX_IN_OUT;  
 
-    bit clk;        // Clock signal           
-
 // Reply Command Signal 
     rand i2c_aux_reply_cmd_e i2c_reply_cmd;
     rand native_aux_reply_cmd_e native_reply_cmd;
