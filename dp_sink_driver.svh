@@ -28,8 +28,6 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
             // Clear previous aux data
             response_seq_item.aux_in_out.delete();
 
-            response_seq_item.clk = dp_sink_vif.clk;
-
             // Drive the values to the interface according to the operation
             @(posedge dp_sink_vif.clk);
             case (stim_seq_item.sink_operation)

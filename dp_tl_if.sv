@@ -21,7 +21,7 @@ interface dp_tl_if(input clk);
     logic [AUX_ADDRESS_WIDTH-1:0] LPM_Address;
     logic [AUX_DATA_WIDTH-1:0]    LPM_Data, LPM_LEN, LPM_Reply_Data;
     logic [1:0]                   LPM_CMD, LPM_Reply_ACK;
-    logic                         LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_NATIVE_I2C, LPM_Transaction_VLD;
+    logic                         LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_NATIVE_I2C,LPM_Transaction_VLD;
     logic                         HPD_Detect, HPD_IRQ, CTRL_Native_Failed;
 
     ////////////////// LINK Training Signals //////////////////////
