@@ -434,6 +434,8 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                 seq_item.Channel_EQ.rand_mode(1);
                 seq_item.Symbol_Lock.rand_mode(1);
                 seq_item.EQ_CR_DN.rand_mode(1);
+                seq_item.CR_DONE.rand_mode(1);
+                seq_item.CR_DONE_VLD = 1'b1; // CR_DONE is valid
                 seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate change of max TPS
                 seq_item.LPM_Transaction_VLD = 1'b1;
                 seq_item.EQ_Data_VLD = 1;
