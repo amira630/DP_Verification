@@ -2,10 +2,11 @@ class dp_reference_model extends uvm_component;
     `uvm_component_utils(dp_reference_model)
 
     // Input and output analysis ports for connecting to the scoreboard
-    uvm_analysis_imp #(dp_transaction) ref_model_in_port;  // Receives transactions from the monitor
+    uvm_analysis_imp #(dp_sink_sequence_item) sink_in_port;  // Receives transactions from dp_sink_monitor
+    uvm_analysis_imp #(dp_tl_sequence_item) tl_in_port;      // Receives transactions from dp_tl_monitor
     uvm_analysis_port #(dp_transaction) ref_model_out_port; // Sends expected transactions to the scoreboard
 
-    // Internal variables
+    // Transaction variables for output of Reference model
     dp_transaction expected_transaction;
 
     // Variables for connection detection scenario
@@ -13,21 +14,11 @@ class dp_reference_model extends uvm_component;
     time HPD_high_start; // Time when HPD_Signal went high
     time HPD_low_start;  // Time when HPD_Signal went low
 
-// typedef enum logic [2:0] {
-//     IDLE,
-//     CONNECTION_DETECTION,
-//     LINK_TRAINING,
-//     I2C_OVER_AUX,
-//     NATIVE_AUX,
-//     ERROR
-// } fsm_state_e;
-
-// fsm_state_e current_state, next_state;
-
     // Constructor
     function new(string name, uvm_component parent);
         super.new(name, parent);
-        ref_model_in_port = new("ref_model_in_port", this);
+        sink_in_port = new("sink_in_port", this);
+        tl_in_port = new("tl_in_port", this);
         ref_model_out_port = new("ref_model_out_port", this);
     endfunction
 
@@ -39,112 +30,42 @@ class dp_reference_model extends uvm_component;
 
     // Main task to process transactions
     task run_phase(uvm_phase phase);
-        dp_transaction received_transaction;
+    dp_sink_sequence_item sink_item;
+    dp_tl_sequence_item tl_item;
 
         phase.raise_objection(this); // Raise objection to keep the simulation running
 
-        current_state = IDLE; // Start in the IDLE state
+        // current_state = IDLE; // Start in the IDLE state
 
         forever begin
             // Generate the expected transaction based on the received transaction
             expected_transaction = new();
-            generate_expected_transaction(received_transaction, expected_transaction);
+            generate_expected_transaction(sink_item, tl_item, expected_transaction);
         end
 
         phase.drop_objection(this); // Drop objection when done
     endtask
 
-    // // Main task to process transactions
-    // task run_phase(uvm_phase phase);
-    //     dp_transaction received_transaction;
-    //     dp_transaction expected_transaction;
-    
-    //     phase.raise_objection(this); // Raise objection to keep the simulation running
-    
-    //     current_state = IDLE; // Start in the IDLE state
-    
-    //     forever begin
-    //         case (current_state)
-    //             IDLE: begin
-    //                 // Wait for a transaction
-    //                 if (ref_model_in_port.try_get(received_transaction)) begin
-    //                     // Determine the next state based on the transaction type
-    //                     if (received_transaction.HPD_Signal) begin
-    //                         next_state = CONNECTION_DETECTION;
-    //                     end else if (received_transaction.LPM_CMD == AUX_NATIVE_READ || received_transaction.LPM_CMD == AUX_NATIVE_WRITE) begin
-    //                         next_state = NATIVE_AUX;
-    //                     end else if (received_transaction.SPM_CMD == AUX_I2C_READ) begin
-    //                         next_state = I2C_OVER_AUX;
-    //                     end else begin
-    //                         next_state = LINK_TRAINING;
-    //                     end
-    //                 end else begin
-    //                     next_state = IDLE; // Stay in IDLE if no transaction is available
-    //                 end
-    //             end
-    
-    //             CONNECTION_DETECTION: begin
-    //                 // Call the connection detection function
-    //                 generate_connection_detection(received_transaction, expected_transaction);
-    //                 next_state = IDLE; // Return to IDLE after processing
-    //             end
-    
-    //             LINK_TRAINING: begin
-    //                 // Call the link training flow function
-    //                 generate_link_training_flow(received_transaction, expected_transaction);
-    //                 next_state = IDLE; // Return to IDLE after processing
-    //             end
-    
-    //             I2C_OVER_AUX: begin
-    //                 // Call the I2C-over-AUX transaction function
-    //                 generate_i2c_over_aux_transaction(received_transaction, expected_transaction);
-    //                 next_state = IDLE; // Return to IDLE after processing
-    //             end
-    
-    //             NATIVE_AUX: begin
-    //                 // Call the native AUX transaction function
-    //                 generate_native_aux_transaction(received_transaction, expected_transaction);
-    //                 next_state = IDLE; // Return to IDLE after processing
-    //             end
-    
-    //             ERROR: begin
-    //                 // Handle invalid or unsupported scenarios
-    //                 `uvm_error(get_type_name(), "Invalid or unsupported transaction");
-    //                 next_state = IDLE; // Return to IDLE after handling the error
-    //             end
-    
-    //             default: begin
-    //                 next_state = IDLE; // Default state
-    //             end
-    //         endcase
-    
-    //         // Update the current state
-    //         current_state = next_state;
-    //     end
-    
-    //     phase.drop_objection(this); // Drop objection when done
-    // endtask
-
-
     // Function to generate the expected transaction
     function void generate_expected_transaction(
-        input dp_transaction received_transaction,
-        output dp_transaction expected_transaction
+    input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
+    input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
+    output dp_transaction expected_transaction // Generated expected transaction
     );
 
         // Connection Detection Scenario
-        generate_connection_detection(received_transaction, expected_transaction);
+        generate_connection_detection(sink_item, tl_item, expected_transaction);
 
         // // Link Training Scenario //
 
         // // I2C-over-AUX Transaction Scenario (EDID Read)
-        // generate_i2c_over_aux_transaction(received_transaction, expected_transaction);
+        // generate_i2c_over_aux_transaction(sink_item, tl_item, expected_transaction);
 
         // // Native AUX Transaction Scenario
-        // generate_native_aux_transaction(received_transaction, expected_transaction);
+        // generate_native_aux_transaction(sink_item, tl_item, expected_transaction);
 
         // // Link Training Flow
-        // generate_link_training_flow(received_transaction, expected_transaction);
+        // generate_link_training_flow(sink_item, tl_item, expected_transaction);
         
         // // End of link training flow
 
@@ -153,39 +74,37 @@ class dp_reference_model extends uvm_component;
     endfunction
     
 
-
+    // need to modify a bit
     // Function to handle the Connection Detection Scenario
     function void generate_connection_detection(
-        input dp_transaction received_transaction,
-        output dp_transaction expected_transaction
+    input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
+    input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
+    output dp_transaction expected_transaction // Generated expected transaction
     );
         // Wait for the next transaction
-        ref_model_in_port.get(received_transaction);
-
-        // Copy the received transaction
-        expected_transaction.copy(received_transaction);
+        ref_model_in_port.get(sink_item);
 
         // Check if HPD_Signal just went high
-        if (received_transaction.HPD_Signal && !HPD_Signal_prev) begin
+        if (sink_item.HPD_Signal && !HPD_Signal_prev) begin
             HPD_high_start = $time;
-        end else if (!received_transaction.HPD_Signal && HPD_Signal_prev) begin
+        end else if (!sink_item.HPD_Signal && HPD_Signal_prev) begin
             // Check if HPD_Signal just went low
             HPD_low_start = $time;
         end
     
         // Check if HPD_Signal has been high for ≥2 ms
-        if (received_transaction.HPD_Signal && ($time - HPD_high_start) >= 2_000_000) begin
+        if (sink_item.HPD_Signal && ($time - HPD_high_start) >= 2_000_000) begin
             expected_transaction.HPD_Detect = 1'b1; // Assert HPD_Detect
 
             // Start Link Training Flow
-            generate_link_training_flow(received_transaction, expected_transaction);
+            generate_link_training_flow(sink_item, tl_item, expected_transaction);
 
         end else begin
             expected_transaction.HPD_Detect = 1'b0; // Deassert HPD_Detect
         end
     
         // Check if HPD_Signal went low for 0.5–1 ms and then returned high
-        if (!received_transaction.HPD_Signal && ($time - HPD_low_start) >= 500_000 && ($time - HPD_low_start) <= 1_000_000) begin
+        if (!sink_item.HPD_Signal && ($time - HPD_low_start) >= 500_000 && ($time - HPD_low_start) <= 1_000_000) begin
             if (HPD_Signal_prev) begin
                 expected_transaction.HPD_IRQ = 1'b1; // Pulse HPD_IRQ for 1 clock cycle
             end
@@ -194,7 +113,7 @@ class dp_reference_model extends uvm_component;
         end
                 
         // Update the previous state of HPD_Signal
-        HPD_Signal_prev = received_transaction.HPD_Signal;
+        HPD_Signal_prev = sink_item.HPD_Signal;
     
         // Log the connection detection results
         `uvm_info(get_type_name(), $sformatf("Connection Detection: HPD_Detect=%0b, HPD_IRQ=%0b",
@@ -212,24 +131,13 @@ class dp_reference_model extends uvm_component;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     //to be added: nack and defer correct conditions, correct aux_in_out, ctrl_i2c_failed maybe??
 
     // Function to generate the expected transaction for I2C-over-AUX (EDID Read)
     function void generate_i2c_over_aux_transaction(
-        input dp_transaction received_transaction,
-        output dp_transaction expected_transaction
+    input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
+    input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
+    output dp_transaction expected_transaction // Generated expected transaction
     );
         // Decode the aux_in_out signal
         bit [3:0] command;       // First 4 bits: Command
@@ -241,10 +149,7 @@ class dp_reference_model extends uvm_component;
         while (ack_count < 1) begin
 
         // Wait for the next transaction
-        ref_model_in_port.get(received_transaction);
-
-        // Copy the received transaction
-        expected_transaction.copy(received_transaction);
+        ref_model_in_port.get(tl_item);
     
         // Initialize outputs
         // note to self: need to turn off hpd detect / IRQ maybe?
@@ -255,11 +160,11 @@ class dp_reference_model extends uvm_component;
         expected_transaction.I2C_Complete = 1'b0;
     
         // Check if the transaction is valid
-        if (received_transaction.SPM_Transaction_VLD) begin
+        if (tl_item.SPM_Transaction_VLD) begin
             // Step 1: Address-only transaction
-            if (received_transaction.SPM_CMD == AUX_I2C_READ && received_transaction.SPM_LEN == 0) begin
+            if (tl_item.SPM_CMD == AUX_I2C_READ && tl_item.SPM_LEN == 0) begin
 
-                address = received_transaction.SPM_Address; // Extract the address from the received transaction
+                address = tl_item.SPM_Address; // Extract the address from the received transaction
 
                 // Assign the encoded value to aux_in_out
                 // Encoded value: 0101|0000 -> 00000000 -> SPM_Address
@@ -289,10 +194,10 @@ class dp_reference_model extends uvm_component;
                 // `uvm_info(get_type_name(), $sformatf("AUX_IN_OUT: 0101|0000 -> 00000000 -> 00000000 (START_STOP=1, MOT=1, I2C Address=0000000)"), UVM_LOW);
 
                 // Wait for the next transaction
-                ref_model_in_port.get(received_transaction);
+                ref_model_in_port.get(sink_item);
                 
                     // Extract the command
-                    command = received_transaction.aux_in_out[7:4]; // First 4 bits
+                    command = sink_item.aux_in_out[7:4]; // First 4 bits
                 
                     // Take action based on the command
                     case (command)
@@ -377,12 +282,12 @@ class dp_reference_model extends uvm_component;
         while (ack_count < 128) begin // Read 128 bytes of EDID data
 
         // Wait for the next transaction
-        ref_model_in_port.get(received_transaction);
+        ref_model_in_port.get(tl_item);
     
         // Check if the transaction is valid
-        if (received_transaction.SPM_Transaction_VLD) begin
+        if (tl_item.SPM_Transaction_VLD) begin
             // Step 1: Address-only transaction
-            if (received_transaction.SPM_CMD == AUX_I2C_READ && received_transaction.SPM_LEN == 0) begin
+            if (tl_item.SPM_CMD == AUX_I2C_READ && tl_item.SPM_LEN == 0) begin
 
                 // Assign the encoded value to aux_in_out
                 // Encoded value: 0101|0000 -> 00000000 -> SPM_Address -> 00000000
@@ -417,16 +322,16 @@ class dp_reference_model extends uvm_component;
                 // `uvm_info(get_type_name(), $sformatf("AUX_IN_OUT: 0101|0000 -> 00000000 -> 00000000 -> 0000|0000 (START_STOP=1, MOT=1, I2C Address=0000000, Read Length=1)"), UVM_LOW);
 
                 // Wait for the next transaction
-                ref_model_in_port.get(received_transaction);
+                ref_model_in_port.get(sink_item);
                 
                     // Extract the command
-                    command = received_transaction.aux_in_out[7:4]; // First 4 bits
+                    command = sink_item.aux_in_out[7:4]; // First 4 bits
 
                     // Wait for the next transaction
-                    ref_model_in_port.get(received_transaction);  
+                    ref_model_in_port.get(sink_item);  
                     
                     // Extract the data
-                    data = received_transaction.aux_in_out[7:0]; // Second 8 bits  
+                    data = sink_item.aux_in_out[7:0]; // Second 8 bits  
                 
                     // Take action based on the command
                     case (command)
@@ -511,12 +416,12 @@ class dp_reference_model extends uvm_component;
         while (ack_count < 1) begin
 
         // Wait for the next transaction
-        ref_model_in_port.get(received_transaction);
+        ref_model_in_port.get(tl_item);
     
         // Check if the transaction is valid
-        if (received_transaction.SPM_Transaction_VLD) begin
+        if (tl_item.SPM_Transaction_VLD) begin
             // Step 1: Address-only transaction
-            if (received_transaction.SPM_CMD == AUX_I2C_READ && received_transaction.SPM_LEN == 0) begin
+            if (tl_item.SPM_CMD == AUX_I2C_READ && tl_item.SPM_LEN == 0) begin
                 
                 // Assign the encoded value to aux_in_out
                 // Encoded value: 0001|0000 -> 00000000 -> SPM_Address -> 00000000
@@ -546,10 +451,10 @@ class dp_reference_model extends uvm_component;
                 // `uvm_info(get_type_name(), $sformatf("AUX_IN_OUT: 0001|0000 -> 00000000 -> 00000000 (START_STOP=1, MOT=1, I2C Address=0000000)"), UVM_LOW);
 
                 // Wait for the next transaction
-                ref_model_in_port.get(received_transaction);
+                ref_model_in_port.get(sink_item);
                 
                     // Extract the command
-                    command = received_transaction.aux_in_out[7:4]; // First 4 bits
+                    command = sink_item.aux_in_out[7:4]; // First 4 bits
                 
                     // Take action based on the command
                     case (command)
@@ -637,11 +542,12 @@ class dp_reference_model extends uvm_component;
    
     // Function to generate the expected transaction for Native AUX Read Transaction
         function void generate_native_aux_read_transaction(
-        input dp_transaction received_transaction,
-        output dp_transaction expected_transaction,
-        input bit [3:0] override_command = 4'b0000,  // Default: Use received_transaction.LPM_CMD
-        input bit [19:0] override_address = 20'h00000, // Default: Use received_transaction.LPM_Address
-        input bit [7:0] override_length = 8'h00       // Default: Use received_transaction.LPM_LEN
+        input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
+        input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
+        output dp_transaction expected_transaction, // Generated expected transaction
+        input bit [3:0] override_command = 4'b0000,  // Default: Use tl_item.LPM_CMD
+        input bit [19:0] override_address = 20'h00000, // Default: Use tl_item.LPM_Address
+        input bit [7:0] override_length = 8'h00       // Default: Use tl_item.LPM_LEN
     );
         // Decode the aux_in_out signal
         bit [3:0] command;       // First 4 bits: Command
@@ -650,17 +556,14 @@ class dp_reference_model extends uvm_component;
         bit [7:0] data[$];       // Data
         bit ack_count = 0;       // Ack counter
     
-        // Use overrides if provided, otherwise use defaults from received_transaction
-        command = (override_command != 4'b0000) ? override_command : received_transaction.LPM_CMD;
-        address = (override_address != 20'h00000) ? override_address : received_transaction.LPM_Address;
-        length = (override_length != 8'h00) ? override_length : received_transaction.LPM_LEN;
+        // Use overrides if provided, otherwise use defaults from tl_item
+        command = (override_command != 4'b0000) ? override_command : tl_item.LPM_CMD;
+        address = (override_address != 20'h00000) ? override_address : tl_item.LPM_Address;
+        length = (override_length != 8'h00) ? override_length : tl_item.LPM_LEN;
     
         // while (ack_count < 1) begin
             // Wait for the next transaction
-            // ref_model_in_port.get(received_transaction);
-    
-            // // Copy the received transaction
-            // expected_transaction.copy(received_transaction);
+            // ref_model_in_port.get(tl_item);
     
             // // Initialize outputs
             // expected_transaction.LPM_Reply_ACK = 1'b0;
@@ -670,7 +573,7 @@ class dp_reference_model extends uvm_component;
             // expected_transaction.LPM_Native_I2C = 1'b0;
     
             // Check if the transaction is valid
-            if (received_transaction.LPM_Transaction_VLD) begin
+            if (tl_item.LPM_Transaction_VLD) begin
                 // Handle Read Request Transaction
                 if (command == AUX_NATIVE_READ) begin
                     // Log the read request transaction
@@ -701,18 +604,18 @@ class dp_reference_model extends uvm_component;
                     data = new[length];
     
                     // Wait for the next transaction
-                    ref_model_in_port.get(received_transaction);
+                    ref_model_in_port.get(sink_item);
     
                     // Extract the command
-                    command = received_transaction.aux_in_out[3:0]; // Second 4 bits
+                    command = sink_item.aux_in_out[3:0]; // Second 4 bits
     
                     // Loop to extract data bytes based on the length
                     for (int i = 0; i < length + 1; i++) begin
                         // Wait for the next transaction for each byte
-                        ref_model_in_port.get(received_transaction);
+                        ref_model_in_port.get(sink_item);
     
                         // Extract the data byte(s) from aux_in_out
-                        data[i] = received_transaction.aux_in_out[7:0];
+                        data[i] = sink_item.aux_in_out[7:0];
     
                         // Log the extracted data byte
                         `uvm_info(get_type_name(), $sformatf("Extracted Data Byte %0d: 0x%0h", i, data[i]), UVM_LOW);
@@ -809,12 +712,13 @@ class dp_reference_model extends uvm_component;
 
     // Function to generate the expected transaction for Native AUX Write Transaction
     function void generate_native_aux_write_transaction(
-    input dp_transaction received_transaction,
-    output dp_transaction expected_transaction,
-    input bit [3:0] override_command = 4'b0000,  // Default: Use received_transaction.LPM_CMD
-    input bit [19:0] override_address = 20'h00000, // Default: Use received_transaction.LPM_Address
-    input bit [7:0] override_length = 8'h00,      // Default: Use received_transaction.LPM_LEN
-    input bit [7:0] override_data[$] = {}         // Default: Use received_transaction.LPM_Data
+    input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
+    input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
+    output dp_transaction expected_transaction, // Generated expected transaction
+    input bit [3:0] override_command = 4'b0000,  // Default: Use tl_item.LPM_CMD
+    input bit [19:0] override_address = 20'h00000, // Default: Use tl_item.LPM_Address
+    input bit [7:0] override_length = 8'h00,      // Default: Use tl_item.LPM_LEN
+    input bit [7:0] override_data[$] = {}         // Default: Use tl_item.LPM_Data
 );
     // Decode the aux_in_out signal
     bit [3:0] command;       // First 4 bits: Command
@@ -823,18 +727,15 @@ class dp_reference_model extends uvm_component;
     bit [7:0] data[$];       // Data
     bit ack_count = 0;       // Ack counter
 
-    // Use overrides if provided, otherwise use defaults from received_transaction
-    command = (override_command != 4'b0000) ? override_command : received_transaction.LPM_CMD;
-    address = (override_address != 20'h00000) ? override_address : received_transaction.LPM_Address;
-    length = (override_length != 8'h00) ? override_length : received_transaction.LPM_LEN;
-    data = (override_data.size() > 0) ? override_data : {received_transaction.LPM_Data};
+    // Use overrides if provided, otherwise use defaults from tl_item
+    command = (override_command != 4'b0000) ? override_command : tl_item.LPM_CMD;
+    address = (override_address != 20'h00000) ? override_address : tl_item.LPM_Address;
+    length = (override_length != 8'h00) ? override_length : tl_item.LPM_LEN;
+    data = (override_data.size() > 0) ? override_data : {tl_item.LPM_Data};
 
     // while (ack_count < 1) begin
     // //     // Wait for the next transaction
-    //     ref_model_in_port.get(received_transaction); //Lpm_seq_item
-
-        // // Copy the received transaction
-        // expected_transaction.copy(received_transaction);
+    //     ref_model_in_port.get(tl_item); //Lpm_seq_item
 
         // // Initialize outputs
         // expected_transaction.LPM_Reply_ACK = 1'b0;
@@ -844,7 +745,7 @@ class dp_reference_model extends uvm_component;
         // expected_transaction.LPM_Native_I2C = 1'b0;
 
         // Check if the transaction is valid
-        if (received_transaction.LPM_Transaction_VLD) begin
+        if (tl_item.LPM_Transaction_VLD) begin
             // Handle Write Request Transaction
             if (command == AUX_NATIVE_WRITE) begin
                 // Simulate transmitting the request
@@ -878,10 +779,10 @@ class dp_reference_model extends uvm_component;
                 end
 
                 // Wait for the next transaction
-                ref_model_in_port.get(received_transaction); //Sink_seq_item
+                ref_model_in_port.get(sink_item); //Sink_seq_item
 
                 // Extract the command
-                command = received_transaction.aux_in_out[3:0]; // Second 4 bits
+                command = sink_item.aux_in_out[3:0]; // Second 4 bits
 
                 // Take action based on the command
                 case (command)
@@ -970,19 +871,30 @@ endfunction
 
 
 function bit generate_clock_recovery_phase(
-    input dp_transaction received_transaction,
-    output dp_transaction expected_transaction
+    input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
+    input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
+    output dp_transaction expected_transaction // Generated expected transaction
 );
-
-    typedef enum logic [2:0] {
-       IDLE,
-       WRITE_LINK_CONFIG,
-       ENABLE_TRAINING_PATTERN,
-       CONFIGURE_DRIVING_SETTINGS,
-       READ_TRAINING_INTERVAL,
-       WAIT_AND_READ_LINK_STATUS,
-       FAILURE,
-       SUCCESS
+    
+    // State machine for the clock recovery phase
+    // Define the states for the FSM
+    typedef enum logic [3:0] { // Updated to [3:0] to accommodate more states
+        IDLE,
+        IDLE_WITH_UPDATED_BW_OR_LC,
+        WRITE_LINK_CONFIG,
+        ENABLE_TRAINING_PATTERN,
+        CONFIGURE_DRIVING_SETTINGS,
+        READ_TRAINING_INTERVAL,
+        WAIT_AND_READ_LINK_STATUS,
+        CR_DONE_CHECK,
+        READ_ADJUSTED_DRIVING_PARAMETERS,
+        CHECK_NEW_CONDITIONS,
+        CHECK_IF_RBR,
+        CHECK_IF_ONE_LANE_USED,
+        REDUCE_LANE_COUNT,
+        REDUCE_LINK_RATE,
+        FAILURE,
+        SUCCESS
     } fsm_state_e;
 
     bit CR_DONE = 0;
@@ -1001,15 +913,15 @@ function bit generate_clock_recovery_phase(
         case (current_state)
             IDLE: begin
                 // Wait for the next transaction
-                ref_model_in_port.get(received_transaction); //Lpm_seq_item
+                ref_model_in_port.get(tl_item); //Lpm_seq_item
 
                 // Store the important values
-                MAX_VTG_temp = received_transaction.MAX_VTG;
-                MAX_PRE_temp = received_transaction.MAX_PRE;
-                CURRENT_LANE_COUNT = received_transaction.Link_LC_CR;
-                CURRENT_LINK_RATE = received_transaction.Link_BW_CR;
+                MAX_VTG_temp = tl_item.MAX_VTG;
+                MAX_PRE_temp = tl_item.MAX_PRE;
+                CURRENT_LANE_COUNT = tl_item.Link_LC_CR;
+                CURRENT_LINK_RATE = tl_item.Link_BW_CR;
 
-                if (received_transaction.LPM_Start_CR && received_transaction.Driving_Param_VLD && received_transaction.Config_Param_VLD)
+                if (tl_item.LPM_Start_CR && tl_item.Driving_Param_VLD && tl_item.Config_Param_VLD)
                 // Start the clock recovery process
                 `uvm_info(get_type_name(), "Starting Clock Recovery Phase", UVM_LOW);
                 next_state = WRITE_LINK_CONFIG;
@@ -1020,13 +932,13 @@ function bit generate_clock_recovery_phase(
 
             IDLE_WITH_UPDATED_BW_OR_LC: begin
                 // Wait for the next transaction
-                ref_model_in_port.get(received_transaction); //Lpm_seq_item
+                ref_model_in_port.get(tl_item); //Lpm_seq_item
 
                 // Store the important values
-                CURRENT_LANE_COUNT = received_transaction.Link_LC_CR;
-                CURRENT_LINK_RATE = received_transaction.Link_BW_CR;
+                CURRENT_LANE_COUNT = tl_item.Link_LC_CR;
+                CURRENT_LINK_RATE = tl_item.Link_BW_CR;
 
-                if (received_transaction.LPM_Start_CR && received_transaction.Driving_Param_VLD && received_transaction.Config_Param_VLD)
+                if (tl_item.LPM_Start_CR && tl_item.Driving_Param_VLD && tl_item.Config_Param_VLD)
                 // Start the clock recovery process
                 `uvm_info(get_type_name(), "Repeatinf Clock Recovery Phase with Updated Parameters", UVM_LOW);
                 next_state = WRITE_LINK_CONFIG;
@@ -1040,12 +952,13 @@ function bit generate_clock_recovery_phase(
                 `uvm_info(get_type_name(), "Writing to Link Configuration field", UVM_LOW);
                 
                 generate_native_aux_write_transaction(
-                    received_transaction,       // Input transaction
+                    sink_item,       // Input transaction from sink
+                    tl_item,         // Input transaction from tl
                     expected_transaction,       // Output transaction
                     4'b1000,                    // Override command (AUX_NATIVE_WRITE)
                     20'h00100,                  // Override address (0x00100)
                     8'h03,                      // Override length (3 byte(s))
-                    '{received_transaction.CURRENT_LINK_RATE, {3'b100, 5'(received_transaction.CURRENT_LANE_COUNT + 5'b01)}, 8'h00} // Override data
+                    '{CURRENT_LINK_RATE, {3'b100, 5'(CURRENT_LANE_COUNT + 5'b01)}, 8'h00} // Override data
                 );
                 
                 next_state = ENABLE_TRAINING_PATTERN;
@@ -1058,11 +971,12 @@ function bit generate_clock_recovery_phase(
 
                 expected_transaction.PHY_Instruct = 2'b00; // Training pattern 1
                 expected_transaction.PHY_Instruct_VLD = 1'b1; // Set PHY_Instruct_VLD to 1
-                // expected_transaction.PHY_ADJ_BW = received_transaction.Link_BW_CR
-                // expected_transaction.PHY_ADJ_LC = received_transaction.Link_LC_CR
+                // expected_transaction.PHY_ADJ_BW = tl_item.Link_BW_CR
+                // expected_transaction.PHY_ADJ_LC = tl_item.Link_LC_CR
 
                 generate_native_aux_write_transaction(
-                    received_transaction,       // Input transaction
+                    sink_item,       // Input transaction from sink
+                    tl_item,         // Input transaction from tl
                     expected_transaction,       // Output transaction
                     4'b1000,                    // Override command (AUX_NATIVE_WRITE)
                     20'h00102,                  // Override address (0x00102)
@@ -1080,60 +994,63 @@ function bit generate_clock_recovery_phase(
                 // Step 3: Configure initial driving settings
                 `uvm_info(get_type_name(), "Configuring initial driving settings", UVM_LOW);
             
-                if (received_transaction.Link_LC_CR == 2'b00) begin
+                if (tl_item.Link_LC_CR == 2'b00) begin
                     // Configure Lane 0
                     generate_native_aux_write_transaction(
-                        received_transaction,       // Input transaction
+                        sink_item,       // Input transaction from sink
+                        tl_item,         // Input transaction from tl
                         expected_transaction,       // Output transaction
                         4'b1000,                    // Override command (AUX_NATIVE_WRITE)
                         20'h00103,                  // Override address (0x00103)
                         8'h00,                      // Override length (1 byte)
-                        '{(received_transaction.VTG[1:0] == received_transaction.MAX_VTG && received_transaction.PRE[1:0] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[1:0], 1'b1, received_transaction.VTG[1:0]} :
-                          (received_transaction.VTG[1:0] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[1:0], 1'b1, received_transaction.VTG[1:0]} :
-                          (received_transaction.PRE[1:0] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[1:0], 1'b0, received_transaction.VTG[1:0]} :
-                          {2'b00, 1'b0, received_transaction.PRE[1:0], 1'b0, received_transaction.VTG[1:0]}} // Override data
+                        '{(tl_item.VTG[1:0] == tl_item.MAX_VTG && tl_item.PRE[1:0] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                          (tl_item.VTG[1:0] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                          (tl_item.PRE[1:0] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]} :
+                          {2'b00, 1'b0, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]}} // Override data
                     );
-                end else if (received_transaction.Link_LC_CR == 2'b01) begin
+                end else if (tl_item.Link_LC_CR == 2'b01) begin
                     // Configure Lanes 0 and 1
                     generate_native_aux_write_transaction(
-                        received_transaction,       // Input transaction
+                        sink_item,       // Input transaction from sink
+                        tl_item,         // Input transaction from tl
                         expected_transaction,       // Output transaction
                         4'b1000,                    // Override command (AUX_NATIVE_WRITE)
                         20'h00103,                  // Override address (0x00103)
                         8'h01,                      // Override length (2 bytes)
-                        '{(received_transaction.VTG[1:0] == received_transaction.MAX_VTG && received_transaction.PRE[1:0] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[1:0], 1'b1, received_transaction.VTG[1:0]} :
-                          (received_transaction.VTG[1:0] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[1:0], 1'b1, received_transaction.VTG[1:0]} :
-                          (received_transaction.PRE[1:0] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[1:0], 1'b0, received_transaction.VTG[1:0]} :
-                          {2'b00, 1'b0, received_transaction.PRE[1:0], 1'b0, received_transaction.VTG[1:0]},
-                          (received_transaction.VTG[3:2] == received_transaction.MAX_VTG && received_transaction.PRE[3:2] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[3:2], 1'b1, received_transaction.VTG[3:2]} :
-                          (received_transaction.VTG[3:2] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[3:2], 1'b1, received_transaction.VTG[3:2]} :
-                          (received_transaction.PRE[3:2] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[3:2], 1'b0, received_transaction.VTG[3:2]} :
-                          {2'b00, 1'b0, received_transaction.PRE[3:2], 1'b0, received_transaction.VTG[3:2]}} // Override data
+                        '{(tl_item.VTG[1:0] == tl_item.MAX_VTG && tl_item.PRE[1:0] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                          (tl_item.VTG[1:0] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                          (tl_item.PRE[1:0] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]} :
+                          {2'b00, 1'b0, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]},
+                          (tl_item.VTG[3:2] == tl_item.MAX_VTG && tl_item.PRE[3:2] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
+                          (tl_item.VTG[3:2] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
+                          (tl_item.PRE[3:2] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]} :
+                          {2'b00, 1'b0, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]}} // Override data
                     );
                 end else begin
                     // Configure Lanes 0, 1, 2, and 3
                     generate_native_aux_write_transaction(
-                        received_transaction,       // Input transaction
+                        sink_item,       // Input transaction from sink
+                        tl_item,         // Input transaction from tl
                         expected_transaction,       // Output transaction
                         4'b1000,                    // Override command (AUX_NATIVE_WRITE)
                         20'h00103,                  // Override address (0x00103)
                         8'h03,                      // Override length (4 bytes)
-                        '{(received_transaction.VTG[1:0] == received_transaction.MAX_VTG && received_transaction.PRE[1:0] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[1:0], 1'b1, received_transaction.VTG[1:0]} :
-                          (received_transaction.VTG[1:0] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[1:0], 1'b1, received_transaction.VTG[1:0]} :
-                          (received_transaction.PRE[1:0] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[1:0], 1'b0, received_transaction.VTG[1:0]} :
-                          {2'b00, 1'b0, received_transaction.PRE[1:0], 1'b0, received_transaction.VTG[1:0]},
-                          (received_transaction.VTG[3:2] == received_transaction.MAX_VTG && received_transaction.PRE[3:2] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[3:2], 1'b1, received_transaction.VTG[3:2]} :
-                          (received_transaction.VTG[3:2] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[3:2], 1'b1, received_transaction.VTG[3:2]} :
-                          (received_transaction.PRE[3:2] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[3:2], 1'b0, received_transaction.VTG[3:2]} :
-                          {2'b00, 1'b0, received_transaction.PRE[3:2], 1'b0, received_transaction.VTG[3:2]},
-                          (received_transaction.VTG[5:4] == received_transaction.MAX_VTG && received_transaction.PRE[5:4] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[5:4], 1'b1, received_transaction.VTG[5:4]} :
-                          (received_transaction.VTG[5:4] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[5:4], 1'b1, received_transaction.VTG[5:4]} :
-                          (received_transaction.PRE[5:4] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[5:4], 1'b0, received_transaction.VTG[5:4]} :
-                          {2'b00, 1'b0, received_transaction.PRE[5:4], 1'b0, received_transaction.VTG[5:4]},
-                          (received_transaction.VTG[7:6] == received_transaction.MAX_VTG && received_transaction.PRE[7:6] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[7:6], 1'b1, received_transaction.VTG[7:6]} :
-                          (received_transaction.VTG[7:6] == received_transaction.MAX_VTG) ? {2'b00, 1'b0, received_transaction.PRE[7:6], 1'b1, received_transaction.VTG[7:6]} :
-                          (received_transaction.PRE[7:6] == received_transaction.MAX_PRE) ? {2'b00, 1'b1, received_transaction.PRE[7:6], 1'b0, received_transaction.VTG[7:6]} :
-                          {2'b00, 1'b0, received_transaction.PRE[7:6], 1'b0, received_transaction.VTG[7:6]}} // Override data
+                        '{(tl_item.VTG[1:0] == tl_item.MAX_VTG && tl_item.PRE[1:0] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                          (tl_item.VTG[1:0] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                          (tl_item.PRE[1:0] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]} :
+                          {2'b00, 1'b0, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]},
+                          (tl_item.VTG[3:2] == tl_item.MAX_VTG && tl_item.PRE[3:2] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
+                          (tl_item.VTG[3:2] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
+                          (tl_item.PRE[3:2] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]} :
+                          {2'b00, 1'b0, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]},
+                          (tl_item.VTG[5:4] == tl_item.MAX_VTG && tl_item.PRE[5:4] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[5:4], 1'b1, tl_item.VTG[5:4]} :
+                          (tl_item.VTG[5:4] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[5:4], 1'b1, tl_item.VTG[5:4]} :
+                          (tl_item.PRE[5:4] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[5:4], 1'b0, tl_item.VTG[5:4]} :
+                          {2'b00, 1'b0, tl_item.PRE[5:4], 1'b0, tl_item.VTG[5:4]},
+                          (tl_item.VTG[7:6] == tl_item.MAX_VTG && tl_item.PRE[7:6] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[7:6], 1'b1, tl_item.VTG[7:6]} :
+                          (tl_item.VTG[7:6] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[7:6], 1'b1, tl_item.VTG[7:6]} :
+                          (tl_item.PRE[7:6] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[7:6], 1'b0, tl_item.VTG[7:6]} :
+                          {2'b00, 1'b0, tl_item.PRE[7:6], 1'b0, tl_item.VTG[7:6]}} // Override data
                     );
                 end
 
@@ -1144,7 +1061,8 @@ function bit generate_clock_recovery_phase(
                 // Step 4: Read TRAINING_AUX_RD_INTERVAL
                 `uvm_info(get_type_name(), "Reading TRAINING_AUX_RD_INTERVAL", UVM_LOW);
                 generate_native_aux_read_transaction(
-                    received_transaction,       // Input transaction
+                    sink_item,       // Input transaction from sink
+                    tl_item,         // Input transaction from tl
                     expected_transaction,       // Output transaction
                     4'b1001,                    // Override command (AUX_NATIVE_READ)
                     20'h0000E,                  // Override address (0x0000E)
@@ -1160,11 +1078,12 @@ function bit generate_clock_recovery_phase(
     //     EQ_RD_Value[6:0] inside {7'h00, 7'h01, 7'h02, 7'h03, 7'h04}; // Allowed values for the lower 7 bits
 
                 // Step 5: Wait for the interval and read Link Status registers
-                ref_model_in_port.get(received_transaction); //Lpm_seq_item
+                ref_model_in_port.get(tl_item); //Lpm_seq_item
                 // Wait EQ_RD_Value
                 `uvm_info(get_type_name(), "Waiting for TRAINING_AUX_RD_INTERVAL and reading Link Status registers", UVM_LOW);
                 generate_native_aux_read_transaction(
-                    received_transaction,       // Input transaction
+                    sink_item,       // Input transaction from sink
+                    tl_item,         // Input transaction from tl
                     expected_transaction,       // Output transaction
                     4'b1001,                    // Override command (AUX_NATIVE_READ)
                     20'h00202,                  // Override address (0x00202)
@@ -1180,21 +1099,21 @@ function bit generate_clock_recovery_phase(
             same_parameters_repeated_counter = same_parameters_repeated_counter + 1;
 
             // Wait for the next transaction
-            ref_model_in_port.get(received_transaction); //Lpm_seq_item
+            ref_model_in_port.get(tl_item); //Lpm_seq_item
 
-		    if((received_transaction.Link_LC_CR == 'b11) && (&received_transaction.CR_DONE))
+		    if((tl_item.Link_LC_CR == 'b11) && (&tl_item.CR_DONE))
              begin
               next_state = SUCCESS;			
              end
-            else if((received_transaction.Link_LC_CR == 'b01) && (&received_transaction.CR_DONE[1:0]))
+            else if((tl_item.Link_LC_CR == 'b01) && (&tl_item.CR_DONE[1:0]))
              begin
               next_state = SUCCESS;			
              end
-            else if((received_transaction.Link_LC_CR == 'b00) && (received_transaction.CR_DONE[0]))
+            else if((tl_item.Link_LC_CR == 'b00) && (tl_item.CR_DONE[0]))
              begin
               next_state = SUCCESS;			
              end
-            else if(received_transaction.Link_LC_CR == 'b10)   // Error Value of LC so it goes to the IDLE STATE 
+            else if(tl_item.Link_LC_CR == 'b10)   // Error Value of LC so it goes to the IDLE STATE 
              begin
               next_state = IDLE_STATE;			
              end
@@ -1210,7 +1129,8 @@ function bit generate_clock_recovery_phase(
             `uvm_info(get_type_name(), "Reading Adjusted Training Parameters", UVM_LOW);
 
                 generate_native_aux_read_transaction(
-                    received_transaction,       // Input transaction
+                    sink_item,       // Input transaction from sink
+                    tl_item,         // Input transaction from tl
                     expected_transaction,       // Output transaction
                     4'b1001,                    // Override command (AUX_NATIVE_READ)
                     20'h00206,                  // Override address (0x00202)
@@ -1223,9 +1143,9 @@ function bit generate_clock_recovery_phase(
         // Conditions: 1. MAX_VTG = VTG 2. full_loop_counter > 10 3. same_parameters_repeated_counter > 5
         // Note: Should be 3 conditions but don't know
             CHECK_NEW_CONDITIONS: begin
-          ref_model_in_port.get(received_transaction); //Lpm_seq_item
+          ref_model_in_port.get(tl_item); //Lpm_seq_item
 
-           if ((full_loop_counter == 'd11) || (same_parameters_repeated_counter == 'd6) || (received_transaction.VTG == MAX_VTG_temp))
+           if ((full_loop_counter == 'd11) || (same_parameters_repeated_counter == 'd6) || (tl_item.VTG == MAX_VTG_temp))
             begin
              next_state = CHECK_IF_RBR;
             end
@@ -1333,52 +1253,54 @@ function bit generate_clock_recovery_phase(
     return CR_DONE;
 endfunction
 
-
+    // should be made into an fsm like CLOCK RECOVERY
     // Function to generate the expected transaction for Channel Equalization Phase
-    function bit generate_channel_equalization_phase(
-        input dp_transaction received_transaction,
-        output dp_transaction expected_transaction
-    );
-        // bit EQ_DONE = 0;
+    // function bit generate_channel_equalization_phase(
+    // input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
+    // input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
+    // output dp_transaction expected_transaction // Generated expected transaction
+    // );
+    //     // bit EQ_DONE = 0;
     
-        // Step 1: Enable Training Pattern 2 and disable scrambling
-        `uvm_info(get_type_name(), "Enabling Training Pattern 2 for Channel Equalization", UVM_LOW);
-        expected_transaction.LPM_Reply_ACK = 1'b1;
-        expected_transaction.LPM_Reply_ACK_VLD = 1'b1;
+    //     // Step 1: Enable Training Pattern 2 and disable scrambling
+    //     `uvm_info(get_type_name(), "Enabling Training Pattern 2 for Channel Equalization", UVM_LOW);
+    //     expected_transaction.LPM_Reply_ACK = 1'b1;
+    //     expected_transaction.LPM_Reply_ACK_VLD = 1'b1;
     
-        // Step 2: Read TRAINING_AUX_RD_INTERVAL
-        expected_transaction.SPM_Reply_Data = $urandom_range(1, 10); // Simulate interval value
-        `uvm_info(get_type_name(), $sformatf("TRAINING_AUX_RD_INTERVAL: %0d", expected_transaction.SPM_Reply_Data), UVM_LOW);
+    //     // Step 2: Read TRAINING_AUX_RD_INTERVAL
+    //     expected_transaction.SPM_Reply_Data = $urandom_range(1, 10); // Simulate interval value
+    //     `uvm_info(get_type_name(), $sformatf("TRAINING_AUX_RD_INTERVAL: %0d", expected_transaction.SPM_Reply_Data), UVM_LOW);
     
-        // Step 3: Wait for the interval and read Link Status registers
-        for (int retry = 0; retry < 5; retry++) begin
-            `uvm_info(get_type_name(), "Reading Link Status registers for Channel Equalization", UVM_LOW);
-            bit [7:0] EQ_status = $urandom_range(0, 1); // Randomly simulate success/failure
+    //     // Step 3: Wait for the interval and read Link Status registers
+    //     for (int retry = 0; retry < 5; retry++) begin
+    //         `uvm_info(get_type_name(), "Reading Link Status registers for Channel Equalization", UVM_LOW);
+    //         bit [7:0] EQ_status = $urandom_range(0, 1); // Randomly simulate success/failure
     
-            if (EQ_status) begin
-                EQ_DONE = 1;
-                `uvm_info(get_type_name(), "Channel Equalization successful", UVM_LOW);
-                break;
-            end else begin
-                `uvm_warning(get_type_name(), "Channel Equalization failed, retrying...");
-            end
-        end
+    //         if (EQ_status) begin
+    //             EQ_DONE = 1;
+    //             `uvm_info(get_type_name(), "Channel Equalization successful", UVM_LOW);
+    //             break;
+    //         end else begin
+    //             `uvm_warning(get_type_name(), "Channel Equalization failed, retrying...");
+    //         end
+    //     end
     
-        // Step 4: Handle failure
-        if (!EQ_DONE) begin
-            `uvm_error(get_type_name(), "Channel Equalization failed after retries");
-        end
+    //     // Step 4: Handle failure
+    //     if (!EQ_DONE) begin
+    //         `uvm_error(get_type_name(), "Channel Equalization failed after retries");
+    //     end
     
-        return EQ_DONE;
-    endfunction
+    //     return EQ_DONE;
+    // endfunction
 
 
 
 
     // Function to generate the expected transaction for Link Training Flow
     function void generate_link_training_flow(
-        input dp_transaction received_transaction,
-        output dp_transaction expected_transaction
+    input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
+    input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
+    output dp_transaction expected_transaction // Generated expected transaction
     );
         bit [3:0] command;       // First 4 bits: Command
 
@@ -1386,20 +1308,21 @@ endfunction
         bit CR_DONE = 0;
         bit EQ_DONE = 0;
     
-        // Step 1: Read DPCD capabilities (0x00000–0x000FF)
+        // Step 2: Read DPCD capabilities (0x00000–0x000FF)
         `uvm_info(get_type_name(), "Reading DPCD capabilities", UVM_LOW);
 
         for (int i = 0; i < 16; i++) begin
         // Native AUX Transaction Scenario
         generate_native_aux_read_transaction(
-            received_transaction,       // Input transaction
+            sink_item,       // Input transaction from sink
+            tl_item,         // Input transaction from tl
             expected_transaction        // Output transaction
         );
         end
         
         // need to understand better
         // need to handle how to get Link_BW_CR and Link_LC_CR
-        // Step 2: Writing to the Link Configuration field (offsets 0x00100–0x00101) to set the Link Bandwidth and Lane Count  clears register 0x00102 to 00h in the same write 
+        // Step 3: Writing to the Link Configuration field (offsets 0x00100–0x00101) to set the Link Bandwidth and Lane Count  clears register 0x00102 to 00h in the same write 
         //transaction.
 
                 // Assign the encoded value to aux_in_out
@@ -1407,7 +1330,8 @@ endfunction
                 
                 // Call the Native aux write function to handle the transaction
                 generate_native_aux_write_transaction(
-                    received_transaction,       // Input transaction
+                    sink_item,       // Input transaction from sink
+                    tl_item,         // Input transaction from tl
                     expected_transaction,       // Output transaction
                     4'b1000,                    // Override command (AUX_NATIVE_WRITE)
                     20'h00100,                  // Override address (0x00100)
@@ -1416,19 +1340,19 @@ endfunction
                 );
 
     
-        // Step 3: Begin Clock Recovery Phase
-        CR_DONE = generate_clock_recovery_phase(received_transaction, expected_transaction);
+        // Step 4: Begin Clock Recovery Phase
+        CR_DONE = generate_clock_recovery_phase(sink_item, tl_item, expected_transaction);
     
         // Step 5: Begin Channel Equalization Phase if CR is successful
         if (CR_DONE) begin
-            EQ_DONE = generate_channel_equalization_phase(received_transaction, expected_transaction);
+            EQ_DONE = generate_channel_equalization_phase(sink_item, tl_item, expected_transaction);
         end
     
         // Step 6: Finalize Link Training
         if (EQ_DONE) begin
             expected_transaction.EQ_LT_Pass = 1'b1;
-            expected_transaction.final_bw = $urandom_range(1, 4); // Simulate final bandwidth
-            expected_transaction.final_lane_count = $urandom_range(1, 4); // Simulate final lane count
+            expected_transaction.final_bw = 
+            expected_transaction.final_lane_count = 
             `uvm_info(get_type_name(), $sformatf("Link Training successful: BW=%0d, Lanes=%0d",
                                                  expected_transaction.final_bw,
                                                  expected_transaction.final_lane_count), UVM_LOW);
