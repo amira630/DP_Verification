@@ -144,7 +144,7 @@ class dp_reference_model extends uvm_component;
         bit [7:0] address;       // last 8 bits of address Address
         bit [7:0] length;        // Next 8 bits: Length
         bit [7:0] data[$];       // Remaining bits: Data
-        bit ack_count = 0;  //Ack counter
+        int ack_count = 0;  //Ack counter
         
         while (ack_count < 1) begin
 
@@ -554,7 +554,7 @@ class dp_reference_model extends uvm_component;
         bit [19:0] address;      // Address
         bit [7:0] length;        // Length
         bit [7:0] data[$];       // Data
-        bit ack_count = 0;       // Ack counter
+        int ack_count = 0;       // Ack counter
     
         // Use overrides if provided, otherwise use defaults from tl_item
         command = (override_command != 4'b0000) ? override_command : tl_item.LPM_CMD;
@@ -725,7 +725,7 @@ class dp_reference_model extends uvm_component;
     bit [19:0] address;      // Address
     bit [7:0] length;        // Length
     bit [7:0] data[$];       // Data
-    bit ack_count = 0;       // Ack counter
+    int ack_count = 0;       // Ack counter
 
     // Use overrides if provided, otherwise use defaults from tl_item
     command = (override_command != 4'b0000) ? override_command : tl_item.LPM_CMD;
@@ -899,7 +899,7 @@ function bit generate_clock_recovery_phase(
 
     bit CR_DONE = 0;
     fsm_state_e current_state, next_state;
-    bit ack_count = 0;  //Ack counter
+    int ack_count = 0;  //Ack counter
     bit [1:0]  MAX_VTG_temp, MAX_PRE_temp; // Temporary variables for max values
     bit [3:0]  full_loop_counter = 4'b0000;
     bit [3:0]  same_parameters_repeated_counter = 4'b0000;
@@ -1066,7 +1066,7 @@ function bit generate_clock_recovery_phase(
                     expected_transaction,       // Output transaction
                     4'b1001,                    // Override command (AUX_NATIVE_READ)
                     20'h0000E,                  // Override address (0x0000E)
-                    8'h01                       // Override length (1 byte)
+                    8'h00                       // Override length (1 byte)
                 );
                 next_state = WAIT_AND_READ_LINK_STATUS;
             end
@@ -1089,6 +1089,8 @@ function bit generate_clock_recovery_phase(
                     20'h00202,                  // Override address (0x00202)
                     8'h05                       // Override length (6 byte(s))
                 );
+
+                next_state = CR_DONE_CHECK; 
 
             end
             
@@ -1115,7 +1117,7 @@ function bit generate_clock_recovery_phase(
              end
             else if(tl_item.Link_LC_CR == 'b10)   // Error Value of LC so it goes to the IDLE STATE 
              begin
-              next_state = IDLE_STATE;			
+              next_state = IDLE;			
              end
 			     else
 			      begin
@@ -1253,47 +1255,451 @@ function bit generate_clock_recovery_phase(
     return CR_DONE;
 endfunction
 
-    // should be made into an fsm like CLOCK RECOVERY
-    // Function to generate the expected transaction for Channel Equalization Phase
-    // function bit generate_channel_equalization_phase(
-    // input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
-    // input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
-    // output dp_transaction expected_transaction // Generated expected transaction
-    // );
-    //     // bit EQ_DONE = 0;
+        // add a value to retry CR
+        // Function to generate the expected transaction for channel equalization phase
+        function bit generate_channel_equalization_phase(
+        input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
+        input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
+        output dp_transaction expected_transaction,
+        input bit [3:0]  NEW_LANE_COUNT = 2'b00; // Current lane count
+        input bit [7:0]  NEW_LINK_RATE = 8'h00; // Current link rate
+        input bit [7:0]  NEW_VTG = 8'h00;, // Temporary variable for max values
+        input bit [7:0]  NEW_PRE = 8'h00 // Temporary variable for max values
+        input bit [1:0]  MAX_VTG_temp = 2'b00; // Temporary variable for max values
+        input bit [1:0]  MAX_PRE_temp = 2'b00; // Temporary variable for max values
+    );
     
-    //     // Step 1: Enable Training Pattern 2 and disable scrambling
-    //     `uvm_info(get_type_name(), "Enabling Training Pattern 2 for Channel Equalization", UVM_LOW);
-    //     expected_transaction.LPM_Reply_ACK = 1'b1;
-    //     expected_transaction.LPM_Reply_ACK_VLD = 1'b1;
+        // State machine for the channel equalization phase
+        typedef enum logic [4:0] { // Updated to [4:0] to accommodate more states
+            IDLE,
+            ENABLE_TRAINING_PATTERN_SEQUENCE,
+            READ_TRAINING_INTERVAL,
+            WAIT_AND_READ_LINK_STATUS,
+            CHECK_CR,                        // Added state to check CR_DONE
+            CHECK_EQUALIZATION,              // Added state to check equalization parameters
+            WRITE_ADJUSTED_DRIVING_PARAMETERS, // Added state to write adjusted driving parameters
+            CHECK_IF_RBR,                    // Added state to check if RBR is used
+            CHECK_IF_ONE_LANE_USED,          // Added state to check if one lane is used
+            REDUCE_LANE_COUNT,
+            REDUCE_LINK_RATE,
+            FAILURE,
+            SUCCESS
+        } fsm_state_e;
     
-    //     // Step 2: Read TRAINING_AUX_RD_INTERVAL
-    //     expected_transaction.SPM_Reply_Data = $urandom_range(1, 10); // Simulate interval value
-    //     `uvm_info(get_type_name(), $sformatf("TRAINING_AUX_RD_INTERVAL: %0d", expected_transaction.SPM_Reply_Data), UVM_LOW);
+        bit EQ_DONE = 0;
+        fsm_state_e current_state, next_state;
+        int ack_count = 0;  // Ack counter
+        bit [3:0] retry_counter = 4'b0000;  // Retry counter for Sequence 2
+        bit [3:0] CURRENT_LANE_COUNT = NEW_LANE_COUNT; // Current lane count
+        bit [7:0] CURRENT_LINK_RATE = NEW_LINK_RATE; // Current link rate
+        bit [7:0] CURRENT_PRE = NEW_PRE;// Temporary variable for VTG and PRE values
+        bit [7:0] CURRENT_VTG = NEW_VTG; // Temporary variable for VTG and PRE values
+        bit [1:0] MAX_TPS_SUPPORTED_STORED = 2'b00; // Temporary variable for max values
+        int Loop_Counter = 0; // Loop counter for retrying the sequence
+        int Max_Loop_Counter = 0; // Maximum loop count for retrying the sequence
     
-    //     // Step 3: Wait for the interval and read Link Status registers
-    //     for (int retry = 0; retry < 5; retry++) begin
-    //         `uvm_info(get_type_name(), "Reading Link Status registers for Channel Equalization", UVM_LOW);
-    //         bit [7:0] EQ_status = $urandom_range(0, 1); // Randomly simulate success/failure
+        // Initialize the FSM
+        current_state = IDLE;
     
-    //         if (EQ_status) begin
-    //             EQ_DONE = 1;
-    //             `uvm_info(get_type_name(), "Channel Equalization successful", UVM_LOW);
-    //             break;
-    //         end else begin
-    //             `uvm_warning(get_type_name(), "Channel Equalization failed, retrying...");
-    //         end
-    //     end
+        forever begin
+            case (current_state)
+                IDLE: begin
+                    // Wait for the next transaction
+                    ref_model_in_port.get(tl_item);
     
-    //     // Step 4: Handle failure
-    //     if (!EQ_DONE) begin
-    //         `uvm_error(get_type_name(), "Channel Equalization failed after retries");
-    //     end
+                    // Store the important values
+                    MAX_TPS_SUPPORTED_STORED = tl_item.MAX_TPS_SUPPORTED;
     
-    //     return EQ_DONE;
-    // endfunction
+                    if (tl_item.LPM_Start_CR && tl_item.Driving_Param_VLD && tl_item.Config_Param_VLD) begin
+                        `uvm_info(get_type_name(), "Starting Channel Equalization Phase", UVM_LOW);
+                        next_state = ENABLE_TRAINING_PATTERN_SEQUENCE;
+                    end else begin
+                        next_state = IDLE; // Stay in IDLE if not valid
+                    end
+                end
+    
+                ENABLE_TRAINING_PATTERN_SEQUENCE: begin
+                    // Step 1: Enable Training Pattern (Depending on MAX TPS supported) and disable scrambling
+                    `uvm_info(get_type_name(), "Enabling Training Pattern and disabling scrambling", UVM_LOW);
+
+                    // signals sent to phy layer to transmit TPS
+                    if (CURRENT_LANE_COUNT == 2'b00) begin
+                        // Configure Lane 0
+                        generate_native_aux_write_transaction(
+                            sink_item,       // Input transaction from sink
+                            tl_item,         // Input transaction from tl
+                            expected_transaction,       // Output transaction
+                            4'b1000,                    // Override command (AUX_NATIVE_WRITE)
+                            20'h00102,                  // Override address (0x00102)
+                            8'h01,                      // Override length (2 byte)
+                            '{(MAX_TPS_SUPPORTED == 2'b01) ? 8'h22 : 
+                              (MAX_TPS_SUPPORTED == 2'b10) ? 8'h23 : 
+                              (MAX_TPS_SUPPORTED == 2'b11) ? 8'h07 : 8'h00, // TPS value based on MAX_TPS_SUPPORTED
+                              (tl_item.VTG[1:0] == MAX_VTG_temp && tl_item.PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                              (tl_item.VTG[1:0] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                              (tl_item.PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]} :
+                              {2'b00, 1'b0, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]}} // Override data
+                        );
+                    end else if (CURRENT_LANE_COUNT == 2'b01) begin
+                        // Configure Lanes 0 and 1
+                        generate_native_aux_write_transaction(
+                            sink_item,       // Input transaction from sink
+                            tl_item,         // Input transaction from tl
+                            expected_transaction,       // Output transaction
+                            4'b1000,                    // Override command (AUX_NATIVE_WRITE)
+                            20'h00102,                  // Override address (0x00102)
+                            8'h02,                      // Override length (3 bytes)
+                            '{(MAX_TPS_SUPPORTED == 2'b01) ? 8'h22 : 
+                              (MAX_TPS_SUPPORTED == 2'b10) ? 8'h23 : 
+                              (MAX_TPS_SUPPORTED == 2'b11) ? 8'h07 : 8'h00, // TPS value based on MAX_TPS_SUPPORTED
+                              (tl_item.VTG[1:0] == MAX_VTG_temp && tl_item.PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                              (tl_item.VTG[1:0] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                              (tl_item.PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]} :
+                              {2'b00, 1'b0, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]},
+                              (tl_item.VTG[3:2] == MAX_VTG_temp && tl_item.PRE[3:2] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
+                              (tl_item.VTG[3:2] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
+                              (tl_item.PRE[3:2] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]} :
+                              {2'b00, 1'b0, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]}} // Override data
+                        );
+                    end else begin
+                        // Configure Lanes 0, 1, 2, and 3
+                        generate_native_aux_write_transaction(
+                            sink_item,       // Input transaction from sink
+                            tl_item,         // Input transaction from tl
+                            expected_transaction,       // Output transaction
+                            4'b1000,                    // Override command (AUX_NATIVE_WRITE)
+                            20'h00102,                  // Override address (0x00102)
+                            8'h04,                      // Override length (5 bytes)
+                            '{(MAX_TPS_SUPPORTED == 2'b01) ? 8'h22 : 
+                              (MAX_TPS_SUPPORTED == 2'b10) ? 8'h23 : 
+                              (MAX_TPS_SUPPORTED == 2'b11) ? 8'h07 : 8'h00, // TPS value based on MAX_TPS_SUPPORTED
+                              (tl_item.VTG[1:0] == MAX_VTG_temp && tl_item.PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                              (tl_item.VTG[1:0] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                              (tl_item.PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]} :
+                              {2'b00, 1'b0, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]},
+                              (tl_item.VTG[3:2] == MAX_VTG_temp && tl_item.PRE[3:2] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
+                              (tl_item.VTG[3:2] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
+                              (tl_item.PRE[3:2] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]} :
+                              {2'b00, 1'b0, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]},
+                              (tl_item.VTG[5:4] == MAX_VTG_temp && tl_item.PRE[5:4] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[5:4], 1'b1, tl_item.VTG[5:4]} :
+                              (tl_item.VTG[5:4] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[5:4], 1'b1, tl_item.VTG[5:4]} :
+                              (tl_item.PRE[5:4] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[5:4], 1'b0, tl_item.VTG[5:4]} :
+                              {2'b00, 1'b0, tl_item.PRE[5:4], 1'b0, tl_item.VTG[5:4]},
+                              (tl_item.VTG[7:6] == MAX_VTG_temp && tl_item.PRE[7:6] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[7:6], 1'b1, tl_item.VTG[7:6]} :
+                              (tl_item.VTG[7:6] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[7:6], 1'b1, tl_item.VTG[7:6]} :
+                              (tl_item.PRE[7:6] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[7:6], 1'b0, tl_item.VTG[7:6]} :
+                              {2'b00, 1'b0, tl_item.PRE[7:6], 1'b0, tl_item.VTG[7:6]}} // Override data
+                        );
+                    end
+    
+                    next_state = READ_TRAINING_INTERVAL;
+                end
+    
+                READ_TRAINING_INTERVAL: begin
+                    // Step 2: Read TRAINING_AUX_RD_INTERVAL
+                    `uvm_info(get_type_name(), "Reading TRAINING_AUX_RD_INTERVAL", UVM_LOW);
+    
+                    generate_native_aux_read_transaction(
+                        sink_item,       // Input transaction from sink
+                        tl_item,         // Input transaction from tl
+                        expected_transaction,       // Output transaction
+                        4'b1001,                    // Override command (AUX_NATIVE_READ)
+                        20'h0000E,                  // Override address (0x0000E)
+                        8'h00                       // Override length (1 byte)
+                    );
+    
+                    next_state = WAIT_AND_READ_LINK_STATUS;
+                end
+                
+                //     constraint eq_rd_value_constraint {
+                //     EQ_RD_Value[7] == 1'b1; // Ensure the MSB is always 1
+                //     EQ_RD_Value[6:0] inside {7'h00, 7'h01, 7'h02, 7'h03, 7'h04}; // Allowed values for the lower 7 bits
+
+                WAIT_AND_READ_LINK_STATUS: begin
+                    // Step 3: Wait for the interval and read Link Status registers
+                    `uvm_info(get_type_name(), "Waiting for TRAINING_AUX_RD_INTERVAL and reading Link Status registers", UVM_LOW);
+                    ref_model_in_port.get(tl_item); //Lpm_seq_item
+                    // Wait EQ_RD_Value
+
+                    // read Link Status registers (0X00202) TO (OX00207)
+                    generate_native_aux_read_transaction(
+                        sink_item,       // Input transaction from sink
+                        tl_item,         // Input transaction from tl
+                        expected_transaction,       // Output transaction
+                        4'b1001,                    // Override command (AUX_NATIVE_READ)
+                        20'h00202,                  // Override address (0x00202)
+                        8'h05                       // Override length (6 bytes)
+                    );
+    
+                    next_state = CHECK_CR;
+                end
+    
+                CHECK_CR: begin
+                // Step 4: Check CR_DONE
+                `uvm_info(get_type_name(), "Checking CR parameters", UVM_LOW);
+
+                    // Wait for the next transaction
+                    ref_model_in_port.get(tl_item); //Lpm_seq_item   
+
+		           if((CURRENT_LANE_COUNT == 'b11) && (&tl_item.CR_DONE))
+                   begin
+                    next_state = CHECK_EQUALIZATION;			
+                   end
+                   else if((CURRENT_LANE_COUNT == 'b01) && (&tl_item.CR_DONE[1:0]))
+                   begin
+                    next_state = CHECK_EQUALIZATION;			
+                   end
+                   else if((CURRENT_LANE_COUNT == 'b00) && (tl_item.CR_DONE[0]))
+                   begin
+                    next_state = CHECK_EQUALIZATION;			
+                   end
+                   else if(CURRENT_LANE_COUNT == 'b10)   // Error Value of LC so it goes to the IDLE STATE 
+                   begin
+                    next_state = IDLE;			
+                   end
+			       else
+			       begin
+                    expected_transaction.FSM_CR_Failed = 1'b1;
+                    ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard 
+                    next_state = CHECK_IF_ONE_LANE_USED; // Check if one lane is used
+                   end
+                   end	
+
+                CHECK_EQUALIZATION: begin
+
+                // Step 5: Check EQUALIZATION
+                `uvm_info(get_type_name(), "Checking EQ parameters", UVM_LOW);  
+
+                   if((CURRENT_LANE_COUNT == 'b11) && (tl_item.Lane_Align == 8'b11111111) && (tl_item.Channel_EQ[0] == 1'b1) && (tl_item.Symbol_Locked[0] == 1'b1))
+                   begin
+                    next_state = SUCCESS;			
+                   end
+                   else if((CURRENT_LANE_COUNT == 'b01) && (tl_item.Lane_Align == 8'b11111111) && (tl_item.Channel_EQ[1:0] == 2'b11) && (tl_item.Symbol_Locked[1:0] == 2'b11))
+                   begin
+                    next_state = SUCCESS;			
+                   end
+                   else if((CURRENT_LANE_COUNT == 'b00) && (tl_item.Lane_Align == 8'b11111111) && (tl_item.Channel_EQ[0] == 1'b1) && (tl_item.Symbol_Locked[0] == 1'b1))
+                   begin
+                    next_state = SUCCESS;			
+                   end
+                   else if(CURRENT_LANE_COUNT == 'b10)   // Error Value of LC so it goes to the IDLE STATE 
+                   begin
+                    next_state = IDLE;			
+                   end
+			       else
+			       begin
+                    Loop_Counter = Loop_Counter + 1; 
+                    if(Loop_Counter == 6)
+                    begin
+                        next_state = IDLE;
+                        Max_Loop_Counter = 1;
+                        expected_transaction.FSM_CR_Failed = 1'b1;
+                        ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard                   
+                    end
+                    else
+                    begin
+                        next_state = WRITE_ADJUSTED_DRIVING_PARAMETERS;
+                    end 
+                   end
+
+                end	
+
+    
+                WRITE_ADJUSTED_DRIVING_PARAMETERS: begin
+                    // Step 5: Read Adjusted Training Parameters
+                    `uvm_info(get_type_name(), "Reading Adjusted Training Parameters", UVM_LOW);
+
+                    // signals sent to phy layer to transmit TPS
+                    if (CURRENT_LANE_COUNT == 2'b00) begin
+                        // Configure Lane 0
+                        generate_native_aux_write_transaction(
+                            sink_item,       // Input transaction from sink
+                            tl_item,         // Input transaction from tl
+                            expected_transaction,       // Output transaction
+                            4'b1000,                    // Override command (AUX_NATIVE_WRITE)
+                            20'h00102,                  // Override address (0x00102)
+                            8'h01,                      // Override length (2 byte)
+                            '{(tl_item.VTG[1:0] == MAX_VTG_temp && tl_item.PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                              (tl_item.VTG[1:0] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                              (tl_item.PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]} :
+                              {2'b00, 1'b0, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]}} // Override data
+                        );
+                    end else if (CURRENT_LANE_COUNT == 2'b01) begin
+                        // Configure Lanes 0 and 1
+                        generate_native_aux_write_transaction(
+                            sink_item,       // Input transaction from sink
+                            tl_item,         // Input transaction from tl
+                            expected_transaction,       // Output transaction
+                            4'b1000,                    // Override command (AUX_NATIVE_WRITE)
+                            20'h00102,                  // Override address (0x00102)
+                            8'h02,                      // Override length (3 bytes)
+                            '{(tl_item.VTG[1:0] == MAX_VTG_temp && tl_item.PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                              (tl_item.VTG[1:0] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                              (tl_item.PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]} :
+                              {2'b00, 1'b0, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]},
+                              (tl_item.VTG[3:2] == MAX_VTG_temp && tl_item.PRE[3:2] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
+                              (tl_item.VTG[3:2] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
+                              (tl_item.PRE[3:2] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]} :
+                              {2'b00, 1'b0, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]}} // Override data
+                        );
+                    end else begin
+                        // Configure Lanes 0, 1, 2, and 3
+                        generate_native_aux_write_transaction(
+                            sink_item,       // Input transaction from sink
+                            tl_item,         // Input transaction from tl
+                            expected_transaction,       // Output transaction
+                            4'b1000,                    // Override command (AUX_NATIVE_WRITE)
+                            20'h00102,                  // Override address (0x00102)
+                            8'h04,                      // Override length (5 bytes)
+                            '{(tl_item.VTG[1:0] == MAX_VTG_temp && tl_item.PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                              (tl_item.VTG[1:0] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
+                              (tl_item.PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]} :
+                              {2'b00, 1'b0, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]},
+                              (tl_item.VTG[3:2] == MAX_VTG_temp && tl_item.PRE[3:2] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
+                              (tl_item.VTG[3:2] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
+                              (tl_item.PRE[3:2] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]} :
+                              {2'b00, 1'b0, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]},
+                              (tl_item.VTG[5:4] == MAX_VTG_temp && tl_item.PRE[5:4] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[5:4], 1'b1, tl_item.VTG[5:4]} :
+                              (tl_item.VTG[5:4] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[5:4], 1'b1, tl_item.VTG[5:4]} :
+                              (tl_item.PRE[5:4] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[5:4], 1'b0, tl_item.VTG[5:4]} :
+                              {2'b00, 1'b0, tl_item.PRE[5:4], 1'b0, tl_item.VTG[5:4]},
+                              (tl_item.VTG[7:6] == MAX_VTG_temp && tl_item.PRE[7:6] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[7:6], 1'b1, tl_item.VTG[7:6]} :
+                              (tl_item.VTG[7:6] == MAX_VTG_temp) ? {2'b00, 1'b0, tl_item.PRE[7:6], 1'b1, tl_item.VTG[7:6]} :
+                              (tl_item.PRE[7:6] == MAX_PRE_temp) ? {2'b00, 1'b1, tl_item.PRE[7:6], 1'b0, tl_item.VTG[7:6]} :
+                              {2'b00, 1'b0, tl_item.PRE[7:6], 1'b0, tl_item.VTG[7:6]}} // Override data
+                        );
+                    end
+    
+                    next_state = READ_TRAINING_INTERVAL;
+                end
 
 
+            // Check if RBR is used
+            CHECK_IF_RBR: begin
+
+           if (CURRENT_LINK_RATE == == 8'h06) // is Bandwidth used is RBR?
+            begin
+             next_state = FAILURE;
+            end
+           else
+            begin
+             next_state = REDUCE_LINK_RATE;
+            end
+
+            end
+
+            // Check if one lane is used
+            CHECK_IF_ONE_LANE_USED: begin
+              if (tl_item.CR_DONE == 4'b0000) // is one lane used?
+            begin
+             next_state = CHECK_IF_RBR;
+            end
+              else
+            begin
+             next_state = REDUCE_LANE_COUNT;
+            end
+            end
+            
+            // Reduce Lane Count
+            REDUCE_LANE_COUNT: begin
+            if (CURRENT_LANE_COUNT == 2'b11)
+            begin
+             CURRENT_LANE_COUNT = 2'b01;
+            end
+            else
+            begin
+             CURRENT_LANE_COUNT = 2'b01;
+            end
+            restart = 1 // restart CR process  
+            next_state = IDLE; // Reset to IDLE for the next phase  
+            // restart clock recovery with updated lane count and bandwidth
+            end
+
+            // Reduce Link Count
+            REDUCE_LINK_RATE: begin
+          if (CURRENT_LINK_RATE == 8'h1E)               // HBR3
+           begin
+             CURRENT_LINK_RATE = 8'h14;          // HBR2
+           end
+          else if (CURRENT_LINK_RATE == 8'h14)          // HBR2
+           begin
+             CURRENT_LINK_RATE = 8'h0A;          // HBR
+           end
+          else if (CURRENT_LINK_RATE == 8'h0A)          // HBR
+           begin
+              CURRENT_LINK_RATE = 8'h06;          // RBR
+           end
+          else                                       // Default
+           begin
+              CURRENT_LINK_RATE = 8'h06;          // RBR
+           end 
+            restart = 1 // restart CR process
+            next_state = IDLE; // Reset to IDLE for the next phase
+            // restart clock recovery with updated lane count and bandwidth 
+            end
+
+            SUCCESS: begin
+                    // Step 8: EQ successful, Clear 0x00102 and set EQ_LT_Pass
+                    `uvm_info(get_type_name(), "Channel Equalization successful", UVM_LOW);
+                    
+                generate_native_aux_write_transaction(
+                    sink_item,       // Input transaction from sink
+                    tl_item,         // Input transaction from tl
+                    expected_transaction,       // Output transaction
+                    4'b1000,                    // Override command (AUX_NATIVE_WRITE)
+                    20'h00102,                  // Override address (0x00102)
+                    8'h00,                      // Override length (1 byte)
+                    8'h00                       // Override data
+                );
+
+                    expected_transaction.EQ_LT_Pass = 1'b1;
+                    expected_transaction.EQ_Final_ADJ_BW = CURRENT_LINK_RATE;
+                    expected_transaction.EQ_Final_ADJ_LC = CURRENT_LANE_COUNT;
+    
+                    ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
+                    EQ_DONE = 1;
+                    next_state = IDLE; // Reset to IDLE for the next phase
+                    break;
+                end
+    
+            FAILURE: begin
+                    // Step 9: EQ failed
+                    `uvm_error(get_type_name(), "Channel Equalization failed", UVM_LOW);
+    
+                    generate_native_aux_write_transaction(
+                    sink_item,       // Input transaction from sink
+                    tl_item,         // Input transaction from tl
+                    expected_transaction,       // Output transaction
+                    4'b1000,                    // Override command (AUX_NATIVE_WRITE)
+                    20'h00102,                  // Override address (0x00102)
+                    8'h00,                      // Override length (1 byte)
+                    8'h00                       // Override data
+             );
+
+                    expected_transaction.EQ_Failed = 1'b1;
+                    ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
+                    EQ_DONE = 0;
+                    next_state = IDLE; // Reset to IDLE for the next phase
+                    break;
+                end
+    
+                default: begin
+                    // Default state
+                    next_state = IDLE;
+                end
+            endcase
+    
+            // Update the current state
+            current_state = next_state;
+    
+            // Exit the loop if the process is complete
+            if (current_state == IDLE && (EQ_DONE || next_state == FAILURE)) begin
+                break;
+            end
+        end
+    
+        return EQ_DONE;
+    endfunction
 
 
     // Function to generate the expected transaction for Link Training Flow
