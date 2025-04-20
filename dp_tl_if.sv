@@ -1,8 +1,6 @@
+import test_parameters_pkg::*;
 interface dp_tl_if (input clk);
 
-    parameter int AUX_ADDRESS_WIDTH = 20;      // 20-bit AUX address
-
-    parameter int AUX_DATA_WIDTH = 8;      // 8-bit AUX data
     
     logic rst_n;   // Reset is asynchronous active low
     logic ready;   // Ready signal indicating that the DUT will respond to the transaction
@@ -190,12 +188,12 @@ interface dp_tl_if (input clk);
       endtask
 
       // I2C_READ task
-      task I2C_READ(input dp_tl_sequence_item SPM);
+      task I2C_READ(input logic[19:0] address, input logic[7:0] length, input native_aux_request_cmd_e command, input bit transaction_vld);
             // Set SPM-related signals to perform a read operation
-            SPM_Address = SPM.SPM_Address;
-            SPM_CMD     = SPM.SPM_CMD;
-            SPM_LEN     = SPM.SPM_LEN;
-            SPM_Transaction_VLD = SPM.SPM_Transaction_VLD;
+            SPM_Address = address;
+            SPM_CMD     = command;
+            SPM_LEN     = length;
+            SPM_Transaction_VLD = transaction_vld;
             // SPM_Data = SPM.SPM_Data;                                 // Data is not used in read operation
 
             wait(SPM_Reply_Data_VLD == 1 || SPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
@@ -203,71 +201,71 @@ interface dp_tl_if (input clk);
       endtask
     
       // I2C_WRITE task
-      task I2C_WRITE(input dp_tl_sequence_item SPM);
-            // Set SPM-related signals to perform a write operation
-            SPM_Address = SPM.SPM_Address;
-            SPM_CMD     = SPM.SPM_CMD;
-            SPM_LEN     = SPM.SPM_LEN;
-            SPM_Transaction_VLD = SPM.SPM_Transaction_VLD;
-            SPM_Data = SPM.SPM_Data;
+      // task I2C_WRITE(input dp_tl_sequence_item SPM);
+      //       // Set SPM-related signals to perform a write operation
+      //       SPM_Address = SPM.SPM_Address;
+      //       SPM_CMD     = SPM.SPM_CMD;
+      //       SPM_LEN     = SPM.SPM_LEN;
+      //       SPM_Transaction_VLD = SPM.SPM_Transaction_VLD;
+      //       SPM_Data = SPM.SPM_Data;
 
-            wait(SPM_Reply_Data_VLD == 1 || SPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
-            ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
-      endtask
+      //       wait(SPM_Reply_Data_VLD == 1 || SPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
+      //       ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
+      // endtask
 
-      // NATIVE_READ task
-      task NATIVE_READ(input dp_tl_sequence_item LPM);
-            // Set LPM-related signals to perform a read operation
-            LPM_Address = LPM.LPM_Address;
-            LPM_CMD     = LPM.LPM_CMD;
-            LPM_LEN     = LPM.LPM_LEN;
-            LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
-            // LPM_Data = LPM.LPM_Data; // Data is not used in read operation
+      // // NATIVE_READ task
+      // task NATIVE_READ(input dp_tl_sequence_item LPM);
+      //       // Set LPM-related signals to perform a read operation
+      //       LPM_Address = LPM.LPM_Address;
+      //       LPM_CMD     = LPM.LPM_CMD;
+      //       LPM_LEN     = LPM.LPM_LEN;
+      //       LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
+      //       // LPM_Data = LPM.LPM_Data; // Data is not used in read operation
 
-            wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
-            ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
-      endtask
+      //       wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
+      //       ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
+      // endtask
 
       // NATIVE_WRITE task
-      task NATIVE_WRITE(input dp_tl_sequence_item LPM);
-            // Set LPM-related signals to perform a write operation
-            LPM_Address = LPM.LPM_Address;
-            LPM_CMD     = LPM.LPM_CMD;
-            LPM_LEN     = LPM.LPM_LEN;
-            LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
-            LPM_Data = LPM.LPM_Data;
+      // task NATIVE_WRITE(input dp_tl_sequence_item LPM);
+      //       // Set LPM-related signals to perform a write operation
+      //       LPM_Address = LPM.LPM_Address;
+      //       LPM_CMD     = LPM.LPM_CMD;
+      //       LPM_LEN     = LPM.LPM_LEN;
+      //       LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
+      //       LPM_Data = LPM.LPM_Data;
 
-            wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
-            ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
-      endtask
+      //       wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
+      //       ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
+      // endtask
 
-      //////////////////////////// LINK TRAINING ////////////////////////////
+      // //////////////////////////// LINK TRAINING ////////////////////////////
 
-      task LINK_TRAINING (input dp_tl_sequence_item LPM);
-            // Set LPM-related signals for Clock Recovery Link Training
-            LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
-            LPM_Start_CR = LPM.LPM_Start_CR;
-            CR_DONE_VLD  = LPM.CR_DONE_VLD;
-            CR_DONE      = LPM.CR_DONE;
-            Link_LC_CR   = LPM.Link_LC_CR;
-            Link_BW_CR   = LPM.Link_BW_CR;
-            PRE          = LPM.PRE;
-            VTG          = LPM.VTG;
-            Driving_Param_VLD = LPM.Driving_Param_VLD;
-            Config_Param_VLD = LPM.Config_Param_VLD;
-            EQ_RD_Value  = LPM.EQ_RD_Value;
-            EQ_CR_DN     = LPM.EQ_CR_DN;
-            Channel_EQ   = LPM.Channel_EQ;
-            Symbol_Lock  = LPM.Symbol_Lock;
-            Lane_Align   = LPM.Lane_Align;
-            EQ_Data_VLD  = LPM.EQ_Data_VLD;
-            MAX_VTG      = LPM.MAX_VTG;
-            MAX_PRE      = LPM.MAX_PRE;
-            MAX_TPS_SUPPORTED = LPM.MAX_TPS_SUPPORTED;
-            MAX_TPS_SUPPORTED_VLD      = LPM.MAX_TPS_SUPPORTED_VLD;
+      // task LINK_TRAINING (input dp_tl_sequence_item LPM);
+      //       // Set LPM-related signals for Clock Recovery Link Training
+      //       LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
+      //       LPM_Start_CR = LPM.LPM_Start_CR;
+      //       CR_DONE_VLD  = LPM.CR_DONE_VLD;
+      //       CR_DONE      = LPM.CR_DONE;
+      //       Link_LC_CR   = LPM.Link_LC_CR;
+      //       Link_BW_CR   = LPM.Link_BW_CR;
+      //       PRE          = LPM.PRE;
+      //       VTG          = LPM.VTG;
+      //       Driving_Param_VLD = LPM.Driving_Param_VLD;
+      //       Config_Param_VLD = LPM.Config_Param_VLD;
+      //       EQ_RD_Value  = LPM.EQ_RD_Value;
+      //       EQ_CR_DN     = LPM.EQ_CR_DN;
+      //       Channel_EQ   = LPM.Channel_EQ;
+      //       Symbol_Lock  = LPM.Symbol_Lock;
+      //       Lane_Align   = LPM.Lane_Align;
+      //       EQ_Data_VLD  = LPM.EQ_Data_VLD;
+      //       MAX_VTG      = LPM.MAX_VTG;
+      //       MAX_PRE      = LPM.MAX_PRE;
+      //       MAX_TPS_SUPPORTED = LPM.MAX_TPS_SUPPORTED;
+      //       MAX_TPS_SUPPORTED_VLD      = LPM.MAX_TPS_SUPPORTED_VLD;
 
-            wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the link training to complete
-            ready = 1;                                             // Set ready signal to indicate that the DUT is ready to respond
-      endtask
+      //       wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the link training to complete
+      //       ready = 1;                                             // Set ready signal to indicate that the DUT is ready to respond
+      // endtask
 
 endinterface
