@@ -36,6 +36,11 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
                     `uvm_info("DP_SINK_DRIVER", $sformatf("Driving HPD_Signal = %0b", stim_seq_item.HPD_Signal), UVM_MEDIUM);
                     dp_sink_vif.drive_hpd_signal(stim_seq_item.HPD_Signal);
                 end
+                Interrupt_operation: begin
+                    // Interrupt sequence
+                    `uvm_info("DP_SINK_DRIVER", $sformatf("Driving Interrupt"), UVM_MEDIUM);
+                    dp_sink_vif.Interrupt();
+                end
                 Reply_operation: begin
                     // Reply operation
                     dp_sink_vif.drive_aux_in_out(stim_seq_item.AUX_IN_OUT);

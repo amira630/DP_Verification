@@ -148,7 +148,8 @@
 // Sink Driver Operation
     typedef enum logic [1:0] {
         HPD_operation   = 2'b00,  
-        Reply_operation = 2'b01
+        Interrupt_operation       = 2'b01,
+        Reply_operation = 2'b10
     } sink_op_code;
 
     // 
