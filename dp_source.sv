@@ -1,4 +1,112 @@
-module dp_source(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
+module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
+
+    // inputs
+    logic        clk;                
+    logic        rst_n;              
+    logic        spm_transaction_vld;
+    logic [1:0]  spm_cmd;            
+    logic [19:0] spm_address;        
+    logic [7:0]  spm_len;            
+    logic [7:0]  spm_data;           
+    logic        lpm_transaction_vld;
+    logic [1:0]  lpm_cmd;            
+    logic [19:0] lpm_address;        
+    logic [7:0]  lpm_len;            
+    logic [7:0]  lpm_data; 
+    logic        hpd_signal; 
+
+    // phy interface
+    logic        phy_start_stop;
+    
+    // lpm interface with cr fsm and cahnnell eq fsm 
+    logic [7:0]  vtg;
+    logic [7:0]  pre;
+
+    // channell eq fsm with lpm interface 
+    logic [3:0]  eq_cr_dn;
+    logic [3:0]  channel_eq;
+    logic [3:0]  symbol_lock;
+    logic [7:0]  lane_align;
+    logic        eq_data_vld;
+    logic [1:0]  tps;          
+    logic        tps_vld;
+
+    // channell eq fsm ; cr fsm with lpm interface     
+    logic [1:0]  max_vtg; // this signal is input to cr err chk      
+    logic [1:0]  max_pre;
+
+
+    // lpm with ctr interface
+    logic [7:0]  eq_rd_value;
+
+
+    //  eq err chk fsm ; cr err chk fsm and cr fsm with lpm interface
+    logic        config_param_vld; 
+    logic [7:0]  lpm_link_bw; 
+    logic [1:0]  lpm_link_lc; 
+
+
+    // lpm with cr fsm interface
+    logic        lpm_start_cr; 
+    logic        driving_param_vld;
+    logic        cr_done_vld;
+    logic [3:0]  cr_done;          
+
+
+
+    //===========================================================                   
+    // outputs       
+    //===========================================================
+
+    logic         aux_start_stop;
+    logic         timer_timeout;
+    logic         hpd_irq;
+    logic         hpd_detect;
+    logic         ctrl_native_failed;  
+    logic         ctrl_i2c_failed;
+
+    // reply decoder with spm interface signals    
+    logic [7:0]   spm_reply_data;
+    logic         spm_reply_data_vld;  
+    logic [1:0]   spm_reply_ack;
+    logic         spm_reply_ack_vld; 
+    logic         spm_native_i2c; 
+
+    // reply decoder with lpm interface signals    
+    logic [7:0]   lpm_reply_data;
+    logic         lpm_reply_data_vld;  
+    logic [1:0]   lpm_reply_ack;
+    logic         lpm_reply_ack_vld; 
+    logic         lpm_native_i2c; 
+
+    //
+    logic [1:0]         phy_instruct;
+    logic               phy_instruct_vld;
+    logic [1:0]         phy_adj_lc;
+    logic [7:0]         phy_adj_bw;
+
+    // cr fsm with lpm and err chk interface 
+    logic         fsm_cr_failed;
+    logic         cr_completed;
+
+    // channell eq fsm interface with lpm 
+    logic  [1:0]  eq_final_adj_lc;
+    logic  [7:0]  eq_final_adj_bw;
+    logic         eq_lt_failed;
+    logic         eq_lt_pass;
+    logic         eq_fsm_cr_failed;
+
+    logic [7:0] reply_data;
+    logic       reply_data_vld;
+    logic [1:0] reply_ack;
+    logic       reply_ack_vld;
+    logic       reply_i2c_native;
+
+
+    // bidirectional data bus
+    wire [7:0]  aux_in_out;
+
+
     // Inputs
     assign clk = tl_if.clk;              
     assign rst_n = tl_if.rst_n;              
@@ -45,14 +153,14 @@ module dp_source(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
     assign lpm_start_cr = tl_if.LPM_Start_CR;
     assign driving_param_vld = tl_if.Driving_Param_VLD;
     assign cr_done_vld = tl_if.CR_DONE_VLD;
-    assign cr_done = tl_if.CR_DONE,          
+    assign cr_done = tl_if.CR_DONE;         
 
     // PHY INTERFACE
     assign phy_start_stop = sink_if.PHY_START_STOP;
     assign hpd_signal = sink_if.HPD_Signal;
 
     // Bidirectional Data Bus
-    assign aux_in_out = sink_if.AUX_IN_OUT;
+    // assign aux_in_out = ;
 
     //===========================================================                   
     // Outputs       
@@ -67,7 +175,7 @@ module dp_source(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
     assign tl_if.SPM_Reply_Data = spm_reply_data;
     assign tl_if.SPM_Reply_Data_VLD = spm_reply_data_vld;
     assign tl_if.SPM_Reply_ACK = spm_reply_data_vld;
-    assign tl_if.SPM_Reply_ACK_VLD = spm_reply_ack_vld
+    assign tl_if.SPM_Reply_ACK_VLD = spm_reply_ack_vld;
     assign tl_if.SPM_NATIVE_I2C = spm_native_i2c;
     assign tl_if.CTRL_I2C_Failed = ctrl_i2c_failed;
 
@@ -75,7 +183,7 @@ module dp_source(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
     assign tl_if.LPM_Reply_Data = lpm_reply_data;
     assign tl_if.LPM_Reply_Data_VLD = lpm_reply_data_vld;
     assign tl_if.LPM_Reply_ACK = lpm_reply_ack;
-    assign tl_if.LPM_Reply_ACK_VLD = lpm_reply_ack_vld
+    assign tl_if.LPM_Reply_ACK_VLD = lpm_reply_ack_vld;
     assign tl_if.LPM_NATIVE_I2C = lpm_native_i2c;
     assign tl_if.CTRL_Native_Failed = ctrl_native_failed;
 
@@ -109,8 +217,6 @@ module dp_source(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
     wire         ctrl_native_retrans;
     wire         ctrl_ack_flag;
     wire         ctrl_i2c_native;
-    wire         ctrl_native_failed;   
-    wire         ctrl_i2c_failed; 
 
     // demux interface signals
     wire [1:0]   de_mux_native_cmd;    
@@ -153,6 +259,17 @@ module dp_source(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
     wire [7:0]  eq_len;             
     wire [7:0]  eq_data;
 
+    // Mux Phy Interface signals for Link Training
+    wire [1:0]  mux_cr_phy_instruct;
+    wire        mux_cr_phy_instruct_vld;
+    wire [1:0]  mux_cr_adj_lc;
+    wire [7:0]  mux_cr_adj_bw;
+    wire [1:0]  mux_eq_adj_lc;
+    wire [7:0]  mux_eq_adj_bw;
+    wire [1:0]  mux_eq_phy_instruct;
+    wire        mux_eq_phy_instruct_vld;
+
+    
 
     assign spm_reply_data = reply_data;
     assign spm_reply_data_vld = reply_data_vld;
@@ -166,15 +283,19 @@ module dp_source(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
     assign lpm_reply_ack_vld = reply_ack_vld;
     assign lpm_native_i2c = reply_i2c_native;
     
-    // Mux Phy Interface signals for Link Training
-    wire [1:0]  mux_cr_phy_instruct,
-    wire        mux_cr_phy_instruct_vld,
-    wire [1:0]  mux_cr_adj_lc, 
-    wire [7:0]  mux_cr_adj_bw,
-    wire [1:0]  mux_eq_adj_lc,
-    wire [7:0]  mux_eq_adj_bw,
-    wire [1:0]  mux_eq_phy_instruct,
-    wire        mux_eq_phy_instruct_vld,
+    
+
+    // cr fsm with phy layer interface
+    // logic  [1:0]  cr_phy_instruct;
+    // logic         cr_phy_instruct_vld;
+    // logic  [1:0]  cr_adj_lc; 
+    // logic  [7:0]  cr_adj_bw;
+
+    // // channell eq fsm interface with phy layer 
+    // logic  [1:0]  eq_phy_instruct;
+    // logic  [1:0]  eq_adj_lc;
+    // logic  [7:0]  eq_adj_bw;
+    // logic         eq_phy_instruct_vld;
 
 
     // Instantiate the AUX_CTRL_UNIT module
@@ -247,7 +368,7 @@ module dp_source(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
     (
     .clk                  (clk),
     .rst_n                (rst_n),
-    .ctrl_data_done_number(ctrl_done_data_number),
+    .ctrl_done_data_number(ctrl_done_data_number),
     .ctrl_native_retrans  (ctrl_native_retrans),
     .de_mux_native_cmd    (de_mux_native_cmd),
     .de_mux_native_data   (de_mux_native_data),
@@ -285,8 +406,7 @@ module dp_source(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
     .i2c_fsm_complete   (i2c_fsm_complete),
     .i2c_splitted_msg   (i2c_splitted_msg),
     .i2c_msg_vld        (i2c_msg_vld),
-    .i2c_fsm_failed     (i2c_fsm_failed),
-    .i2c_complete       (i2c_complete)
+    .i2c_fsm_failed     (i2c_fsm_failed)
     );
 
     // Instantiate the bidirectional_aux_phy_interface module
@@ -301,7 +421,7 @@ module dp_source(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
     .bdi_aux_in_vld    (bdi_aux_in_vld),
     .bdi_timer_reset   (bdi_timer_reset),
     .phy_start_stop    (phy_start_stop),
-    .aux_in_out        (aux_in_out)
+    .aux_in_out        (sink_if.AUX_IN_OUT)
     );
     // Instantiate the timeout_timer module
     timeout_timer timeout_timer_inst
@@ -314,18 +434,18 @@ module dp_source(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
     );
 
     //instantiate reply decoder
-    reply_decoder reply_decoder_inst
+    Reply_Decoder reply_decoder_inst
     (
-    .clk               (clk),
-    .rst_n             (rst_n),
-    .reply_data        (reply_data),
-    .reply_data_vld    (reply_data_vld),
-    .reply_ack         (reply_ack),
-    .reply_ack_vld     (reply_ack_vld),
-    .reply_i2c_native  (reply_i2c_native),
-    .bdi_aux_in        (bdi_aux_in),
-    .bdi_aux_in_vld    (bdi_aux_in_vld),
-    .ctrl_i2c_native   (ctrl_i2c_native)
+    .clk                    (clk),
+    .rst                    (rst_n),
+    .reply_data             (reply_data),
+    .reply_data_vld         (reply_data_vld),
+    .reply_ack              (reply_ack),
+    .reply_ack_vld          (reply_ack_vld),
+    .reply_dec_i2c_native   (reply_i2c_native),
+    .aux_in                 (bdi_aux_in),
+    .aux_in_vld             (bdi_aux_in_vld),
+    .aux_ctrl_i2c_native    (ctrl_i2c_native)
     );
 
     cr_eq_lt_top link_trainning_inst
@@ -387,25 +507,6 @@ module dp_source(DP_TL_if.DUT tl_if, DP_SINK_if.DUT sink_if);
     .hpd_signal(hpd_signal),
     .hpd_detect(hpd_detect),
     .hpd_irq   (hpd_irq)
-    );
-
-    native_i2c_de_mux  native_i2c_de_mux_inst 
-    (
-    .ctrl_msg_cmd         (ctrl_msg_cmd),
-    .ctrl_msg_data        (ctrl_msg_data),
-    .ctrl_msg_address     (ctrl_msg_address),
-    .ctrl_msg_len         (ctrl_msg_len),
-    .ctrl_tr_vld          (ctrl_tr_vld),
-    .ctrl_i2c_native      (ctrl_i2c_native),
-    .de_mux_native_cmd    (de_mux_native_cmd),
-    .de_mux_native_data   (de_mux_native_data),
-    .de_mux_native_address(de_mux_native_address),
-    .de_mux_native_len    (de_mux_native_len),
-    .de_mux_native_tr_vld (de_mux_native_tr_vld),
-    .de_mux_i2c_cmd       (de_mux_i2c_cmd),
-    .de_mux_i2c_address   (de_mux_i2c_address),
-    .de_mux_i2c_len       (de_mux_i2c_len),
-    .de_mux_i2c_tr_vld    (de_mux_i2c_tr_vld)
     );
 
     cr_eq_mux cr_eq_mux_inst

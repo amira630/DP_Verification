@@ -1,8 +1,5 @@
-interface dp_sink_if(input clk);
+interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk);
 
-    parameter int AUX_ADDRESS_WIDTH = 20;      // 20-bit AUX address
-
-    parameter int AUX_DATA_WIDTH = 8;      // 8-bit AUX data
 
     ///////////////////////////////////////////////////////////////
     //////////////////// AUXILIARY CHANNEL ////////////////////////

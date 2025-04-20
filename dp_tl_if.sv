@@ -1,5 +1,4 @@
-import test_parameters_pkg::*;
-interface dp_tl_if (input clk);
+interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk);
 
     
     logic rst_n;   // Reset is asynchronous active low
@@ -22,8 +21,9 @@ interface dp_tl_if (input clk);
     logic [AUX_ADDRESS_WIDTH-1:0] LPM_Address;
     logic [AUX_DATA_WIDTH-1:0]    LPM_Data, LPM_LEN, LPM_Reply_Data;
     logic [1:0]                   LPM_CMD, LPM_Reply_ACK;
-    logic                         LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_NATIVE_I2C,LPM_Transaction_VLD;
+    logic                         LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD,LPM_Transaction_VLD;
     logic                         HPD_Detect, HPD_IRQ, CTRL_Native_Failed;
+    logic                         LPM_NATIVE_I2C;            
 
     ////////////////// LINK Training Signals //////////////////////
 
@@ -118,7 +118,7 @@ interface dp_tl_if (input clk);
                  LPM_Reply_Data_VLD,      // A valid signal indicating that the data is ready (set to one when receiving data from a Native reply transaction).
                  LPM_Reply_ACK,           // Native Reply Transaction (Command Part) for a Native Request Transaction.
                  LPM_Reply_ACK_VLD,       // A valid signal indicating that the acknowledge data is ready (set to one when receiving reply acknowledge data from a Native reply transaction).
-                 LPM_Native_I2C,          // Signal representing the most significant bit in the command field to determine the type of transaction whether I2C or Native
+                 LPM_NATIVE_I2C,          // Signal representing the most significant bit in the command field to determine the type of transaction whether I2C or Native
                  CTRL_Native_Failed,      // A signal indicating the failure of the Native transaction, which is set to one when the Native transaction fails.
           // LPM - Link Training
                  FSM_CR_Failed,           // A Signal indicating the failure of the Clock Recovery phase during link training, meaning the sink failed to acquire the clock frequency during the training process
@@ -150,7 +150,7 @@ interface dp_tl_if (input clk);
         // SPM - AUX       
         input clk, SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, CTRL_I2C_Failed,         
         // LPM - AUX
-              HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_Native_I2C, CTRL_Native_Failed,         
+              HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_NATIVE_I2C, CTRL_Native_Failed,         
         // LPM - Link Training
               FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC, CR_Completed, EQ_FSM_CR_Failed, Timer_Timeout
     );
@@ -170,7 +170,7 @@ interface dp_tl_if (input clk);
         // SPM - AUX      
               SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, CTRL_I2C_Failed,         
         // LPM - AUX
-              HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_Native_I2C, CTRL_Native_Failed,        
+              HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_NATIVE_I2C, CTRL_Native_Failed,        
         // LPM - Link Training
               FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC, CR_Completed , EQ_FSM_CR_Failed, Timer_Timeout,
         // MSS - ISO
@@ -188,7 +188,7 @@ interface dp_tl_if (input clk);
       endtask
 
       // I2C_READ task
-      task I2C_READ(input logic[19:0] address, input logic[7:0] length, input native_aux_request_cmd_e command, input bit transaction_vld);
+      task I2C_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
             // Set SPM-related signals to perform a read operation
             SPM_Address = address;
             SPM_CMD     = command;
@@ -201,43 +201,43 @@ interface dp_tl_if (input clk);
       endtask
     
       // I2C_WRITE task
-      // task I2C_WRITE(input dp_tl_sequence_item SPM);
-      //       // Set SPM-related signals to perform a write operation
-      //       SPM_Address = SPM.SPM_Address;
-      //       SPM_CMD     = SPM.SPM_CMD;
-      //       SPM_LEN     = SPM.SPM_LEN;
-      //       SPM_Transaction_VLD = SPM.SPM_Transaction_VLD;
-      //       SPM_Data = SPM.SPM_Data;
+      task I2C_WRITE(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld, input logic[7:0] data);
+            // Set SPM-related signals to perform a write operation
+            SPM_Address = address;
+            SPM_CMD     = command;
+            SPM_LEN     = length;
+            SPM_Transaction_VLD = transaction_vld;
+            SPM_Data = data;
 
-      //       wait(SPM_Reply_Data_VLD == 1 || SPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
-      //       ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
-      // endtask
+            wait(SPM_Reply_Data_VLD == 1 || SPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
+            ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
+      endtask
 
       // // NATIVE_READ task
-      // task NATIVE_READ(input dp_tl_sequence_item LPM);
-      //       // Set LPM-related signals to perform a read operation
-      //       LPM_Address = LPM.LPM_Address;
-      //       LPM_CMD     = LPM.LPM_CMD;
-      //       LPM_LEN     = LPM.LPM_LEN;
-      //       LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
-      //       // LPM_Data = LPM.LPM_Data; // Data is not used in read operation
+      task NATIVE_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
+            // Set LPM-related signals to perform a read operation
+            LPM_Address = address;
+            LPM_CMD     = command;
+            LPM_LEN     = length;
+            LPM_Transaction_VLD = transaction_vld;
+            // LPM_Data = LPM.LPM_Data; // Data is not used in read operation
 
-      //       wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
-      //       ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
-      // endtask
+            wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
+            ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
+      endtask
 
       // NATIVE_WRITE task
-      // task NATIVE_WRITE(input dp_tl_sequence_item LPM);
-      //       // Set LPM-related signals to perform a write operation
-      //       LPM_Address = LPM.LPM_Address;
-      //       LPM_CMD     = LPM.LPM_CMD;
-      //       LPM_LEN     = LPM.LPM_LEN;
-      //       LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
-      //       LPM_Data = LPM.LPM_Data;
+      task NATIVE_WRITE(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld, input logic[7:0] data);
+            // Set LPM-related signals to perform a write operation
+            LPM_Address = address;
+            LPM_CMD     = command;
+            LPM_LEN     = length;
+            LPM_Transaction_VLD = transaction_vld;
+            LPM_Data = data;
 
-      //       wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
-      //       ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
-      // endtask
+            wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
+            ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
+      endtask
 
       // //////////////////////////// LINK TRAINING ////////////////////////////
 
