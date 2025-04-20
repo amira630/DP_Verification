@@ -469,6 +469,10 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
             if (restart) begin 
                 continue; // Restart the loop if needed
             end
+            else if(seq_item.EQ_LT_Pass) begin
+                seq_item.ISO_LC = seq_item.EQ_Final_ADJ_LC;
+                seq_item.ISO_BW = seq_item.EQ_Final_ADJ_BW; 
+            end
         end   
     // Step 6: Write 00h to offset 0x00102 to disable Link Training
         start_item(seq_item);
@@ -496,6 +500,28 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         end
     endtask
 
+    task ISO_INIT();
+        start_item(seq_item);
+        // seq_item.rand_mode(0);
+        // seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1); seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
+        // seq_item.HSW.rand_mode(1); seq_item.VSW.rand_mode(1); seq_item.HWidth.rand_mode(1); seq_item.VHeight.rand_mode(1); seq_item.MISC0.rand_mode(1); seq_item.MISC1.rand_mode(1);
+        seq_item.SPM_Transaction_VLD = 1'b1;
+        seq_item.SPM_MSA_VLD = 1'b1;
+        seq_item.SPM_Lane_BW = seq_item.ISO_BW; 
+        seq_item.SPM_Lane_Count = seq_item.ISO_LC;
+        seq_item.SPM_ISO_start = 1'b1;
+        seq_item.SPM_MSA = {seq_item.MISC1, seq_item.MISC0, seq_item.VHeight, seq_item.HWidth, seq_item.VSW, seq_item.VSP, seq_item.HSW, seq_item.HSP, seq_item.VStart, seq_item.HStart, seq_item.VTotal, seq_item.HTotal, seq_item.Nvid, seq_item.Mvid};
+        assert(seq_item.randomize());
+        finish_item(seq_item);
+        `uvm_info("TL_ISO_INIT_SEQ", $sformatf("ISO_INIT_SPM: ISO_start=%0b, SPM_Lane_BW=0x%0h, SPM_Lane_Count=0x%0h, Mvid=0x%0h, Nvid=0x%0h, HTotal=0x%0h, VTotal=0x%0h, HStart=0x%0h, VStart=0x%0h, HSP=0x%0h, VSP=0x%0h, HSW=0x%0h, VSW=0x%0h, HWidth=0x%0h, VHeight=0x%0h, MISC1=0x%0h, MISC2=0x%0h", seq_item.SPM_ISO_start, seq_item.SPM_Lane_BW, seq_item.SPM_Lane_Count, seq_item.Mvid, seq_item.Nvid, seq_item.HTotal, seq_item.VTotal, seq_item.HStart, seq_item.VStart, seq_item.HSP, seq_item.VSP, seq_item.HSW, seq_item.VSW, seq_item.HWidth, seq_item.VHeight, seq_item.MISC1, seq_item.MISC2), UVM_MEDIUM);
+    endtask
+
+    task Main_Stream();
+        start_item(seq_item);
+        
+        assert(seq_item.randomize());
+        finish_item(seq_item);
+    endtask
     // Prevent the base sequence from running directly
     task body();
         `uvm_fatal("TL_BASE_SEQ", "Base sequence should not be executed directly!")

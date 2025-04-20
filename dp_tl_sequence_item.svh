@@ -5,10 +5,12 @@ class dp_tl_sequence_item extends uvm_sequence_item;
   `uvm_object_utils(dp_tl_sequence_item);
   
   rand bit rst_n;   // Reset is asynchronous active low
+
+    ///////////////////////////////////////////////////////////////
+    //////////////////// AUXILIARY CHANNEL ////////////////////////
+    ///////////////////////////////////////////////////////////////  
     
-    ///////////////////////////////////////////////////////////////
     /////////////////// STREAM POLICY MAKER ///////////////////////
-    ///////////////////////////////////////////////////////////////
 
 // input Data from the stream policy maker to DUT
     rand logic [AUX_DATA_WIDTH-1:0]    SPM_Data; // Randomized only if write will be supported
@@ -22,10 +24,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     logic [1:0]                SPM_Reply_ACK;
     logic                      SPM_NATIVE_I2C, SPM_Reply_Data_VLD, SPM_Reply_ACK_VLD, CTRL_I2C_Failed;
 
-
-    ///////////////////////////////////////////////////////////////
     //////////////////// LINK POLICY MAKER ////////////////////////
-    ///////////////////////////////////////////////////////////////
     
     // input Data to DUT
     logic [AUX_ADDRESS_WIDTH-1:0]      LPM_Address;
@@ -57,12 +56,48 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     logic [1:0]                EQ_Final_ADJ_LC;
     bit                        FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, CR_Completed, EQ_FSM_CR_Failed;
 
+    ///////////////////////////////////////////////////////////////
+    ////////////////// ISOCHRONOUS TRANSPORT //////////////////////
+    ///////////////////////////////////////////////////////////////
+
+    /////////////////// STREAM POLICY MAKER ///////////////////////
+
+    logic [AUX_DATA_WIDTH-1:0] SPM_Lane_BW;
+    logic [7:0]                SPM_MSA [23:0];
+    logic [1:0]                SPM_Lane_Count, SPM_BW_Sel;
+    logic                      SPM_ISO_start, SPM_MSA_VLD;
+
+    rand logic [23:0] Mvid;         //
+    rand logic [23:0] Nvid;
+    rand logic [15:0] HTotal;       // in pixels
+    rand logic [15:0] VTotal;       // in lines
+    rand logic [15:0] HStart;       // in pixels
+    rand logic [15:0] VStart;       // in lines
+    rand logic        HSP, VSP;
+    rand logic [14:0] HSW;          // in pixels    
+    rand logic [14:0] VSW;          // in lines
+    rand logic [15:0] HWidth;       // in pixels
+    rand logic [15:0] VHeight;      // in lines
+    rand logic [7:0]  MISC0;        // for bpc and color format
+    rand logic [7:0]  MISC1;        // for colorimetry and colorimetry range
+
+    logic [15:0] HFront, HBack, VFront, VBack;
+
+    /////////////////// MAIN STREAM SOURCE ///////////////////////
+
+    rand logic [47:0] MS_Pixel_Data;
+    rand logic [9:0]  MS_Stm_BW;
+    rand logic        MS_DE, MS_VSYNC, MS_HSYNC;
+    rand bit          MS_Stm_CLK;
+
 
     op_code operation;
     bit     link_values_locked = 0; // State variable to lock values after first randomization
     bit [AUX_DATA_WIDTH-1:0] prev_vtg;
     bit [AUX_DATA_WIDTH-1:0] prev_pre;
     bit cr_completed_flag = 0; // State variable to track if CR_Completed is 1
+    bit [1:0] ISO_LC;
+    bit [AUX_DATA_WIDTH-1:0] ISO_BW;
 
     ///////////////////////////////////////////////////////////////
     /////////////////////// SPM CONSTRAINTS ///////////////////////

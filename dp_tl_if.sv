@@ -20,7 +20,7 @@ interface dp_tl_if(input clk);
     logic [AUX_ADDRESS_WIDTH-1:0] LPM_Address;
     logic [AUX_DATA_WIDTH-1:0]    LPM_Data, LPM_LEN, LPM_Reply_Data;
     logic [1:0]                   LPM_CMD, LPM_Reply_ACK;
-    logic                         LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_NATIVE_I2C,LPM_Transaction_VLD;
+    logic                         LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_NATIVE_I2C, LPM_Transaction_VLD;
     logic                         HPD_Detect, HPD_IRQ, CTRL_Native_Failed;
 
     ////////////////// LINK Training Signals //////////////////////
@@ -38,7 +38,7 @@ interface dp_tl_if(input clk);
     /////////////////// STREAM POLICY MAKER ///////////////////////
 
     logic [AUX_DATA_WIDTH-1:0] SPM_Lane_BW;
-    logic [23:0]               SPM_MSA;
+    logic [7:0]                SPM_MSA [23:0]; // 24 bytes of MSA data
     logic [1:0]                SPM_Lane_Count, SPM_BW_Sel;
     logic                      SPM_ISO_start, SPM_MSA_VLD;
 
