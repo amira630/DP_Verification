@@ -40,7 +40,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
     /////////////////// STREAM POLICY MAKER ///////////////////////
 
     logic [AUX_DATA_WIDTH-1:0] SPM_Lane_BW;
-    logic [23:0]               SPM_MSA;
+    logic [7:0]                SPM_MSA [23:0]; // 24 bytes of MSA data
     logic [1:0]                SPM_Lane_Count, SPM_BW_Sel;
     logic                      SPM_ISO_start, SPM_MSA_VLD;
 
