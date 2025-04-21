@@ -29,7 +29,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     // input Data to DUT
     logic [AUX_ADDRESS_WIDTH-1:0]      LPM_Address;
     rand logic [AUX_DATA_WIDTH-1:0]    LPM_LEN;
-    rand logic [AUX_DATA_WIDTH-1:0]    LPM_Data[$];
+    logic [AUX_DATA_WIDTH-1:0]    LPM_Data;
     rand native_aux_request_cmd_e      LPM_CMD; // 00 Write and 01 Read
     bit                                LPM_Transaction_VLD;
 
@@ -98,6 +98,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     bit cr_completed_flag = 0; // State variable to track if CR_Completed is 1
     bit [1:0] ISO_LC;
     bit [AUX_DATA_WIDTH-1:0] ISO_BW;
+    rand logic [AUX_DATA_WIDTH-1:0]    LPM_Data_queue[$];
 
     ///////////////////////////////////////////////////////////////
     /////////////////////// SPM CONSTRAINTS ///////////////////////
@@ -248,16 +249,16 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     }
 
     constraint lpm_data_constraint {
-        if (LPM_CMD == AUX_NATIVE_WRITE) {
-            LPM_Data.size() == LPM_LEN + 1; // Ensure the queue size matches LPM_LEN + 1
+        if (LPM_CMD == AUX_NATIVE_WRITE && LPM_Transaction_VLD) {
+            LPM_Data_queue.size() == LPM_LEN + 1; // Ensure the queue size matches LPM_LEN + 1
         } else {
-            LPM_Data.size() == 0; // Ensure the queue is empty for other commands
+            LPM_Data_queue.size() == 0; // Ensure the queue is empty for other commands
         }
     }
 
     constraint lpm_data_values {
-        foreach (LPM_Data[i]) {
-                LPM_Data[i] inside {[0:(1 << AUX_DATA_WIDTH) - 1]}; // Randomize valid values
+        foreach (LPM_Data_queue[i]) {
+                LPM_Data_queue[i] inside {[0:(1 << AUX_DATA_WIDTH) - 1]}; // Randomize valid values
         }
     }
 
