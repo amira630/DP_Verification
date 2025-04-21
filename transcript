@@ -1,22 +1,100 @@
 # vsim -c -voptargs="+acc" work.top 
-# Start time: 13:26:42 on Apr 21,2025
-# ** Note: (vsim-3812) Design is being optimized...
-# ** Note: (vopt-143) Recognized 1 FSM in module "eq_fsm(fast)".
-# ** Note: (vopt-143) Recognized 1 FSM in module "cr_fsm(fast)".
-# ** Note: (vopt-143) Recognized 1 FSM in module "aux_ctrl_unit(fast)".
-# ** Warning: dp_source.sv(413): (vopt-2685) [TFMPC] - Too few port connections for 'bidirectional_aux_phy_interface_inst'.  Expected 11, found 10.
-# ** Warning: dp_source.sv(413): (vopt-2718) [TFMPC] - Missing connection for port 'aux_start_stop'.
-# ** Note: (vopt-143) Recognized 1 FSM in module "cr_err_chk(fast)".
-# ** Note: (vopt-143) Recognized 1 FSM in module "i2c_fsm(fast)".
-# ** Note: (vopt-143) Recognized 1 FSM in module "eq_err_chk(fast)".
-# ** Note: (vopt-143) Recognized 1 FSM in module "link_trainning_ctr(fast)".
-# ** Warning: cr_eq_lt_top.sv(149): (vopt-2685) [TFMPC] - Too few port connections for 'channell_eq_top'.  Expected 43, found 42.
-# ** Warning: cr_eq_lt_top.sv(149): (vopt-2718) [TFMPC] - Missing connection for port 'eq_fsm_cr_failed'.
-# ** Error (suppressible): dp_sink_if.sv(35): (vopt-8885) Illegal inout port connection for AUX_IN_OUT to variable type. 
-# ** Error (suppressible): dp_sink_if.sv(55): (vopt-8885) Illegal inout port connection for AUX_IN_OUT to variable type. 
-# Optimization failed
-# ** Error: (vopt-2064) Compiler back-end code generation process terminated with code 12.
-# ** Note: (vsim-12126) Error and warning message counts have been restored: Errors=3, Warnings=4.
-# Error loading design
-# End time: 13:26:45 on Apr 21,2025, Elapsed time: 0:00:03
-# Errors: 3, Warnings: 4
+# Start time: 14:45:57 on Apr 21,2025
+# ** Note: (vsim-3813) Design is being optimized due to module recompilation...
+# //  Questa Sim-64
+# //  Version 2021.1 win64 Jan 19 2021
+# //
+# //  Copyright 1991-2021 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  QuestaSim and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading sv_std.std
+# Loading work.dp_tl_if(fast)
+# Loading work.dp_sink_if(fast)
+# Loading mtiUvm.uvm_pkg(fast)
+# Loading work.test_parameters_pkg(fast)
+# Loading work.dp_transactions_pkg(fast)
+# Loading work.dp_sink_agent_pkg(fast)
+# Loading work.dp_tl_agent_pkg(fast)
+# Loading work.dp_source_env_pkg(fast)
+# Loading work.dp_source_test_pkg(fast)
+# Loading work.top_sv_unit(fast)
+# Loading mtiUvm.questa_uvm_pkg(fast)
+# Loading work.top(fast)
+# Loading work.dp_tl_if(fast__2)
+# Loading work.dp_sink_if(fast__2)
+# Loading work.dp_source(fast)
+# Loading work.aux_ctrl_unit(fast)
+# Loading work.native_i2c_de_mux(fast)
+# Loading work.native_message_encoder(fast)
+# Loading work.native_i2c_mux(fast)
+# Loading work.i2c_top(fast)
+# Loading work.i2c_fsm(fast)
+# Loading work.i2c_msg_encoder(fast)
+# Loading work.bidirectional_aux_phy_interface(fast)
+# Loading work.timeout_timer(fast)
+# Loading work.Reply_Decoder(fast)
+# Loading work.cr_eq_lt_top(fast)
+# Loading work.cr_top(fast)
+# Loading work.cr_fsm(fast)
+# Loading work.cr_err_chk(fast)
+# Loading work.eq_top(fast)
+# Loading work.eq_fsm(fast)
+# Loading work.eq_err_chk(fast)
+# Loading work.link_trainning_ctr(fast)
+# Loading work.hpd(fast)
+# Loading work.cr_eq_mux(fast)
+# Loading C:/questasim64_2021.1/uvm-1.1d\win64\uvm_dpi.dll
+# ----------------------------------------------------------------
+# UVM-1.1d
+# (C) 2007-2013 Mentor Graphics Corporation
+# (C) 2007-2013 Cadence Design Systems, Inc.
+# (C) 2006-2013 Synopsys, Inc.
+# (C) 2011-2013 Cypress Semiconductor Corp.
+# ----------------------------------------------------------------
+# 
+#   ***********       IMPORTANT RELEASE NOTES         ************
+# 
+#   You are using a version of the UVM library that has been compiled
+#   with `UVM_NO_DEPRECATED undefined.
+#   See http://www.eda.org/svdb/view.php?id=3313 for more details.
+# 
+#   You are using a version of the UVM library that has been compiled
+#   with `UVM_OBJECT_MUST_HAVE_CONSTRUCTOR undefined.
+#   See http://www.eda.org/svdb/view.php?id=3770 for more details.
+# 
+#       (Specify +UVM_NO_RELNOTES to turn off this notice)
+# 
+# UVM_WARNING @ 0: reporter [TPRGED] Type name 'dp_source_config' already registered with factory. No string-based lookup support for multiple types with the same type name.
+# UVM_INFO verilog_src/questa_uvm_pkg-1.2/src/questa_uvm_pkg.sv(277) @ 0: reporter [Questa UVM] QUESTA_UVM-1.2.3
+# UVM_INFO verilog_src/questa_uvm_pkg-1.2/src/questa_uvm_pkg.sv(278) @ 0: reporter [Questa UVM]  questa_uvm::init(+struct)
+# UVM_INFO @ 0: reporter [RNTST] Running test dp_source_test...
+# UVM_INFO dp_source_test.svh(44) @ 0: uvm_test_top [TEST] Setting CFG now!
+# UVM_INFO dp_sink_agent.svh(17) @ 0: uvm_test_top.env.sink_agt [SINK AGENT] Trying to get CFG now!
+# UVM_FATAL dp_sink_agent.svh(19) @ 0: uvm_test_top.env.sink_agt [build_phase] Unable to get configuration object in Sink Agent
+# 
+# --- UVM Report Summary ---
+# 
+# ** Report counts by severity
+# UVM_INFO :    5
+# UVM_WARNING :    1
+# UVM_ERROR :    0
+# UVM_FATAL :    1
+# ** Report counts by id
+# [Questa UVM]     2
+# [RNTST]     1
+# [SINK AGENT]     1
+# [TEST]     1
+# [TPRGED]     1
+# [build_phase]     1
+# ** Note: $finish    : C:/questasim64_2021.1/win64/../verilog_src/uvm-1.1d/src/base/uvm_report_object.svh(292)
+#    Time: 0 ps  Iteration: 7  Region: /uvm_pkg::uvm_phase::m_run_phases
+# End time: 14:46:22 on Apr 21,2025, Elapsed time: 0:00:25
+# Errors: 0, Warnings: 0

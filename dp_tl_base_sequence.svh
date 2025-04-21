@@ -187,9 +187,9 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
 
     task CR_LT();
         int ack_count = 0;
+        bit done = 0;
         seq_item = dp_tl_sequence_item::type_id::create("seq_item");
         seq_item.FSM_CR_Failed = 1;
-        int done = 0;
         while (seq_item.FSM_CR_Failed) begin
             seq_item.FSM_CR_Failed = 0;
             // We go in the first cycle, give the LL all the max allowed values nad minimum VTG and PRE
@@ -317,8 +317,8 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
 
     task CR_LT_eq();
         int ack_count = 0;
+        bit done = 0;
         seq_item.FSM_CR_Failed = 1;
-        int done = 0;
         while (seq_item.FSM_CR_Failed) begin
             seq_item.FSM_CR_Failed = 0;
             // We go in the first cycle, give the LL all the max allowed values nad minimum VTG and PRE
@@ -443,9 +443,9 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
     task EQ_LT();
         int ack_count = 0; // Counter to track acknowledgment responses
         bit restart= 1; // Flag to indicate if a restart is needed
+        bit done = 0; 
         // Create a sequence item for link policy maker (LPM) communication
         seq_item = dp_tl_sequence_item::type_id::create("seq_item");
-        int done = 0; 
         
         // Loop until equalization succeeds
         while (restart) begin
@@ -601,88 +601,88 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         end
     endtask
 
-    task ISO_INIT();
-        start_item(seq_item);
-        // seq_item.rand_mode(0);
-        // seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1); seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
-        // seq_item.HSW.rand_mode(1); seq_item.VSW.rand_mode(1); seq_item.HWidth.rand_mode(1); seq_item.VHeight.rand_mode(1); seq_item.MISC0.rand_mode(1); seq_item.MISC1.rand_mode(1);
-        seq_item.SPM_Transaction_VLD = 1'b1;
-        seq_item.SPM_MSA_VLD = 1'b1;
-        seq_item.SPM_Lane_BW = seq_item.ISO_BW; 
-        seq_item.SPM_Lane_Count = seq_item.ISO_LC;
-        seq_item.SPM_ISO_start = 1'b1;
-        seq_item.SPM_MSA = {seq_item.MISC1, seq_item.MISC0, seq_item.VHeight, seq_item.HWidth, seq_item.VSW, seq_item.VSP, seq_item.HSW, seq_item.HSP, seq_item.VStart, seq_item.HStart, seq_item.VTotal, seq_item.HTotal, seq_item.Nvid, seq_item.Mvid};
-        case (seq_item.ISO_BW)
-            8'h06: SPM_BW_Sel = 2'b00;
-            8'h0A: SPM_BW_Sel = 2'b01;
-            8'h14: SPM_BW_Sel = 2'b10;
-            8'h1E: SPM_BW_Sel = 2'b11;
-            default: begin
-                SPM_BW_Sel = 2'b00;
-                `uvm_info("The stored lane BW is incorrect!", UVM_MEDIUM)
-            end
-        endcase     
-        seq_item.MS_Stm_BW.rand_mode(0);
-        seq_item.MS_DE.rand_mode(0);
-        seq_item.MS_Stm_BW = 10'd80; // 80MHz for now, should be randomized
-        seq_item.MS_DE = 0;
-        // seq_item.MS_VSYNC=;
-        // seq_item.MS_HSYNC;
-        assert(seq_item.randomize());   
-        if(HSP) // HSP is active high, so set MS_HSYNC to 0
-            seq_item.MS_HSYNC = 1'b0; // HSP is active high, so set MS_HSYNC to 0
-        else
-            seq_item.MS_HSYNC = 1'b1; // HSP is active low, so set MS_HSYNC to 1
-        if(VSP) // VSP is active high, so set MS_VSYNC to 0
-            seq_item.MS_VSYNC = 1'b0; // VSP is active high, so set MS_VSYNC to 0
-        else
-            seq_item.MS_VSYNC = 1'b1; // VSP is active low, so set MS_VSYNC to 1
-        finish_item(seq_item);
-        `uvm_info("TL_ISO_INIT_SEQ", $sformatf("ISO_INIT_SPM: ISO_start=%0b, SPM_Lane_BW=0x%0h, SPM_Lane_Count=0x%0h, Mvid=0x%0h, Nvid=0x%0h, HTotal=0x%0h, VTotal=0x%0h, HStart=0x%0h, VStart=0x%0h, HSP=0x%0h, VSP=0x%0h, HSW=0x%0h, VSW=0x%0h, HWidth=0x%0h, VHeight=0x%0h, MISC1=0x%0h, MISC2=0x%0h", seq_item.SPM_ISO_start, seq_item.SPM_Lane_BW, seq_item.SPM_Lane_Count, seq_item.Mvid, seq_item.Nvid, seq_item.HTotal, seq_item.VTotal, seq_item.HStart, seq_item.VStart, seq_item.HSP, seq_item.VSP, seq_item.HSW, seq_item.VSW, seq_item.HWidth, seq_item.VHeight, seq_item.MISC1, seq_item.MISC2), UVM_MEDIUM);
-    endtask
+    // task ISO_INIT();
+    //     start_item(seq_item);
+    //     // seq_item.rand_mode(0);
+    //     // seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1); seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
+    //     // seq_item.HSW.rand_mode(1); seq_item.VSW.rand_mode(1); seq_item.HWidth.rand_mode(1); seq_item.VHeight.rand_mode(1); seq_item.MISC0.rand_mode(1); seq_item.MISC1.rand_mode(1);
+    //     seq_item.SPM_Transaction_VLD = 1'b1;
+    //     seq_item.SPM_MSA_VLD = 1'b1;
+    //     seq_item.SPM_Lane_BW = seq_item.ISO_BW; 
+    //     seq_item.SPM_Lane_Count = seq_item.ISO_LC;
+    //     seq_item.SPM_ISO_start = 1'b1;
+    //     seq_item.SPM_MSA = {seq_item.MISC1, seq_item.MISC0, seq_item.VHeight, seq_item.HWidth, seq_item.VSW, seq_item.VSP, seq_item.HSW, seq_item.HSP, seq_item.VStart, seq_item.HStart, seq_item.VTotal, seq_item.HTotal, seq_item.Nvid, seq_item.Mvid};
+    //     case (seq_item.ISO_BW)
+    //         8'h06: SPM_BW_Sel = 2'b00;
+    //         8'h0A: SPM_BW_Sel = 2'b01;
+    //         8'h14: SPM_BW_Sel = 2'b10;
+    //         8'h1E: SPM_BW_Sel = 2'b11;
+    //         default: begin
+    //             SPM_BW_Sel = 2'b00;
+    //             `uvm_info("The stored lane BW is incorrect!", UVM_MEDIUM)
+    //         end
+    //     endcase     
+    //     seq_item.MS_Stm_BW.rand_mode(0);
+    //     seq_item.MS_DE.rand_mode(0);
+    //     seq_item.MS_Stm_BW = 10'd80; // 80MHz for now, should be randomized
+    //     seq_item.MS_DE = 0;
+    //     // seq_item.MS_VSYNC=;
+    //     // seq_item.MS_HSYNC;
+    //     assert(seq_item.randomize());   
+    //     if(HSP) // HSP is active high, so set MS_HSYNC to 0
+    //         seq_item.MS_HSYNC = 1'b0; // HSP is active high, so set MS_HSYNC to 0
+    //     else
+    //         seq_item.MS_HSYNC = 1'b1; // HSP is active low, so set MS_HSYNC to 1
+    //     if(VSP) // VSP is active high, so set MS_VSYNC to 0
+    //         seq_item.MS_VSYNC = 1'b0; // VSP is active high, so set MS_VSYNC to 0
+    //     else
+    //         seq_item.MS_VSYNC = 1'b1; // VSP is active low, so set MS_VSYNC to 1
+    //     finish_item(seq_item);
+    //     `uvm_info("TL_ISO_INIT_SEQ", $sformatf("ISO_INIT_SPM: ISO_start=%0b, SPM_Lane_BW=0x%0h, SPM_Lane_Count=0x%0h, Mvid=0x%0h, Nvid=0x%0h, HTotal=0x%0h, VTotal=0x%0h, HStart=0x%0h, VStart=0x%0h, HSP=0x%0h, VSP=0x%0h, HSW=0x%0h, VSW=0x%0h, HWidth=0x%0h, VHeight=0x%0h, MISC1=0x%0h, MISC2=0x%0h", seq_item.SPM_ISO_start, seq_item.SPM_Lane_BW, seq_item.SPM_Lane_Count, seq_item.Mvid, seq_item.Nvid, seq_item.HTotal, seq_item.VTotal, seq_item.HStart, seq_item.VStart, seq_item.HSP, seq_item.VSP, seq_item.HSW, seq_item.VSW, seq_item.HWidth, seq_item.VHeight, seq_item.MISC1, seq_item.MISC2), UVM_MEDIUM);
+    // endtask
 
-    task Main_Stream();
-        int countv = 1;
-        int counth = 1;
-        repeat(seq_item.VTotal) begin
-            start_item(seq_item);
-            seq_item.rand_mode(0);
-            seq_item.SPM_Transaction_VLD = 1'b1;
-            seq_item.SPM_MSA_VLD = 1'b0;
-            if(countv<seq_item.VStart -1) begin
-                seq_item.MS_DE = 0;
-            end
-            if(countv >= VFront && countv < VFront+VSW) begin // turn on VSYNC
-                if(VSP) // VSP is active high, so set MS_VSYNC to 1
-                    seq_item.MS_VSYNC = 1'b1; // VSP is active high, so set MS_VSYNC to 1
-                else
-                    seq_item.MS_VSYNC = 1'b0; // VSP is active low, so set MS_VSYNC to 0
-            end
-            else begin 
-                if(VSP) // VSP is active high, so set MS_VSYNC to 0, turning off VSYNC
-                    seq_item.MS_VSYNC = 1'b0; // VSP is active high, so set MS_VSYNC to 0
-                else
-                    seq_item.MS_VSYNC = 1'b1; // VSP is active low, so set MS_VSYNC to 1
-            end
-            if(counth >= HFront && counth < HFront+HSW) begin // turn on HSYNC
-                if(HSP) // HSP is active high, so set MS_HSYNC to 1
-                    seq_item.MS_HSYNC = 1'b1; // HSP is active high, so set MS_HSYNC to 1
-                else
-                    seq_item.MS_HSYNC = 1'b0; // HSP is active low, so set MS_HSYNC to 0
-                counth = 0; // reset the counter    
-            end
-            else begin
-                if(HSP) // HSP is active high, so set MS_HSYNC to 0, turning off HSYNC
-                    seq_item.MS_HSYNC = 1'b0; // HSP is active high, so set MS_HSYNC to 0
-                else
-                    seq_item.MS_HSYNC = 1'b1; // HSP is active low, so set MS_HSYNC to 1
-            end
-            countv++;
-            counth++;
-            assert(seq_item.randomize());
-            finish_item(seq_item);
-        end
-    endtask
+    // task Main_Stream();
+    //     int countv = 1;
+    //     int counth = 1;
+    //     repeat(seq_item.VTotal) begin
+    //         start_item(seq_item);
+    //         seq_item.rand_mode(0);
+    //         seq_item.SPM_Transaction_VLD = 1'b1;
+    //         seq_item.SPM_MSA_VLD = 1'b0;
+    //         if(countv<seq_item.VStart -1) begin
+    //             seq_item.MS_DE = 0;
+    //         end
+    //         if(countv >= VFront && countv < VFront+VSW) begin // turn on VSYNC
+    //             if(VSP) // VSP is active high, so set MS_VSYNC to 1
+    //                 seq_item.MS_VSYNC = 1'b1; // VSP is active high, so set MS_VSYNC to 1
+    //             else
+    //                 seq_item.MS_VSYNC = 1'b0; // VSP is active low, so set MS_VSYNC to 0
+    //         end
+    //         else begin 
+    //             if(VSP) // VSP is active high, so set MS_VSYNC to 0, turning off VSYNC
+    //                 seq_item.MS_VSYNC = 1'b0; // VSP is active high, so set MS_VSYNC to 0
+    //             else
+    //                 seq_item.MS_VSYNC = 1'b1; // VSP is active low, so set MS_VSYNC to 1
+    //         end
+    //         if(counth >= HFront && counth < HFront+HSW) begin // turn on HSYNC
+    //             if(HSP) // HSP is active high, so set MS_HSYNC to 1
+    //                 seq_item.MS_HSYNC = 1'b1; // HSP is active high, so set MS_HSYNC to 1
+    //             else
+    //                 seq_item.MS_HSYNC = 1'b0; // HSP is active low, so set MS_HSYNC to 0
+    //             counth = 0; // reset the counter    
+    //         end
+    //         else begin
+    //             if(HSP) // HSP is active high, so set MS_HSYNC to 0, turning off HSYNC
+    //                 seq_item.MS_HSYNC = 1'b0; // HSP is active high, so set MS_HSYNC to 0
+    //             else
+    //                 seq_item.MS_HSYNC = 1'b1; // HSP is active low, so set MS_HSYNC to 1
+    //         end
+    //         countv++;
+    //         counth++;
+    //         assert(seq_item.randomize());
+    //         finish_item(seq_item);
+    //     end
+    // endtask
     // Prevent the base sequence from running directly
     task body();
         `uvm_fatal("TL_BASE_SEQ", "Base sequence should not be executed directly!")
