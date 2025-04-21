@@ -1,10 +1,22 @@
 # vsim -c -voptargs="+acc" work.top 
-# Start time: 01:26:20 on Apr 21,2025
+# Start time: 13:26:42 on Apr 21,2025
 # ** Note: (vsim-3812) Design is being optimized...
-# ** Error (suppressible): dp_tl_monitor.svh(47): (vopt-2997) Cannot assign a packed type 'reg[7:0]' to an unpacked type 'reg[7:0] $[$]'.
+# ** Note: (vopt-143) Recognized 1 FSM in module "eq_fsm(fast)".
+# ** Note: (vopt-143) Recognized 1 FSM in module "cr_fsm(fast)".
+# ** Note: (vopt-143) Recognized 1 FSM in module "aux_ctrl_unit(fast)".
+# ** Warning: dp_source.sv(413): (vopt-2685) [TFMPC] - Too few port connections for 'bidirectional_aux_phy_interface_inst'.  Expected 11, found 10.
+# ** Warning: dp_source.sv(413): (vopt-2718) [TFMPC] - Missing connection for port 'aux_start_stop'.
+# ** Note: (vopt-143) Recognized 1 FSM in module "cr_err_chk(fast)".
+# ** Note: (vopt-143) Recognized 1 FSM in module "i2c_fsm(fast)".
+# ** Note: (vopt-143) Recognized 1 FSM in module "eq_err_chk(fast)".
+# ** Note: (vopt-143) Recognized 1 FSM in module "link_trainning_ctr(fast)".
+# ** Warning: cr_eq_lt_top.sv(149): (vopt-2685) [TFMPC] - Too few port connections for 'channell_eq_top'.  Expected 43, found 42.
+# ** Warning: cr_eq_lt_top.sv(149): (vopt-2718) [TFMPC] - Missing connection for port 'eq_fsm_cr_failed'.
+# ** Error (suppressible): dp_sink_if.sv(35): (vopt-8885) Illegal inout port connection for AUX_IN_OUT to variable type. 
+# ** Error (suppressible): dp_sink_if.sv(55): (vopt-8885) Illegal inout port connection for AUX_IN_OUT to variable type. 
 # Optimization failed
 # ** Error: (vopt-2064) Compiler back-end code generation process terminated with code 12.
-# ** Note: (vsim-12126) Error and warning message counts have been restored: Errors=2, Warnings=0.
+# ** Note: (vsim-12126) Error and warning message counts have been restored: Errors=3, Warnings=4.
 # Error loading design
-# End time: 01:26:23 on Apr 21,2025, Elapsed time: 0:00:03
-# Errors: 2, Warnings: 0
+# End time: 13:26:45 on Apr 21,2025, Elapsed time: 0:00:03
+# Errors: 3, Warnings: 4

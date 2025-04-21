@@ -108,8 +108,6 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
     
             start_item(seq_item);
                 seq_item.LPM_Data.rand_mode(1);       // randomization on for data
-
-                seq_item.LPM_Data.delete();           // Clear the queue
                 seq_item.LPM_CMD = AUX_NATIVE_WRITE;  // Write
                 seq_item.LPM_Transaction_VLD = 1'b1;  // LPM is going to request a Native transaction
                 seq_item.LPM_Address = address;       // Address

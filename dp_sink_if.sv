@@ -59,9 +59,10 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     //////////////////////// MOINTOR /////////////////////////////  
     
     modport MONITOR (
-        input clk, HPD_Signal, AUX_IN_OUT, AUX_START_STOP, PHY_START_STOP,
+        input clk, HPD_Signal, AUX_START_STOP, PHY_START_STOP,
               PHY_Instruct, PHY_ADJ_BW, PHY_ADJ_LC, PHY_Instruct_VLD,   // Four 8-bit signals carry the processed main video stream data output from the Isochronous Transport Services Block. They are transmitted over the active lanes with the selected video format.
-              ISO_symbols_lane0, ISO_symbols_lane1, ISO_symbols_lane2, ISO_symbols_lane3, Control_sym_flag_lane0, Control_sym_flag_lane1, Control_sym_flag_lane2, Control_sym_flag_lane3
+              ISO_symbols_lane0, ISO_symbols_lane1, ISO_symbols_lane2, ISO_symbols_lane3, Control_sym_flag_lane0, Control_sym_flag_lane1, Control_sym_flag_lane2, Control_sym_flag_lane3,
+              AUX_IN_OUT
     );  
 
 
