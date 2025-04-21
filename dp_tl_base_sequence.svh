@@ -131,8 +131,8 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                 seq_item.LPM_Transaction_VLD = 1'b1;  // LPM is going to request a Native transaction
                 seq_item.LPM_Address = address;       // Address
                 seq_item.LPM_LEN = LEN;               // Length
-                seq_item.LPM_Data= seq_item.LPM_Data_queue[0];
                 assert(seq_item.randomize());                 // Randomize the data
+                seq_item.LPM_Data = seq_item.LPM_Data_queue[0];
             finish_item(seq_item);
             repeat(seq_item.LPM_Data_queue.size()-1) begin
                 while (ack_count < 1) begin
