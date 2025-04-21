@@ -672,7 +672,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
     //             counth = 0; // reset the counter    
     //         end
     //         else begin
-    //             if(HSP) // HSP is active high, so set MS_HSYNC to 0, turning off HSYNC
+    //             if(seq_item.HSP) // HSP is active high, so set MS_HSYNC to 0, turning off HSYNC
     //                 seq_item.MS_HSYNC = 1'b0; // HSP is active high, so set MS_HSYNC to 0
     //             else
     //                 seq_item.MS_HSYNC = 1'b1; // HSP is active low, so set MS_HSYNC to 1
