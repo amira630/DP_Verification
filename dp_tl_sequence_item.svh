@@ -29,7 +29,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     // input Data to DUT
     logic [AUX_ADDRESS_WIDTH-1:0]      LPM_Address;
     rand logic [AUX_DATA_WIDTH-1:0]    LPM_LEN;
-    logic [AUX_DATA_WIDTH-1:0]    LPM_Data;
+    logic [AUX_DATA_WIDTH-1:0]         LPM_Data;
     rand native_aux_request_cmd_e      LPM_CMD; // 00 Write and 01 Read
     bit                                LPM_Transaction_VLD;
 
@@ -81,12 +81,12 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     rand logic [7:0]  MISC0;        // for bpc and color format
     rand logic [7:0]  MISC1;        // for colorimetry and colorimetry range
 
-    logic [15:0] HFront, HBack, VFront, VBack;
+    rand logic [15:0] HFront, HBack, VFront, VBack;
 
     /////////////////// MAIN STREAM SOURCE ///////////////////////
 
     rand logic [47:0] MS_Pixel_Data;
-    rand logic [9:0]  MS_Stm_BW;
+    rand logic [9:0]  MS_Stm_BW;        // takes values on MHz max 1Ghz
     rand logic        MS_DE, MS_VSYNC, MS_HSYNC;
     rand bit          MS_Stm_CLK;
 
@@ -118,6 +118,60 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
     constraint operation_type_dist {
        operation inside {[Reset:EQ_LT]};
+    }
+    constraint vtotal_constraint {
+        VTotal == (VHeight + VStart - 1); // Ensure VTotal equals VHeight + VStart - 1
+    }
+
+    constraint htotal_constraint {
+        HTotal == (HWidth + HStart - 1); // Ensure HTotal equals HWidth + HStart - 1
+    }
+
+    constraint hstart_constraint {
+        HStart inside {[0:HTotal]}; // Ensure HStart is within the range of HTotal
+    }
+
+    constraint vstart_constraint {
+        VStart inside {[0:VTotal]}; // Ensure VStart is within the range of VTotal
+    }
+
+    constraint hwidth_constraint {
+        HWidth inside {[0:HTotal]}; // Ensure HWidth is within the range of HTotal
+    }
+
+    constraint vheight_constraint {
+        VHeight inside {[0:VTotal]}; // Ensure VHeight is within the range of VTotal
+    }
+
+    constraint misc1_constraint {
+        MISC1[7:6] == 2'b00; // Ensure bits 7 and 6 are always 0
+        // MISC1[5:0] can be anything, no constraint needed
+    }
+
+    constraint misc0_constraint {
+        MISC0[7:5] inside {3'b001, 3'b100}; // 8bpc or 16bpc
+        MISC0[4] == 1'b0;                  // MISC0[4] must always be 0
+        MISC0[3] inside {1'b0, 1'b1};      // RGB or YCbCr
+        if (MISC0[3] == 1'b0) {
+            MISC0[2:1] == 2'b00;           // RGB
+        } else {
+            MISC0[2:1] == 2'b10;           // YCbCr (4:4:4)
+        }
+        // MISC0[0] can be anything, no constraint needed
+    }
+
+    constraint hsw_constraint {
+        HSW == (HStart - 1) - HBack - HFront; // Ensure HSW is calculated correctly
+    }
+    
+    constraint vsw_constraint {
+        VSW == (VStart - 1) - VBack - VFront; // Ensure VSW is calculated correctly
+    }
+
+    constraint ms_pixel_data_constraint {
+        if (MISC0[7:5] == 3'b001) {
+            MS_Pixel_Data[47:24] == 24'bx; // Most significant 24 bits are zero for 8bpc mode
+        } 
     }
 
     ///////////////////////////////////////////////////////////////
