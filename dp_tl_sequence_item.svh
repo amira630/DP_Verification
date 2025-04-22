@@ -102,6 +102,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     bit [AUX_DATA_WIDTH-1:0] ISO_BW;
     rand logic [AUX_DATA_WIDTH-1:0]    LPM_Data_queue[$];
 
+    bit LT_Failed, LT_Pass;
+
     ///////////////////////////////////////////////////////////////
     /////////////////////// SPM CONSTRAINTS ///////////////////////
     ///////////////////////////////////////////////////////////////
@@ -121,12 +123,18 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     constraint operation_type_dist {
        operation inside {[reset_op:EQ_LT]};
     }
+
+    constraint hsp_vsp_constraint {
+        HSP dist {1'b1 := 90, 1'b0 := 10}; // HSP is 1 90% of the time
+        VSP dist {1'b1 := 90, 1'b0 := 10}; // VSP is 1 90% of the time
+    }
+
     constraint vtotal_constraint {
-        VTotal == (VHeight + VStart - 1); // Ensure VTotal equals VHeight + VStart - 1
+        (VHeight + VStart - 1) == VTotal; // Ensure VTotal equals VHeight + VStart - 1
     }
 
     constraint htotal_constraint {
-        HTotal == (HWidth + HStart - 1); // Ensure HTotal equals HWidth + HStart - 1
+        (HWidth + HStart - 1) == HTotal; // Ensure HTotal equals HWidth + HStart - 1
     }
 
     constraint hstart_constraint {
@@ -169,6 +177,22 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     constraint vsw_constraint {
         VSW == (VStart - 1) - VBack - VFront; // Ensure VSW is calculated correctly
     }
+
+    constraint hback_constraint {
+        HBack == (HStart - HSW); // Ensure HBack equals HStart - HSW
+    }
+
+    constraint vback_constraint {
+        VBack == (VStart - VSW); // Ensure HBack equals VStart - VSW
+    }    
+
+    constraint hfront_constraint {
+        HFront == (HTotal - (HStart + HWidth)); // Ensure HFront equals HTotal - (HStart + HWidth)
+    }
+
+    constraint vfront_constraint {
+        VFront == (VTotal - (VStart + VHeight)); // Ensure VFront equals VTotal - (VStart + VHeight)
+    } 
 
     constraint ms_pixel_data_constraint {
         if (MISC0[7:5] == 3'b001) {

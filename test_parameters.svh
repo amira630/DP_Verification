@@ -37,6 +37,12 @@
     parameter int AUX_DATA_WIDTH = 8;      // 8-bit AUX data
 
 // typedef enums
+    typedef enum bit [1:0] {
+        DETECTING = 2'b00,
+        CR_STAGE = 2'b01,
+        EQ_STAGE = 2'b10,
+        ISO_STAGE = 2'b11
+    } flow_stages_e;
 
 // Training Patterns
     typedef enum bit [1:0] {
