@@ -132,7 +132,7 @@ class dp_reference_model extends uvm_component;
 // Function to generate the expected transaction for I2C-over-AUX (EDID Read)
 // ADD the timeout timer
     
-    task generate_i2c_over_aux_transaction_fsm(
+    task generate_i2c_over_aux_transaction(
         input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
         input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
         output dp_transaction expected_transaction // Generated expected transaction
@@ -221,6 +221,12 @@ class dp_reference_model extends uvm_component;
                 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
+
+                // // Lower the PHY_START_STOP signal
+                // expected_transaction.PHY_START_STOP = 1'b0; 
+                
+                // // Send the expected transaction to the scoreboard
+                // ref_model_out_port.write(expected_transaction);
 
                 // // Simulate the encoded Address-only I2C-over-AUX transaction
                 // `uvm_info(get_type_name(), "Transmitting Address-only I2C-over-AUX transaction", UVM_LOW);
@@ -332,29 +338,41 @@ class dp_reference_model extends uvm_component;
 
                 // Byte 1
                 expected_transaction.aux_in_out = 8'b0101_0000;
-                // Raise the start_stop signal
-                expected_transaction.start_stop = 1'b1;
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1;
 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 2
                 expected_transaction.aux_in_out = 8'b0000_0000;
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1;
 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 3
-                expected_transaction.aux_in_out = tl_item.SPM_Address; 
+                expected_transaction.aux_in_out = tl_item.SPM_Address;
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1;
                 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
 
                 // Byte 4
                 expected_transaction.aux_in_out = 8'b0000_0000;
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1;
                 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
+
+                // // Lower the PHY_START_STOP signal
+                // expected_transaction.PHY_START_STOP = 1'b0; 
+                
+                // // Send the expected transaction to the scoreboard
+                // ref_model_out_port.write(expected_transaction);
 
                 // // Simulate sending the read request
                 // `uvm_info(get_type_name(), $sformatf("AUX_IN_OUT: 0101|0000 -> 00000000 -> 00000000 -> 0000|0000 (START_STOP=1, MOT=1, I2C Address=0000000, Read Length=1)"), UVM_LOW);
@@ -475,23 +493,33 @@ class dp_reference_model extends uvm_component;
 
                 // Byte 1
                 expected_transaction.aux_in_out = 8'b0001_0000;
-                // Raise the start_stop signal
-                expected_transaction.start_stop = 1'b1;
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1;
 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 2
                 expected_transaction.aux_in_out = 8'b0000_0000;
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1;
 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 3
-                expected_transaction.aux_in_out = address; 
+                expected_transaction.aux_in_out = address;
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1; 
                 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
+
+                // // Lower the PHY_START_STOP signal
+                // expected_transaction.PHY_START_STOP = 1'b0; 
+                
+                // // Send the expected transaction to the scoreboard
+                // ref_model_out_port.write(expected_transaction);
 
                 // // Simulate the encoded Address-only I2C-over-AUX transaction
                 // `uvm_info(get_type_name(), "Transmitting Address-only I2C-over-AUX transaction", UVM_LOW);
@@ -610,181 +638,210 @@ class dp_reference_model extends uvm_component;
     endtask
 
    
-    //to be added: nack and defer conditions
-   
-    // Function to generate the expected transaction for Native AUX Read Transaction
-        function void generate_native_aux_read_transaction(
-        input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
-        input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
-        output dp_transaction expected_transaction, // Generated expected transaction
-        input bit [3:0] override_command = 4'b0000,  // Default: Use tl_item.LPM_CMD
-        input bit [19:0] override_address = 20'h00000, // Default: Use tl_item.LPM_Address
-        input bit [7:0] override_length = 8'h00       // Default: Use tl_item.LPM_LEN
-    );
-        // Decode the aux_in_out signal
-        bit [3:0] command;       // First 4 bits: Command
-        bit [19:0] address;      // Address
-        bit [7:0] length;        // Length
-        bit [7:0] data[$];       // Data
-        int ack_count = 0;       // Ack counter
-    
-        // Use overrides if provided, otherwise use defaults from tl_item
-        command = (override_command != 4'b0000) ? override_command : tl_item.LPM_CMD;
-        address = (override_address != 20'h00000) ? override_address : tl_item.LPM_Address;
-        length = (override_length != 8'h00) ? override_length : tl_item.LPM_LEN;
-    
-        // while (ack_count < 1) begin
-            // Wait for the next transaction
-            // ref_model_in_port.get(tl_item);
-    
-            // // Initialize outputs
-            // expected_transaction.LPM_Reply_ACK = 1'b0;
-            // expected_transaction.LPM_Reply_ACK_VLD = 1'b0;
-            // expected_transaction.LPM_Reply_DATA = 8'h00;
-            // expected_transaction.LPM_Reply_DATA_VLD = 1'b0;
-            // expected_transaction.LPM_Native_I2C = 1'b0;
-    
-            // Check if the transaction is valid
-            if (tl_item.LPM_Transaction_VLD) begin
-                // Handle Read Request Transaction
-                if (command == AUX_NATIVE_READ) begin
-                    // Log the read request transaction
-                    `uvm_info(get_type_name(), $sformatf("Transmitting Read Request: CMD=0x%0b, Addr=0x%0h, LEN=%0d",
-                                                         command, address, length), UVM_LOW);
-    
-                    // Assign the encoded value to aux_in_out
-                    // Encoded value: 1001|Address -> Address -> Address -> Length
-    
-                    // Byte 1: 1001 followed by the first 4 bits of address
-                    expected_transaction.aux_in_out = {4'b1001, address[19:16]}; // 1001 + first 4 bits of address
-                    expected_transaction.start_stop = 1'b1; // Raise the start_stop signal
-                    ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
-    
-                    // Byte 2: Next 8 bits of address
-                    expected_transaction.aux_in_out = address[15:8]; // Next 8 bits of address
-                    ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
-    
-                    // Byte 3: Last 8 bits of address
-                    expected_transaction.aux_in_out = address[7:0]; // Last 8 bits of address
-                    ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
-    
-                    // Byte 4: Length
-                    expected_transaction.aux_in_out = length; // Length
-                    ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
-    
+// Add timeout timer maybe
+// Function to generate the expected transaction for Native AUX Read Transaction
+task generate_native_aux_read_transaction(
+    input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
+    input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
+    output dp_transaction expected_transaction, // Generated expected transaction
+    input bit [3:0] override_command = 4'b0000,  // Default: Use tl_item.LPM_CMD
+    input bit [19:0] override_address = 20'h00000, // Default: Use tl_item.LPM_Address
+    input bit [7:0] override_length = 8'h00       // Default: Use tl_item.LPM_LEN
+);
+
+    // FSM states
+    typedef enum logic [2:0] {
+    IDLE_MODE,
+    NATIVE_TALK_MODE,
+    NATIVE_LISTEN_MODE_WAIT_ACK,
+    NATIVE_LISTEN_MODE_WAIT_DATA
+    } native_aux_fsm_state_e;
+
+    native_aux_fsm_state_e current_state, next_state;
+
+    bit [3:0] command;
+    bit [19:0] address;
+    bit [7:0] length;
+    bit [7:0] data;
+    int defer_counter = 0;
+    bit [7:0] data_counter = 8'b00000000; // Counter for the number of data bytes received
+
+    // Initialize the FSM
+    current_state = IDLE_MODE;
+
+    forever begin
+        case (current_state)
+            IDLE_MODE: begin
+                // Wait for the next transaction
+                ref_model_in_port.get(tl_item);
+
+                if (tl_item.LPM_Transaction_VLD) begin
+                    command = (override_command != 4'b0000) ? override_command : tl_item.LPM_CMD;
+                    address = (override_address != 20'h00000) ? override_address : tl_item.LPM_Address;
+                    length = (override_length != 8'h00) ? override_length : tl_item.LPM_LEN;
+
                     // Allocate the dynamic array based on the length
                     data = new[length];
+
+                    if (command == AUX_NATIVE_READ) begin
+                        `uvm_info(get_type_name(), "Starting Native AUX Read Transaction", UVM_LOW);
+                        next_state = NATIVE_TALK_MODE;
+                    end else begin
+                        `uvm_error(get_type_name(), "Invalid LPM_CMD for Native AUX Read Transaction");
+                        next_state = IDLE_MODE;
+                    end
+                end else begin
+                    next_state = IDLE_MODE;
+                end
+            end
+
+            NATIVE_TALK_MODE: begin
+
+                // Assign the encoded value to aux_in_out
+                // Encoded value: 1001|Address -> Address -> Address -> Length
+    
+                // Transmit the first byte of the read request
+                expected_transaction.aux_in_out = {4'b1001, address[19:16]};
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1;
+                ;
+                ref_model_out_port.write(expected_transaction);
+
+                // Transmit the next two bytes of the address
+                expected_transaction.aux_in_out = address[15:8];
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1;
+
+                ref_model_out_port.write(expected_transaction);
+
+                expected_transaction.aux_in_out = address[7:0];
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1;
+
+                ref_model_out_port.write(expected_transaction);
+
+                // Transmit the length byte
+                expected_transaction.aux_in_out = length;
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1;
+                
+                ref_model_out_port.write(expected_transaction);
+
+                // // Lower the PHY_START_STOP signal
+                // expected_transaction.PHY_START_STOP = 1'b0; 
+                
+                // // Send the expected transaction to the scoreboard
+                // ref_model_out_port.write(expected_transaction);
+
+                next_state = NATIVE_LISTEN_MODE_WAIT_ACK; // Wait for ACK/NACK/DEFER
+            end
+
+            NATIVE_LISTEN_MODE_WAIT_ACK: begin
     
                     // Wait for the next transaction
                     ref_model_in_port.get(sink_item);
     
                     // Extract the command
                     command = sink_item.aux_in_out[3:0]; // Second 4 bits
-    
-                    // Loop to extract data bytes based on the length
-                    for (int i = 0; i < length + 1; i++) begin
-                        // Wait for the next transaction for each byte
-                        ref_model_in_port.get(sink_item);
-    
-                        // Extract the data byte(s) from aux_in_out
-                        data[i] = sink_item.aux_in_out[7:0];
-    
-                        // Log the extracted data byte
-                        `uvm_info(get_type_name(), $sformatf("Extracted Data Byte %0d: 0x%0h", i, data[i]), UVM_LOW);
-                    end
-    
-                    // Take action based on the command
+
                     case (command)
                         AUX_ACK: begin // ACK
-                            `uvm_info(get_type_name(), "Processing AUX_ACK Command", UVM_LOW);
-    
-                            for (int i = 0; i < length + 1; i++) begin
-                                // Populate the expected transaction
-                                expected_transaction.LPM_Reply_ACK = AUX_ACK[1:0];
-                                expected_transaction.LPM_Reply_ACK_VLD = 1'b1;
-                                expected_transaction.LPM_Reply_Data = data[i];
-                                expected_transaction.LPM_Reply_Data_VLD = 1'b1;
-    
-                                // Send the expected transaction to the scoreboard
-                                ref_model_out_port.write(expected_transaction);
-                            end
-    
-                            // ack_count = 1; // Increment the ack_count to exit the loop
-    
-                            // Log the data being sent
-                            `uvm_info(get_type_name(), $sformatf("Sending AUX_ACK Response: data_size=%0d", data.size()), UVM_LOW);
+                            `uvm_info(get_type_name(), "Received AUX_ACK Command", UVM_LOW);
+                            data_counter = length;
+                            next_state = NATIVE_LISTEN_MODE_WAIT_DATA;
                         end
-    
+
                         AUX_NACK: begin // NACK
-                            `uvm_info(get_type_name(), "Processing AUX_NACK Command", UVM_LOW);
-    
-                            // Simulate acknowledgment for NACK
-                            expected_transaction.LPM_Reply_ACK = AUX_NACK[1:0];
-                            expected_transaction.LPM_Reply_ACK_VLD = 1'b1;
-                            expected_transaction.LPM_Reply_Data = 8'h00; // No data for NACK
-                            expected_transaction.LPM_Reply_Data_VLD = 1'b0;
-    
-                            // Send the expected transaction to the scoreboard
-                            ref_model_out_port.write(expected_transaction);
-    
-                            // Log the acknowledgment
-                            `uvm_info(get_type_name(), "AUX_NACK Command Acknowledged", UVM_LOW);
+                            `uvm_info(get_type_name(), "Received AUX_NACK Command", UVM_LOW);
+                            next_state = NATIVE_TALK_MODE; //Retry the transaction
                         end
-    
+
                         AUX_DEFER: begin // DEFER
-                            `uvm_info(get_type_name(), "Processing AUX_DEFER Command", UVM_LOW);
-    
-                            // Simulate acknowledgment for DEFER
-                            expected_transaction.LPM_Reply_ACK = AUX_DEFER[1:0];
-                            expected_transaction.LPM_Reply_ACK_VLD = 1'b1;
-                            expected_transaction.LPM_Reply_Data = 8'h00; // No data for DEFER
-                            expected_transaction.LPM_Reply_Data_VLD = 1'b0;
-                            expected_transaction.CTRL_I2C_Failed = 1'b1; // Set CTRL_I2C_Failed to indicate failure
-    
-                            // Send the expected transaction to the scoreboard
-                            ref_model_out_port.write(expected_transaction);
-    
-                            // Log the acknowledgment
-                            `uvm_info(get_type_name(), "AUX_DEFER Command Acknowledged", UVM_LOW);
+                            `uvm_info(get_type_name(), "Received AUX_DEFER Command", UVM_LOW);
+                            defer_counter = defer_counter + 1;
+                            if (defer_counter == 8) 
+                            begin
+                                next_state = IDLE_MODE; // Restart from IDLE_MODE state after 8 DEFERs
+                                expected_transaction.CTRL_Native_Failed = 1'b1; // Set CTRL_Native_Failed to indicate failure
+                                `uvm_error(get_type_name(), "Native AUX Write Transaction Failed", UVM_LOW)
+                                `uvm_info(get_type_name(), "Restarting from IDLE state after 8 DEFERs", UVM_LOW);
+                            end 
+                            else
+                            begin
+                                next_state = NATIVE_TALK_MODE; //Retry the transaction
+                            end
                         end
-    
+
                         AUX_RESERVED: begin // RESERVED
-                            `uvm_info(get_type_name(), "Processing AUX_RESERVED Command", UVM_LOW);
-    
-                            // Simulate acknowledgment for RESERVED
-                            expected_transaction.LPM_Reply_ACK = AUX_RESERVED[1:0];
-                            expected_transaction.LPM_Reply_ACK_VLD = 1'b1;
-                            expected_transaction.LPM_Reply_Data = 8'h00; // No data for RESERVED
-                            expected_transaction.LPM_Reply_Data_VLD = 1'b0;
-    
-                            // Send the expected transaction to the scoreboard
-                            ref_model_out_port.write(expected_transaction);
-    
-                            // Log the acknowledgment
-                            `uvm_info(get_type_name(), "AUX_RESERVED Command Acknowledged", UVM_LOW);
+                            `uvm_info(get_type_name(), "Received AUX_RESERVED Command", UVM_LOW);
+                            next_state = NATIVE_TALK_MODE; //Retry the transaction
                         end
-    
+
                         default: begin // Invalid or unsupported command
                             `uvm_error(get_type_name(), $sformatf("Invalid or unsupported command: 0x%h", command));
                         end
                     endcase
-                end else begin
-                    `uvm_error(get_type_name(), $sformatf("Invalid LPM_CMD: %0b", command));
-                end
-            end else begin
-                // Transaction not valid
-                `uvm_warning(get_type_name(), "LPM_Transaction_VLD is not asserted");
+
+                    //Note : Maybe add timeout timeout here to move to IDLE state if no response is received
+ 
             end
-        // end
-    
-        // Log the generated expected transaction
-        `uvm_info(get_type_name(), $sformatf("Generated expected transaction: %s", expected_transaction.convert2string()), UVM_LOW);
-    endfunction
 
-    //to be added: nack and defer conditions
+            NATIVE_LISTEN_MODE_WAIT_DATA: begin
 
-    // Function to generate the expected transaction for Native AUX Write Transaction
-    function void generate_native_aux_write_transaction(
+                // Wait for the next transaction
+                ref_model_in_port.get(sink_item);
+
+                if (data_counter > 8'b00000000) begin
+                
+                    ref_model_in_port.get(sink_item);
+                    data = sink_item.aux_in_out[7:0]; // Extract the data byte
+                    data_counter = data_counter - 1'b1; // Decrement the data counter
+                
+                end
+
+                      // Take action based on the command
+                    if (command == AUX_ACK) begin // ACK
+                            `uvm_info(get_type_name(), "Processing AUX_ACK Command", UVM_LOW);
+                
+                            // Populate the expected transaction
+                            expected_transaction.SPM_Reply_ACK = I2C_ACK[3:2];
+                            expected_transaction.SPM_Reply_ACK_VLD = 1'b1;
+                            expected_transaction.SPM_Reply_Data = data;
+                            expected_transaction.SPM_Reply_Data_VLD = 1'b0;
+                
+                            // Log the data being sent
+                            `uvm_info(get_type_name(), $sformatf("Sending I2C_ACK Response: data_size=%0d", data.size()), UVM_LOW);
+
+                            // Send the expected transaction to the scoreboard
+                            ref_model_out_port.write(expected_transaction);
+
+                            if (data_counter == 0) begin
+                                // If all data bytes have been sent, move to IDLE state
+                                `uvm_info(get_type_name(), "All data bytes sent, moving to IDLE state", UVM_LOW);
+                                next_state = IDLE_MODE; // Move to IDLE_MODE state
+                                break; // Exit the loop
+                            end else begin
+                                // Continue to wait for more data
+                                next_state = NATIVE_LISTEN_MODE_WAIT_DATA;
+                            end
+                    end  
+            end
+
+            default: begin
+                next_state = IDLE_MODE;
+            end
+        endcase
+
+        // Update the current state
+        current_state = next_state;
+
+    end
+endtask
+
+// Add timeout timer maybe
+// not sure what to do if 2 consecutive nacks happen
+// Function to generate the expected transaction for Native AUX Write Transaction
+task generate_native_aux_write_transaction(
     input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
     input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
     output dp_transaction expected_transaction, // Generated expected transaction
@@ -793,74 +850,107 @@ class dp_reference_model extends uvm_component;
     input bit [7:0] override_length = 8'h00,      // Default: Use tl_item.LPM_LEN
     input bit [7:0] override_data[$] = {}         // Default: Use tl_item.LPM_Data
 );
-    // Decode the aux_in_out signal
-    bit [3:0] command;       // First 4 bits: Command
-    bit [19:0] address;      // Address
-    bit [7:0] length;        // Length
-    bit [7:0] data[$];       // Data
-    int ack_count = 0;       // Ack counter
 
-    // Use overrides if provided, otherwise use defaults from tl_item
-    command = (override_command != 4'b0000) ? override_command : tl_item.LPM_CMD;
-    address = (override_address != 20'h00000) ? override_address : tl_item.LPM_Address;
-    length = (override_length != 8'h00) ? override_length : tl_item.LPM_LEN;
-    data = (override_data.size() > 0) ? override_data : {tl_item.LPM_Data};
+    // FSM states
+    typedef enum logic [3:0] {
+        IDLE_MODE,
+        NATIVE_TALK_MODE,
+        NATIVE_LISTEN_MODE_WAIT_ACK,
+        NATIVE_LISTEN_MODE_WAIT_DATA,
+        NATIVE_RETRANS_MODE,
+        NATIVE_FAILED_TRANSACTION
+    } native_aux_fsm_state_e;
 
-    // while (ack_count < 1) begin
-    // //     // Wait for the next transaction
-    //     ref_model_in_port.get(tl_item); //Lpm_seq_item
+    native_aux_fsm_state_e current_state, next_state;
 
-        // // Initialize outputs
-        // expected_transaction.LPM_Reply_ACK = 1'b0;
-        // expected_transaction.LPM_Reply_ACK_VLD = 1'b0;
-        // expected_transaction.LPM_Reply_DATA = 8'h00;
-        // expected_transaction.LPM_Reply_DATA_VLD = 1'b0;
-        // expected_transaction.LPM_Native_I2C = 1'b0;
+    bit [3:0] command;
+    bit [19:0] address;
+    bit [7:0] length;
+    bit [7:0] data[$];
+    int defer_counter = 0;
+    bit [7:0] success_counter = 8'b00000000 // Counter for successful number of bytes written
 
-        // Check if the transaction is valid
-        if (tl_item.LPM_Transaction_VLD) begin
-            // Handle Write Request Transaction
-            if (command == AUX_NATIVE_WRITE) begin
-                // Simulate transmitting the request
-                `uvm_info(get_type_name(), $sformatf("Transmitting Write Request: CMD=0x%0b, Addr=0x%0h, LEN=%0d, DATA=0x%0h",
-                                                     command, address, length, data), UVM_LOW);
+    // Initialize the FSM
+    current_state = IDLE_MODE;
+
+    forever begin
+        case (current_state)
+            IDLE_MODE: begin
+                // Wait for the next transaction
+                ref_model_in_port.get(tl_item);
+
+                if (tl_item.LPM_Transaction_VLD) begin
+                    command = (override_command != 4'b0000) ? override_command : tl_item.LPM_CMD;
+                    address = (override_address != 20'h00000) ? override_address : tl_item.LPM_Address;
+                    length = (override_length != 8'h00) ? override_length : tl_item.LPM_LEN;
+                    data = (override_data.size() > 0) ? override_data : {tl_item.LPM_Data};
+
+                    if (command == AUX_NATIVE_WRITE) begin
+                        `uvm_info(get_type_name(), "Starting Native AUX Write Transaction", UVM_LOW);
+                        next_state = NATIVE_TALK_MODE;
+                    end else begin
+                        `uvm_error(get_type_name(), "Invalid LPM_CMD for Native AUX Write Transaction");
+                        next_state = IDLE_MODE;
+                    end
+                end else begin
+                    next_state = IDLE_MODE;
+                end
+            end
+
+            NATIVE_TALK_MODE: begin
 
                 // Assign the encoded value to aux_in_out
                 // Encoded value: 1000|LPM_Address -> LPM_Address -> LPM_Address -> LPM_LEN -> LPM_Data
 
-                // Byte 1: 1000 followed by the first 4 bits of address
-                expected_transaction.aux_in_out = {4'b1000, address[19:16]}; // 1000 + first 4 bits of address
-                expected_transaction.start_stop = 1'b1; // Raise the start_stop signal
-                ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
+                // Transmit the write request
+                expected_transaction.aux_in_out = {4'b1000, address[19:16]}; // Byte 1
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1
+                ref_model_out_port.write(expected_transaction);
 
-                // Byte 2: Next 8 bits of address
-                expected_transaction.aux_in_out = address[15:8]; // Next 8 bits of address
-                ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
+                expected_transaction.aux_in_out = address[15:8]; // Byte 2
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1
+                ref_model_out_port.write(expected_transaction);
 
-                // Byte 3: Last 8 bits of address
-                expected_transaction.aux_in_out = address[7:0]; // Last 8 bits of address
-                ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
+                expected_transaction.aux_in_out = address[7:0]; // Byte 3
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1
+                ref_model_out_port.write(expected_transaction);
 
-                // Byte 4: Length
-                expected_transaction.aux_in_out = length; // Length
-                ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
+                expected_transaction.aux_in_out = length; // Byte 4
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1
+                ref_model_out_port.write(expected_transaction);
 
-                // Loop to send data bytes
+                // Transmit data bytes
                 for (int i = 0; i < length; i++) begin
                     expected_transaction.aux_in_out = data[i];
-                    ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
+                    ref_model_out_port.write(expected_transaction);
+                    // Raise the PHY_START_STOP signal
+                    expected_transaction.PHY_START_STOP = 1'b1
                 end
 
+                // // Lower the PHY_START_STOP signal
+                // expected_transaction.PHY_START_STOP = 1'b0; 
+                
+                // // Send the expected transaction to the scoreboard
+                // ref_model_out_port.write(expected_transaction);
+
+                next_state = NATIVE_LISTEN_MODE_WAIT_ACK; // Wait for ACK/NACK/DEFER
+
+            end
+
+            NATIVE_LISTEN_MODE_WAIT_ACK: begin
                 // Wait for the next transaction
-                ref_model_in_port.get(sink_item); //Sink_seq_item
+                ref_model_in_port.get(sink_item);
 
                 // Extract the command
                 command = sink_item.aux_in_out[3:0]; // Second 4 bits
 
-                // Take action based on the command
                 case (command)
                     AUX_ACK: begin // ACK
-                        `uvm_info(get_type_name(), "Processing AUX_ACK Command", UVM_LOW);
+                        `uvm_info(get_type_name(), "Received AUX_ACK Command", UVM_LOW);
 
                         // Populate the expected transaction
                         expected_transaction.LPM_Reply_ACK = AUX_ACK[1:0];
@@ -871,14 +961,11 @@ class dp_reference_model extends uvm_component;
                         // Send the expected transaction to the scoreboard
                         ref_model_out_port.write(expected_transaction);
 
-                        // ack_count = 1; // Increment the ack_count to exit the loop
-
-                        // Log the data being sent
-                        `uvm_info(get_type_name(), $sformatf("Sending AUX_ACK Response: data_size=%0d", data.size()), UVM_LOW);
+                        next_state = IDLE_MODE; // Transaction successful, move to IDLE
                     end
 
                     AUX_NACK: begin // NACK
-                        `uvm_info(get_type_name(), "Processing AUX_NACK Command", UVM_LOW);
+                        `uvm_info(get_type_name(), "Received AUX_NACK Command", UVM_LOW);
 
                         // Simulate acknowledgment for NACK
                         expected_transaction.LPM_Reply_ACK = AUX_NACK[1:0];
@@ -889,29 +976,31 @@ class dp_reference_model extends uvm_component;
                         // Send the expected transaction to the scoreboard
                         ref_model_out_port.write(expected_transaction);
 
-                        // Log the acknowledgment
-                        `uvm_info(get_type_name(), "AUX_NACK Command Acknowledged", UVM_LOW);
+                        next_state = NATIVE_RETRANS_MODE; // Retransmit missing bytes
                     end
 
                     AUX_DEFER: begin // DEFER
-                        `uvm_info(get_type_name(), "Processing AUX_DEFER Command", UVM_LOW);
+                        `uvm_info(get_type_name(), "Received AUX_DEFER Command", UVM_LOW);
 
                         // Simulate acknowledgment for DEFER
                         expected_transaction.LPM_Reply_ACK = AUX_DEFER[1:0];
                         expected_transaction.LPM_Reply_ACK_VLD = 1'b1;
                         expected_transaction.LPM_Reply_Data = 8'h00; // No data for DEFER
                         expected_transaction.LPM_Reply_Data_VLD = 1'b0;
-                        expected_transaction.LPM_Reply_Data_VLD = 1'b0;
 
                         // Send the expected transaction to the scoreboard
                         ref_model_out_port.write(expected_transaction);
 
-                        // Log the acknowledgment
-                        `uvm_info(get_type_name(), "AUX_DEFER Command Acknowledged", UVM_LOW);
+                        defer_counter = defer_counter + 1;
+                        if (defer_counter == 8) begin
+                            next_state = NATIVE_FAILED_TRANSACTION; // Too many defers, fail the transaction
+                        end else begin
+                            next_state = NATIVE_TALK_MODE; // Retry the transaction
+                        end
                     end
 
                     AUX_RESERVED: begin // RESERVED
-                        `uvm_info(get_type_name(), "Processing AUX_RESERVED Command", UVM_LOW);
+                        `uvm_info(get_type_name(), "Received AUX_RESERVED Command", UVM_LOW);
 
                         // Simulate acknowledgment for RESERVED
                         expected_transaction.LPM_Reply_ACK = AUX_RESERVED[1:0];
@@ -922,27 +1011,84 @@ class dp_reference_model extends uvm_component;
                         // Send the expected transaction to the scoreboard
                         ref_model_out_port.write(expected_transaction);
 
-                        // Log the acknowledgment
-                        `uvm_info(get_type_name(), "AUX_RESERVED Command Acknowledged", UVM_LOW);
+                        next_state = NATIVE_TALK_MODE; // Retry the transaction
                     end
 
                     default: begin // Invalid or unsupported command
                         `uvm_error(get_type_name(), $sformatf("Invalid or unsupported command: 0x%h", command));
+                        next_state = IDLE_MODE;
                     end
                 endcase
-            end else begin
-                `uvm_error(get_type_name(), $sformatf("Invalid LPM_CMD: %0b", command));
             end
-        end else begin
-            // Transaction not valid
-            `uvm_warning(get_type_name(), "LPM_Transaction_VLD is not asserted");
-        end
-    // end
 
-    // Log the generated expected transaction
-    `uvm_info(get_type_name(), $sformatf("Generated expected transaction: %s", expected_transaction.convert2string()), UVM_LOW);
-endfunction
+            NATIVE_RETRANS_MODE: begin
+                // Retry the write transaction
+                `uvm_info(get_type_name(), "Retrying Native AUX Write Transaction", UVM_LOW);
 
+                // Wait for the next transaction
+                ref_model_in_port.get(tl_item);
+
+                success_counter = tl_item.aux_in_out [7:0]; // Extract the number of successful bytes written
+                
+                // Assign the encoded value to aux_in_out
+                // Encoded value: 1000|LPM_Address -> LPM_Address -> LPM_Address -> (length - success_counter) -> Remaining Data
+
+                // Transmit the write request
+                expected_transaction.aux_in_out = {4'b1000, address[19:16]}; // Byte 1
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1
+                ref_model_out_port.write(expected_transaction);
+
+                expected_transaction.aux_in_out = address[15:8]; // Byte 2
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1
+                ref_model_out_port.write(expected_transaction);
+
+                expected_transaction.aux_in_out = address[7:0]; // Byte 3
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1
+                ref_model_out_port.write(expected_transaction);
+
+                expected_transaction.aux_in_out = (length - success_counter); // Byte 4
+                // Raise the PHY_START_STOP signal
+                expected_transaction.PHY_START_STOP = 1'b1
+                ref_model_out_port.write(expected_transaction);
+
+                // Transmit data bytes
+                for (int i = success_counter; i <= length; i++) begin
+                    expected_transaction.aux_in_out = data[i];
+                    // Raise the PHY_START_STOP signal
+                    expected_transaction.PHY_START_STOP = 1'b1
+                    ref_model_out_port.write(expected_transaction);
+                end
+
+                // // Lower the PHY_START_STOP signal
+                // expected_transaction.PHY_START_STOP = 1'b0; 
+                
+                // // Send the expected transaction to the scoreboard
+                // ref_model_out_port.write(expected_transaction);
+
+                next_state = NATIVE_LISTEN_MODE_WAIT_ACK; // Wait for ACK/NACK/DEFER
+            end
+
+            NATIVE_FAILED_TRANSACTION: begin
+                // Transaction failed
+                `uvm_error(get_type_name(), "Native AUX Write Transaction Failed", UVM_LOW);
+                expected_transaction.CTRL_Native_Failed = 1'b1;
+                ref_model_out_port.write(expected_transaction);
+                next_state = IDLE_MODE;
+            end
+
+            default: begin
+                next_state = IDLE_MODE;
+            end
+        endcase
+
+        // Update the current state
+        current_state = next_state;
+
+    end
+endtask
 
 function bit generate_clock_recovery_phase(
     input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
