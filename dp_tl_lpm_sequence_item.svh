@@ -10,7 +10,7 @@ class dp_tl_lpm_sequence_item extends uvm_sequence_item;
     // input Data to DUT
     logic [AUX_ADDRESS_WIDTH-1:0]      LPM_Address;
     rand logic [AUX_DATA_WIDTH-1:0]    LPM_LEN;
-    rand logic [AUX_DATA_WIDTH-1:0]    LPM_Data[$];
+    rand logic [AUX_DATA_WIDTH-1:0]    LPM_Data;;
     native_aux_request_cmd_e           LPM_CMD; // 00 Write and 01 Read
     bit                                LPM_Transaction_VLD;
 

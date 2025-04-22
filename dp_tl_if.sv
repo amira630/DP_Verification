@@ -1,11 +1,12 @@
-interface dp_tl_if(input clk);
+interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk);
 
+    
     logic rst_n;   // Reset is asynchronous active low
     logic ready;   // Ready signal indicating that the DUT will respond to the transaction
-
+    
     ///////////////////////////////////////////////////////////////
     //////////////////// AUXILIARY CHANNEL ////////////////////////
-    ///////////////////////////////////////////////////////////////  
+    /////////////////////////////////////////////////////////////// 
 
     /////////////////// STREAM POLICY MAKER ///////////////////////
 
@@ -16,15 +17,16 @@ interface dp_tl_if(input clk);
     logic        CTRL_I2C_Failed;
 
     //////////////////// LINK POLICY MAKER ////////////////////////
-
+    
     logic [AUX_ADDRESS_WIDTH-1:0] LPM_Address;
     logic [AUX_DATA_WIDTH-1:0]    LPM_Data, LPM_LEN, LPM_Reply_Data;
     logic [1:0]                   LPM_CMD, LPM_Reply_ACK;
-    logic                         LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_NATIVE_I2C, LPM_Transaction_VLD;
+    logic                         LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD,LPM_Transaction_VLD;
     logic                         HPD_Detect, HPD_IRQ, CTRL_Native_Failed;
+    logic                         LPM_NATIVE_I2C;            
 
     ////////////////// LINK Training Signals //////////////////////
-    
+
     logic [AUX_DATA_WIDTH-1:0] Link_BW_CR, PRE, VTG, EQ_RD_Value, Lane_Align, EQ_Final_ADJ_BW;
     logic [3:0] CR_DONE, EQ_CR_DN, Channel_EQ, Symbol_Lock;
     logic [1:0] Link_LC_CR, EQ_Final_ADJ_LC, MAX_TPS_SUPPORTED, MAX_VTG, MAX_PRE;
@@ -116,7 +118,7 @@ interface dp_tl_if(input clk);
                  LPM_Reply_Data_VLD,      // A valid signal indicating that the data is ready (set to one when receiving data from a Native reply transaction).
                  LPM_Reply_ACK,           // Native Reply Transaction (Command Part) for a Native Request Transaction.
                  LPM_Reply_ACK_VLD,       // A valid signal indicating that the acknowledge data is ready (set to one when receiving reply acknowledge data from a Native reply transaction).
-                 LPM_Native_I2C,          // Signal representing the most significant bit in the command field to determine the type of transaction whether I2C or Native
+                 LPM_NATIVE_I2C,          // Signal representing the most significant bit in the command field to determine the type of transaction whether I2C or Native
                  CTRL_Native_Failed,      // A signal indicating the failure of the Native transaction, which is set to one when the Native transaction fails.
           // LPM - Link Training
                  FSM_CR_Failed,           // A Signal indicating the failure of the Clock Recovery phase during link training, meaning the sink failed to acquire the clock frequency during the training process
@@ -129,9 +131,10 @@ interface dp_tl_if(input clk);
                  Timer_Timeout            // Signal indicating the timeout of the timer during link training process.
     );
 
+
     //////////////////////// DRIVER /////////////////////////////
 
-    modport DRV (
+      modport DRV (
         // SPM - AUX
         output rst_n, SPM_Address, SPM_Data, SPM_LEN, SPM_CMD, SPM_Transaction_VLD, 
         // LPM - AUX      
@@ -147,14 +150,14 @@ interface dp_tl_if(input clk);
         // SPM - AUX       
         input clk, SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, CTRL_I2C_Failed,         
         // LPM - AUX
-              HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_Native_I2C, CTRL_Native_Failed,         
+              HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_NATIVE_I2C, CTRL_Native_Failed,         
         // LPM - Link Training
               FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC, CR_Completed, EQ_FSM_CR_Failed, Timer_Timeout
     );
 
-      //////////////////////// MONITOR /////////////////////////////
-
-    modport MONITOR (
+    //////////////////////// MONITOR /////////////////////////////
+    
+      modport MONITOR (
         input clk, rst_n,
         // SPM - AUX
               SPM_Address, SPM_Data, SPM_LEN, SPM_CMD, SPM_Transaction_VLD, 
@@ -167,7 +170,7 @@ interface dp_tl_if(input clk);
         // SPM - AUX      
               SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, CTRL_I2C_Failed,         
         // LPM - AUX
-              HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_Native_I2C, CTRL_Native_Failed,        
+              HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_NATIVE_I2C, CTRL_Native_Failed,        
         // LPM - Link Training
               FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC, CR_Completed , EQ_FSM_CR_Failed, Timer_Timeout,
         // MSS - ISO
@@ -175,7 +178,7 @@ interface dp_tl_if(input clk);
         // SPM - ISO
               SPM_ISO_start, SPM_Lane_Count, SPM_Lane_BW, SPM_MSA, SPM_MSA_VLD, SPM_BW_Sel      
     );
-
+    
       // RESET task
       // This task is used to reset the DUT by asserting and deasserting the reset signal
       task Reset();
@@ -185,38 +188,38 @@ interface dp_tl_if(input clk);
       endtask
 
       // I2C_READ task
-      task I2C_READ(input dp_tl_sequence_item SPM);
+      task I2C_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
             // Set SPM-related signals to perform a read operation
-            SPM_Address = SPM.SPM_Address;
-            SPM_CMD     = SPM.SPM_CMD;
-            SPM_LEN     = SPM.SPM_LEN;
-            SPM_Transaction_VLD = SPM.SPM_Transaction_VLD;
+            SPM_Address = address;
+            SPM_CMD     = command;
+            SPM_LEN     = length;
+            SPM_Transaction_VLD = transaction_vld;
             // SPM_Data = SPM.SPM_Data;                                 // Data is not used in read operation
 
             wait(SPM_Reply_Data_VLD == 1 || SPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
             ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
       endtask
-
+    
       // I2C_WRITE task
-      task I2C_WRITE(input dp_tl_sequence_item SPM);
+      task I2C_WRITE(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld, input logic[7:0] data);
             // Set SPM-related signals to perform a write operation
-            SPM_Address = SPM.SPM_Address;
-            SPM_CMD     = SPM.SPM_CMD;
-            SPM_LEN     = SPM.SPM_LEN;
-            SPM_Transaction_VLD = SPM.SPM_Transaction_VLD;
-            SPM_Data = SPM.SPM_Data;
+            SPM_Address = address;
+            SPM_CMD     = command;
+            SPM_LEN     = length;
+            SPM_Transaction_VLD = transaction_vld;
+            SPM_Data = data;
 
             wait(SPM_Reply_Data_VLD == 1 || SPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
             ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
       endtask
 
-      // NATIVE_READ task
-      task NATIVE_READ(input dp_tl_sequence_item LPM);
+      // // NATIVE_READ task
+      task NATIVE_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
             // Set LPM-related signals to perform a read operation
-            LPM_Address = LPM.LPM_Address;
-            LPM_CMD     = LPM.LPM_CMD;
-            LPM_LEN     = LPM.LPM_LEN;
-            LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
+            LPM_Address = address;
+            LPM_CMD     = command;
+            LPM_LEN     = length;
+            LPM_Transaction_VLD = transaction_vld;
             // LPM_Data = LPM.LPM_Data; // Data is not used in read operation
 
             wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
@@ -224,45 +227,45 @@ interface dp_tl_if(input clk);
       endtask
 
       // NATIVE_WRITE task
-      task NATIVE_WRITE(input dp_tl_sequence_item LPM);
+      task NATIVE_WRITE(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld, input logic[7:0] data);
             // Set LPM-related signals to perform a write operation
-            LPM_Address = LPM.LPM_Address;
-            LPM_CMD     = LPM.LPM_CMD;
-            LPM_LEN     = LPM.LPM_LEN;
-            LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
-            LPM_Data = LPM.LPM_Data;
+            LPM_Address = address;
+            LPM_CMD     = command;
+            LPM_LEN     = length;
+            LPM_Transaction_VLD = transaction_vld;
+            LPM_Data = data;
 
             wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
             ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
       endtask
 
-      //////////////////////////// LINK TRAINING ////////////////////////////
+      // //////////////////////////// LINK TRAINING ////////////////////////////
 
-      task LINK_TRAINING (input dp_tl_sequence_item LPM);
-            // Set LPM-related signals for Clock Recovery Link Training
-            LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
-            LPM_Start_CR = LPM.LPM_Start_CR;
-            CR_DONE_VLD  = LPM.CR_DONE_VLD;
-            CR_DONE      = LPM.CR_DONE;
-            Link_LC_CR   = LPM.Link_LC_CR;
-            Link_BW_CR   = LPM.Link_BW_CR;
-            PRE          = LPM.PRE;
-            VTG          = LPM.VTG;
-            Driving_Param_VLD = LPM.Driving_Param_VLD;
-            Config_Param_VLD = LPM.Config_Param_VLD;
-            EQ_RD_Value  = LPM.EQ_RD_Value;
-            EQ_CR_DN     = LPM.EQ_CR_DN;
-            Channel_EQ   = LPM.Channel_EQ;
-            Symbol_Lock  = LPM.Symbol_Lock;
-            Lane_Align   = LPM.Lane_Align;
-            EQ_Data_VLD  = LPM.EQ_Data_VLD;
-            MAX_VTG      = LPM.MAX_VTG;
-            MAX_PRE      = LPM.MAX_PRE;
-            MAX_TPS_SUPPORTED = LPM.MAX_TPS_SUPPORTED;
-            MAX_TPS_SUPPORTED_VLD      = LPM.MAX_TPS_SUPPORTED_VLD;
+      // task LINK_TRAINING (input dp_tl_sequence_item LPM);
+      //       // Set LPM-related signals for Clock Recovery Link Training
+      //       LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
+      //       LPM_Start_CR = LPM.LPM_Start_CR;
+      //       CR_DONE_VLD  = LPM.CR_DONE_VLD;
+      //       CR_DONE      = LPM.CR_DONE;
+      //       Link_LC_CR   = LPM.Link_LC_CR;
+      //       Link_BW_CR   = LPM.Link_BW_CR;
+      //       PRE          = LPM.PRE;
+      //       VTG          = LPM.VTG;
+      //       Driving_Param_VLD = LPM.Driving_Param_VLD;
+      //       Config_Param_VLD = LPM.Config_Param_VLD;
+      //       EQ_RD_Value  = LPM.EQ_RD_Value;
+      //       EQ_CR_DN     = LPM.EQ_CR_DN;
+      //       Channel_EQ   = LPM.Channel_EQ;
+      //       Symbol_Lock  = LPM.Symbol_Lock;
+      //       Lane_Align   = LPM.Lane_Align;
+      //       EQ_Data_VLD  = LPM.EQ_Data_VLD;
+      //       MAX_VTG      = LPM.MAX_VTG;
+      //       MAX_PRE      = LPM.MAX_PRE;
+      //       MAX_TPS_SUPPORTED = LPM.MAX_TPS_SUPPORTED;
+      //       MAX_TPS_SUPPORTED_VLD      = LPM.MAX_TPS_SUPPORTED_VLD;
 
-            wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the link training to complete
-            ready = 1;                                             // Set ready signal to indicate that the DUT is ready to respond
-      endtask
+      //       wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the link training to complete
+      //       ready = 1;                                             // Set ready signal to indicate that the DUT is ready to respond
+      // endtask
 
 endinterface

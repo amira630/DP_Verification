@@ -31,15 +31,20 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
             // Drive the values to the interface according to the operation
             @(posedge dp_sink_vif.clk);
             case (stim_seq_item.sink_operation)
-                HPD_operation: begin
-                    // HPD operation
-                    `uvm_info("DP_SINK_DRIVER", $sformatf("Driving HPD_Signal = %0b", stim_seq_item.HPD_Signal), UVM_MEDIUM);
-                    dp_sink_vif.drive_hpd_signal(stim_seq_item.HPD_Signal);
+                // HPD_operation: begin
+                //     // HPD operation
+                //     `uvm_info("DP_SINK_DRIVER", $sformatf("Driving HPD_Signal = %0b", stim_seq_item.HPD_Signal), UVM_MEDIUM);
+                //     dp_sink_vif.drive_hpd_signal(stim_seq_item.HPD_Signal);
+                // end
+                Interrupt_operation: begin
+                    // Interrupt sequence
+                    `uvm_info("DP_SINK_DRIVER", $sformatf("Driving Interrupt"), UVM_MEDIUM);
+                    dp_sink_vif.Interrupt();
                 end
-                Reply_operation: begin
-                    // Reply operation
-                    dp_sink_vif.drive_aux_in_out(stim_seq_item.AUX_IN_OUT);
-                end
+                // Reply_operation: begin
+                //     // Reply operation
+                //     dp_sink_vif.drive_aux_in_out(stim_seq_item.AUX_IN_OUT);
+                // end
                 default: 
                     begin
                         dp_sink_vif = null; // Set the interface to null if the operation is not supported

@@ -4,7 +4,6 @@ import uvm_pkg::*;
 class dp_sink_sequence_item extends uvm_sequence_item;
     `uvm_object_utils(dp_sink_sequence_item);
 
-    rand bit rst_n;   // Reset is asynchronous active low
     rand bit HPD_Signal;
     
     bit AUX_START_STOP, PHY_START_STOP;
@@ -57,10 +56,6 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     ///////////////////////////////////////////////////////////////
     /////////////////////// CONSTRAINTS ///////////////////////////
     ///////////////////////////////////////////////////////////////
-
-    constraint rst_n_constraint {
-        rst_n dist {1'b1 := 90, 1'b0 := 10}; // 90% chance of being 1, 10% chance of being 0
-    }
 
     ///////////////////////////////////////////////////////////////
     /////////////////////// CONSTRUCTOR ///////////////////////////

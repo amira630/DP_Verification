@@ -1,3 +1,8 @@
+// Project: DP Verification
+// Description: Top module for the DisplayPort verification environment
+// Time Scale: 1ns / 1ps
+`timescale 1ns / 1ps
+
 // Standard UVM import & include:
 import uvm_pkg::*;
 `include "uvm_macros.svh"
@@ -8,20 +13,19 @@ import dp_source_test_pkg::*;
 module top();
     bit clk;
 
+    // Create the interfaces for Transport Layer and the Sink Link Layer
+    dp_tl_if #(.AUX_ADDRESS_WIDTH(20), .AUX_DATA_WIDTH(8))  tl_if (clk);
+    dp_sink_if #(.AUX_ADDRESS_WIDTH(20), .AUX_DATA_WIDTH(8)) sink_if (clk);
+
+    dp_source DUT (tl_if, sink_if);
+
+
     // start the clock
     initial begin
+        clk = 1;
         forever
-            #10 clk = ~clk;
+            #10000 clk = ~clk;
     end
-
-    // Create the interfaces for Transport Layer and the Sink Link Layer
-    dp_tl_if tl_if (clk);
-    dp_sink_if sink_if (clk);
-
-    // dp_source DP_SOURCE_DUT (
-    //     .tl_if(tl_if),
-    //     .sink_if(sink_if)    // make sure the DP_SOURCE can take two interfaces
-    // );
 
     initial begin
         // add virtual interfaces for each interface to the configurations database

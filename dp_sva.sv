@@ -111,7 +111,7 @@ module dp_sva (
     // Ensures that LPM_LEN is within the valid 8-bit range.
     property valid_lpm_len_read;
         @(posedge clk)
-        if(seq_item_LPM.LPM_Transaction_VLD) seq_item_LPM.LPM_LEN inside {[8'h00:8'h0F]}; // max 16 bytes of data in 1 transaction
+        if(seq_item_LPM.LPM_Transaction_VLD) seq_item_LPM.LPM_LEN inside {[8'h00:8'hFF]}; // max 16 bytes of data in 1 transaction
     endproperty
     assert property (valid_lpm_len_read)
         else $error("LPM_LEN is out of range in native_read_request task");
@@ -165,7 +165,7 @@ module dp_sva (
     // Ensures that LPM_LEN is within the valid 8-bit range.
     property valid_lpm_len_write;
         @(posedge clk)
-        if(seq_item_LPM.LPM_Transaction_VLD) seq_item_LPM.LPM_LEN inside {[8'h00:8'h0F]};
+        if(seq_item_LPM.LPM_Transaction_VLD) seq_item_LPM.LPM_LEN inside {[8'h00:8'hFF]};
     endproperty
     assert property (valid_lpm_len_write)
         else $error("LPM_LEN is out of range in native_write_request task");

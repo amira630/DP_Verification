@@ -29,7 +29,6 @@ class dp_tl_monitor extends uvm_monitor;
     rsp_seq_item.SPM_Address = dp_tl_vif.SPM_Address;
     rsp_seq_item.SPM_LEN = dp_tl_vif.SPM_LEN;
     rsp_seq_item.SPM_Data = dp_tl_vif.SPM_Data;
-    rsp_seq_item.SPM_CMD = dp_tl_vif.SPM_CMD;
     rsp_seq_item.SPM_Transaction_VLD = dp_tl_vif.SPM_Transaction_VLD;
 
       // Output Data from DUT
@@ -45,7 +44,6 @@ class dp_tl_monitor extends uvm_monitor;
     rsp_seq_item.LPM_Address = dp_tl_vif.LPM_Address;
     rsp_seq_item.LPM_LEN = dp_tl_vif.LPM_LEN;
     rsp_seq_item.LPM_Data = dp_tl_vif.LPM_Data;
-    rsp_seq_item.LPM_CMD = dp_tl_vif.LPM_CMD;
     rsp_seq_item.LPM_Transaction_VLD = dp_tl_vif.LPM_Transaction_VLD;
 
     rsp_seq_item.Lane_Align = dp_tl_vif.Lane_Align;
@@ -60,7 +58,6 @@ class dp_tl_monitor extends uvm_monitor;
     rsp_seq_item.EQ_CR_DN = dp_tl_vif.EQ_CR_DN;
     rsp_seq_item.Channel_EQ = dp_tl_vif.Channel_EQ;
     rsp_seq_item.Symbol_Lock = dp_tl_vif.Symbol_Lock;
-    rsp_seq_item.MAX_TPS_SUPPORTED = dp_tl_vif.MAX_TPS_SUPPORTED;
     rsp_seq_item.Link_LC_CR = dp_tl_vif.Link_LC_CR;
     rsp_seq_item.EQ_Data_VLD = dp_tl_vif.EQ_Data_VLD;
     rsp_seq_item.Driving_Param_VLD = dp_tl_vif.Driving_Param_VLD;

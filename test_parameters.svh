@@ -37,6 +37,12 @@
     parameter int AUX_DATA_WIDTH = 8;      // 8-bit AUX data
 
 // typedef enums
+    typedef enum bit [1:0] {
+        DETECTING = 2'b00,
+        CR_STAGE = 2'b01,
+        EQ_STAGE = 2'b10,
+        ISO_STAGE = 2'b11
+    } flow_stages_e;
 
 // Training Patterns
     typedef enum bit [1:0] {
@@ -148,7 +154,8 @@
 // Sink Driver Operation
     typedef enum logic [1:0] {
         HPD_operation   = 2'b00,  
-        Reply_operation = 2'b01
+        Interrupt_operation       = 2'b01,
+        Reply_operation = 2'b10
     } sink_op_code;
 
     // 

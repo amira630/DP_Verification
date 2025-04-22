@@ -2,9 +2,9 @@ import uvm_pkg::*;
     `include "uvm_macros.svh"
     `include "test_parameters.svh"
 class dp_tl_sequence_item extends uvm_sequence_item;
-  `uvm_object_utils(dp_tl_sequence_item);
+    `uvm_object_utils(dp_tl_sequence_item);
   
-  rand bit rst_n;   // Reset is asynchronous active low
+    rand bit rst_n;   // Reset is asynchronous active low
 
     ///////////////////////////////////////////////////////////////
     //////////////////// AUXILIARY CHANNEL ////////////////////////
@@ -73,7 +73,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     rand logic [15:0] VTotal;       // in lines
     rand logic [15:0] HStart;       // in pixels
     rand logic [15:0] VStart;       // in lines
-    rand logic        HSP, VSP;
+    rand bit          HSP, VSP;
     rand logic [14:0] HSW;          // in pixels    
     rand logic [14:0] VSW;          // in lines
     rand logic [15:0] HWidth;       // in pixels
@@ -87,8 +87,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
     rand logic [47:0] MS_Pixel_Data;
     rand logic [9:0]  MS_Stm_BW;        // takes values on MHz max 1Ghz
-    rand logic        MS_DE, MS_VSYNC, MS_HSYNC;
-    rand bit          MS_Stm_CLK;
+    logic             MS_DE, MS_VSYNC, MS_HSYNC;
+    bit               MS_Stm_CLK;
 
 
     op_code operation;
@@ -99,6 +99,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     bit [1:0] ISO_LC;
     bit [AUX_DATA_WIDTH-1:0] ISO_BW;
     rand logic [AUX_DATA_WIDTH-1:0]    LPM_Data_queue[$];
+    bit LT_Failed, LT_Pass;
+
 
     ///////////////////////////////////////////////////////////////
     /////////////////////// SPM CONSTRAINTS ///////////////////////
@@ -119,12 +121,18 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     constraint operation_type_dist {
        operation inside {[Reset:EQ_LT]};
     }
+
+    constraint hsp_vsp_constraint {
+        HSP dist {1'b1 := 90, 1'b0 := 10}; // HSP is 1 90% of the time
+        VSP dist {1'b1 := 90, 1'b0 := 10}; // VSP is 1 90% of the time
+    }
+
     constraint vtotal_constraint {
-        VTotal == (VHeight + VStart - 1); // Ensure VTotal equals VHeight + VStart - 1
+        (VHeight + VStart - 1) == VTotal; // Ensure VTotal equals VHeight + VStart - 1
     }
 
     constraint htotal_constraint {
-        HTotal == (HWidth + HStart - 1); // Ensure HTotal equals HWidth + HStart - 1
+        (HWidth + HStart - 1) == HTotal; // Ensure HTotal equals HWidth + HStart - 1
     }
 
     constraint hstart_constraint {
@@ -150,12 +158,12 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
     constraint misc0_constraint {
         MISC0[7:5] inside {3'b001, 3'b100}; // 8bpc or 16bpc
-        MISC0[4] == 1'b0;                  // MISC0[4] must always be 0
-        MISC0[3] inside {1'b0, 1'b1};      // RGB or YCbCr
+        MISC0[4] == 1'b0;                   // MISC0[4] must always be 0
+        MISC0[3] inside {1'b0, 1'b1};       // RGB or YCbCr
         if (MISC0[3] == 1'b0) {
-            MISC0[2:1] == 2'b00;           // RGB
+            MISC0[2:1] == 2'b00;            // RGB
         } else {
-            MISC0[2:1] == 2'b10;           // YCbCr (4:4:4)
+            MISC0[2:1] == 2'b10;            // YCbCr (4:4:4)
         }
         // MISC0[0] can be anything, no constraint needed
     }
@@ -168,12 +176,29 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         VSW == (VStart - 1) - VBack - VFront; // Ensure VSW is calculated correctly
     }
 
+    constraint hback_constraint {
+        HBack == (HStart - HSW); // Ensure HBack equals HStart - HSW
+    }
+
+    constraint vback_constraint {
+        VBack == (VStart - VSW); // Ensure HBack equals VStart - VSW
+    }    
+
+    constraint hfront_constraint {
+        HFront == (HTotal - (HStart + HWidth)); // Ensure HFront equals HTotal - (HStart + HWidth)
+    }
+
+    constraint vfront_constraint {
+        VFront == (VTotal - (VStart + VHeight)); // Ensure VFront equals VTotal - (VStart + VHeight)
+    } 
+
     constraint ms_pixel_data_constraint {
         if (MISC0[7:5] == 3'b001) {
             MS_Pixel_Data[47:24] == 24'bx; // Most significant 24 bits are zero for 8bpc mode
         } 
     }
 
+    
     ///////////////////////////////////////////////////////////////
     /////////////////////// LPM CONSTRAINTS ///////////////////////
     ///////////////////////////////////////////////////////////////
