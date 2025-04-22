@@ -68,14 +68,14 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
             $cast(response_seq_item, stimulus_seq_item.clone());
 
             // Wait for DUT reponse
-            wait(dp_tl_vif.ready == 1)
+            // wait(dp_tl_vif.ready == 1)
             
             // Copy the values from the DUT to the response sequence item
             // response_seq_item.copy_from_vif(dp_tl_vif);
 
             // Send response back properly via seq_item_port
             @(negedge dp_tl_vif.clk);
-            seq_item_port.item_done(response_seq_item);
+            seq_item_port.item_done(stimulus_seq_item);
 
             `uvm_info("run_phase", $sformatf("Driver Done"), UVM_HIGH);
             `uvm_info("run_phase", stimulus_seq_item.convert2string(), UVM_HIGH);

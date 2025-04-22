@@ -142,7 +142,7 @@
 
 // AUX Channel Operation
     typedef enum logic [3:0] {
-        Reset           = 4'b0000,  
+        reset_op        = 4'b0000,  
         I2C_READ        = 4'b0001,
         I2C_WRITE       = 4'b0010,
         NATIVE_READ     = 4'b0011,
