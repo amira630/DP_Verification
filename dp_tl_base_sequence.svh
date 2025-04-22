@@ -12,6 +12,20 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         super.new(name);
     endfunction //new()
 
+/////////////////////////// Reset /////////////////////////////////////
+task reset_task();
+    // Reset the DUT and wait for it to be ready
+    `uvm_info(get_type_name(), "Resetting DUT", UVM_MEDIUM)
+    seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+    start_item(seq_item);
+        seq_item.operation = reset_op;
+        seq_item.LPM_Transaction_VLD = 1'b1; // LPM is on
+    finish_item(seq_item);
+    `uvm_info(get_type_name(), "DUT Reset complete", UVM_MEDIUM)
+    
+endtask
+
+
 ////////////////////////////////////// HPD //////////////////////////////////////
 
 // // HPD Detect

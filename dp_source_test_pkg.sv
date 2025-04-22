@@ -9,8 +9,8 @@ package dp_source_test_pkg;
     import dp_source_env_pkg::*;
 
     // Includes:
-    `include "dp_source_config.svh"
     `include "dp_tl_base_sequence.svh"
+    `include "dp_tl_reset_seq.svh"
     //`include "dp_tl_i2c_sequence.svh"
     `include "dp_tl_native_ext_receiver_cap_sequence.svh"
     `include "dp_tl_native_link_config_sequence.svh"

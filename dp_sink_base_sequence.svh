@@ -21,10 +21,11 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
             wait(seq_item != null);
         end
 
+        seq_item.sink_operation = Interrupt_operation;  // Set the operation type to IRQ
+
         // Set the sequence item signals
         start_item(seq_item);
         `uvm_info(get_type_name(), "start_item for interrupt", UVM_MEDIUM)
-        seq_item.sink_operation = Interrupt_operation;  // Set the operation type to IRQ
         finish_item(seq_item);                          // Send the sequence item to the driver
         `uvm_info(get_type_name(), "finish_item for interrupt", UVM_MEDIUM)
     endtask

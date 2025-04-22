@@ -92,6 +92,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
 
     op_code operation;
+
+    
     bit     link_values_locked = 0; // State variable to lock values after first randomization
     bit [AUX_DATA_WIDTH-1:0] prev_vtg;
     bit [AUX_DATA_WIDTH-1:0] prev_pre;
@@ -117,7 +119,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     }
 
     constraint operation_type_dist {
-       operation inside {[Reset:EQ_LT]};
+       operation inside {[reset_op:EQ_LT]};
     }
     constraint vtotal_constraint {
         VTotal == (VHeight + VStart - 1); // Ensure VTotal equals VHeight + VStart - 1
@@ -265,22 +267,22 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         }
     }
 
-    constraint pre_vtg_constraint {
-        foreach (PRE[i]) {
-            VTG[i*2 +: 2] <= MAX_VTG[i*2 +: 2]; // VTG must be less than or equal to MAX_VTG
-            PRE[i*2 +: 2] <= MAX_PRE[i*2 +: 2]; // PRE must be less than or equal to MAX_PRE
+    // constraint pre_vtg_constraint {
+    //     foreach (PRE[i]) {
+    //         VTG[i*2 +: 2] <= MAX_VTG[i*2 +: 2]; // VTG must be less than or equal to MAX_VTG
+    //         PRE[i*2 +: 2] <= MAX_PRE[i*2 +: 2]; // PRE must be less than or equal to MAX_PRE
 
-            // Lock VTG if it equals MAX_VTG and LPM_Start_CR is 0
-            if (!LPM_Start_CR && prev_vtg[i*2 +: 2] == MAX_VTG[i*2 +: 2]) {
-                VTG[i*2 +: 2] == prev_vtg[i*2 +: 2];
-            }
+    //         // Lock VTG if it equals MAX_VTG and LPM_Start_CR is 0
+    //         if (!LPM_Start_CR && prev_vtg[i*2 +: 2] == MAX_VTG[i*2 +: 2]) {
+    //             VTG[i*2 +: 2] == prev_vtg[i*2 +: 2];
+    //         }
             
-            // Lock PRE if it equals MAX_PRE and LPM_Start_CR is 0
-            if (!LPM_Start_CR && prev_pre[i*2 +: 2] == MAX_PRE[i*2 +: 2]) {
-                PRE[i*2 +: 2] == prev_pre[i*2 +: 2];
-            }
-        }
-    }
+    //         // Lock PRE if it equals MAX_PRE and LPM_Start_CR is 0
+    //         if (!LPM_Start_CR && prev_pre[i*2 +: 2] == MAX_PRE[i*2 +: 2]) {
+    //             PRE[i*2 +: 2] == prev_pre[i*2 +: 2];
+    //         }
+    //     }
+    // }
             
     constraint vtg_pre_relationship {
         foreach (VTG[i]) {
