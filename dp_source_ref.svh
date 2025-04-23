@@ -2088,10 +2088,6 @@ endfunction
             // Update the current state
             current_state = next_state;
     
-            // Exit the loop if the process is complete
-            if (current_state == IDLE && (EQ_DONE || next_state == FAILURE)) begin
-                break;
-            end
         end
     
         return EQ_DONE;
@@ -2109,6 +2105,15 @@ endfunction
         // Initialize internal flags
         bit CR_DONE = 0;
         bit EQ_DONE = 0;
+
+        // Step 1: Read EDID (128 bytes)
+        `uvm_info(get_type_name(), "Reading EDID", UVM_LOW);
+
+        generate_i2c_over_aux_transaction(
+            sink_item,       // Input transaction from sink
+            tl_item,         // Input transaction from tl
+            expected_transaction,       // Output transaction
+        );
     
         // Step 2: Read DPCD capabilities (0x00000–0x000FF)
         `uvm_info(get_type_name(), "Reading DPCD capabilities", UVM_LOW);
@@ -2121,43 +2126,23 @@ endfunction
             expected_transaction        // Output transaction
         );
         end
-        
-        // need to understand better
-        // need to handle how to get Link_BW_CR and Link_LC_CR
-        // Step 3: Writing to the Link Configuration field (offsets 0x00100–0x00101) to set the Link Bandwidth and Lane Count  clears register 0x00102 to 00h in the same write 
-        //transaction.
-
-                // Assign the encoded value to aux_in_out
-                // Encoded value: 1000|0000 -> 00000001 -> 00000000 -> 00000010 -> Link_BW_CR -> Link_LC_CR -> 00000000
-                
-                // Call the Native aux write function to handle the transaction
-                generate_native_aux_write_transaction(
-                    sink_item,       // Input transaction from sink
-                    tl_item,         // Input transaction from tl
-                    expected_transaction,       // Output transaction
-                    4'b1000,                    // Override command (AUX_NATIVE_WRITE)
-                    20'h00100,                  // Override address (0x00100)
-                    8'h03,                      // Override length (3 byte(s)) (length + 1)
-                    '{8'Link_BW_CR, 8'Link_LC_CR, 8'h00}      // Override data
-                );
-
     
-        // Step 4: Begin Clock Recovery Phase
+        // Step 3: Begin Clock Recovery Phase
         CR_DONE = generate_clock_recovery_phase(sink_item, tl_item, expected_transaction);
     
-        // Step 5: Begin Channel Equalization Phase if CR is successful
+        // Step 4: Begin Channel Equalization Phase if CR is successful
         if (CR_DONE) begin
             EQ_DONE = generate_channel_equalization_phase(sink_item, tl_item, expected_transaction);
         end
+
+        // Restart Clock Recovery Phase if restart = 1'b1
     
-        // Step 6: Finalize Link Training
+        // Step 5: Finalize Link Training
         if (EQ_DONE) begin
             expected_transaction.EQ_LT_Pass = 1'b1;
-            expected_transaction.final_bw = 
-            expected_transaction.final_lane_count = 
             `uvm_info(get_type_name(), $sformatf("Link Training successful: BW=%0d, Lanes=%0d",
-                                                 expected_transaction.final_bw,
-                                                 expected_transaction.final_lane_count), UVM_LOW);
+                                                 expected_transaction.EQ_Final_ADJ_BW,
+                                                 expected_transaction.EQ_Final_ADJ_LC), UVM_LOW);
         end else begin
             expected_transaction.EQ_Failed = 1'b1;
             `uvm_error(get_type_name(), "Link Training failed");
