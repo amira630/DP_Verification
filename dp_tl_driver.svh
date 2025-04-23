@@ -13,7 +13,6 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
         forever begin
             // Get sequence item from sequencer
             stimulus_seq_item = dp_tl_sequence_item::type_id::create("stimulus_seq_item");
-            response_seq_item = dp_tl_sequence_item::type_id::create("response_seq_item");
             // Get the next sequence item from the sequencer
             seq_item_port.get_next_item(stimulus_seq_item);
 
@@ -33,7 +32,9 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
                 case (stimulus_seq_item.operation)
                     4'b0000: dp_tl_vif.Reset();                             // Reset the interface
                     4'b0001: dp_tl_vif.I2C_READ(stimulus_seq_item.SPM_Address,stimulus_seq_item.SPM_LEN,stimulus_seq_item.SPM_CMD,stimulus_seq_item.SPM_Transaction_VLD);      // I2C READ
-                    4'b0010: dp_tl_vif.I2C_WRITE(stimulus_seq_item.SPM_Address,stimulus_seq_item.SPM_LEN,stimulus_seq_item.SPM_CMD,stimulus_seq_item.SPM_Transaction_VLD, stimulus_seq_item.SPM_Data);     // I2C WRITE
+                    4'b0010: dp_tl_vif.I2C_WRITE(stimulus_seq_item.SPM_Address,stimulus_seq_item.SPM_LEN,stimulus_seq_item.SPM_CMD, stimulus_seq_item.SPM_Data, stimulus_seq_item.SPM_Transaction_VLD);     // I2C WRITE
+                    4'b0111: dp_tl_vif.ISO(stimulus_seq_item.SPM_ISO_start, stimulus_seq_item.SPM_MSA_VLD, stimulus_seq_item.MS_DE, stimulus_seq_item.MS_VSYNC, stimulus_seq_item.MS_HSYNC, stimulus_seq_item.SPM_Lane_BW, stimulus_seq_item.SPM_Lane_Count, stimulus_seq_item.SPM_BW_Sel, stimulus_seq_item.MS_Pixel_Data, stimulus_seq_item.MS_Stm_BW, stimulus_seq_item.SPM_MSA); // ISO
+                    4'b1000: `uvm_info("DP_TL_DRIVER", "Source is still detecting the sink.", UVM_MEDIUM) // Detect
                     default: begin
                         dp_tl_vif = null; // Set the interface to null if the operation is not supported
                         `uvm_error("DP_TL_DRIVER", "Unsupported operation in SPM transaction")
@@ -45,33 +46,26 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
                 case (stimulus_seq_item.operation)
                     4'b0000: dp_tl_vif.Reset();
                     4'b0011: dp_tl_vif.NATIVE_READ(stimulus_seq_item.LPM_Address,stimulus_seq_item.LPM_LEN,stimulus_seq_item.LPM_CMD,stimulus_seq_item.LPM_Transaction_VLD);       // NATIVE READ
-                    4'b0100: dp_tl_vif.NATIVE_WRITE(stimulus_seq_item.LPM_Address,stimulus_seq_item.LPM_LEN,stimulus_seq_item.LPM_CMD,stimulus_seq_item.LPM_Transaction_VLD, stimulus_seq_item.LPM_Data);      // NATIVE WRITE
-                    // 4'b0101: dp_tl_vif.LINK_TRAINING(stimulus_seq_item);             // CR_LT
-                    // 4'b0110: dp_tl_vif.LINK_TRAINING(stimulus_seq_item);             // EQ_LT
+                    4'b0100: dp_tl_vif.NATIVE_WRITE(stimulus_seq_item.LPM_Address,stimulus_seq_item.LPM_LEN,stimulus_seq_item.LPM_CMD, stimulus_seq_item.LPM_Data, stimulus_seq_item.LPM_Transaction_VLD);      // NATIVE WRITE
+                    4'b0101: dp_tl_vif.LT_CT(stimulus_seq_item.Config_Param_VLD, stimulus_seq_item.Driving_Param_VLD, stimulus_seq_item.LPM_Start_CR, stimulus_seq_item.CR_DONE_VLD, stimulus_seq_item.PRE, stimulus_seq_item.VTG, stimulus_seq_item.Link_BW_CR, stimulus_seq_item.EQ_RD_Value, stimulus_seq_item.CR_DONE, stimulus_seq_item.Link_LC_CR, stimulus_seq_item.MAX_VTG, stimulus_seq_item.MAX_PRE); // CR_LT
+                    4'b0110: dp_tl_vif.LT_EQ(stimulus_seq_item.Driving_Param_VLD, stimulus_seq_item.CR_DONE_VLD, stimulus_seq_item.EQ_Data_VLD, stimulus_seq_item.MAX_TPS_SUPPORTED_VLD, stimulus_seq_item.PRE, stimulus_seq_item.VTG, stimulus_seq_item.Lane_Align, stimulus_seq_item.CR_DONE, stimulus_seq_item.EQ_CR_DN, stimulus_seq_item.Channel_EQ, stimulus_seq_item.Symbol_Lock, stimulus_seq_item.MAX_TPS_SUPPORTED);  // EQ_LT
+                    4'b1000: `uvm_info("DP_TL_DRIVER", "Source is still detecting the sink.", UVM_MEDIUM) // Detect
                     default: begin
                         dp_tl_vif = null;    // Set the interface to null if the operation is not supported
                         `uvm_error("DP_TL_DRIVER", "Unsupported operation in SPM transaction")
                     end
                 endcase
             end
-            else if (stimulus_seq_item.SPM_Transaction_VLD == 1 && stimulus_seq_item.LPM_Transaction_VLD == 1) begin
-                dp_tl_vif = null;            // Set the interface to null if the operation is not supported
-                `uvm_error("DP_TL_DRIVER", "Both SPM and LPM transactions are present")
-            end
             else begin
-                dp_tl_vif = null;            // Set the interface to null if the operation is not supported
-                `uvm_error("DP_TL_DRIVER", "No transaction is present")
+                case (stimulus_seq_item.operation)
+                    4'b0000: dp_tl_vif.Reset();                             // Reset the interface
+                    4'b1000: `uvm_info("DP_TL_DRIVER", "Source is still detecting the sink.", UVM_MEDIUM) // Detect
+                    default: begin
+                        dp_tl_vif = null; // Set the interface to null if the operation is not supported
+                        `uvm_error("DP_TL_DRIVER", "Unsupported operation in SPM transaction")
+                    end
+                endcase
             end
-
-            // Copy the values from the stimulus to the response sequence item
-            // This is done to ensure that the response sequence item has the same values as the stimulus
-            $cast(response_seq_item, stimulus_seq_item.clone());
-
-            // Wait for DUT reponse
-            // wait(dp_tl_vif.ready == 1)
-            
-            // Copy the values from the DUT to the response sequence item
-            // response_seq_item.copy_from_vif(dp_tl_vif);
 
             // Send response back properly via seq_item_port
             @(negedge dp_tl_vif.clk_AUX);

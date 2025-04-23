@@ -65,7 +65,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     logic [AUX_DATA_WIDTH-1:0] SPM_Lane_BW;
     logic [7:0]                SPM_MSA [23:0];
     logic [1:0]                SPM_Lane_Count, SPM_BW_Sel;
-    logic                      SPM_ISO_start, SPM_MSA_VLD;
+    bit                        SPM_ISO_start, SPM_MSA_VLD;
 
     rand logic [23:0] Mvid;         //
     rand logic [23:0] Nvid;
@@ -87,9 +87,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
     rand logic [47:0] MS_Pixel_Data;
     rand logic [9:0]  MS_Stm_BW;        // takes values on MHz max 1Ghz
-    rand logic        MS_DE, MS_VSYNC, MS_HSYNC;
+    rand bit        MS_DE, MS_VSYNC, MS_HSYNC;
     //rand bit          MS_Stm_CLK;
-
 
     op_code operation;
     

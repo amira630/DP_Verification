@@ -1,8 +1,6 @@
 interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk_AUX, clk_RBR, clk_HBR, clk_HBR2, clk_HBR3, MS_Stm_CLK);
 
-    
     logic rst_n;   // Reset is asynchronous active low
-    logic ready;   // Ready signal indicating that the DUT will respond to the transaction
     
     ///////////////////////////////////////////////////////////////
     //////////////////// AUXILIARY CHANNEL ////////////////////////
@@ -140,7 +138,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
       endtask
 
       // I2C_READ task
-      task I2C_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
+      task I2C_READ(input logic[19:0] address, [7:0] length, [1:0] command, bit transaction_vld);
             // Set SPM-related signals to perform a read operation
             SPM_Address = address;
             SPM_CMD     = command;
@@ -148,12 +146,10 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             SPM_Transaction_VLD = transaction_vld;
             // SPM_Data = SPM.SPM_Data;                                 // Data is not used in read operation
 
-            wait(SPM_Reply_Data_VLD == 1 || SPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
-            ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
       endtask
     
       // I2C_WRITE task
-      task I2C_WRITE(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld, input logic[7:0] data);
+      task I2C_WRITE(input logic[19:0] address, [7:0] length, [1:0] command, [7:0] data, bit transaction_vld);
             // Set SPM-related signals to perform a write operation
             SPM_Address = address;
             SPM_CMD     = command;
@@ -161,12 +157,10 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             SPM_Transaction_VLD = transaction_vld;
             SPM_Data = data;
 
-            wait(SPM_Reply_Data_VLD == 1 || SPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
-            ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
       endtask
 
       // // NATIVE_READ task
-      task NATIVE_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
+      task NATIVE_READ(input logic [19:0] address, [7:0] length, [1:0] command, bit transaction_vld);
             // Set LPM-related signals to perform a read operation
             LPM_Address = address;
             LPM_CMD     = command;
@@ -174,50 +168,73 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             LPM_Transaction_VLD = transaction_vld;
             // LPM_Data = LPM.LPM_Data; // Data is not used in read operation
 
-            wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
-            ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
       endtask
 
       // NATIVE_WRITE task
-      task NATIVE_WRITE(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld, input logic[7:0] data);
+      task NATIVE_WRITE(input logic [19:0] address, [7:0] length, [1:0] command, [7:0] data, bit transaction_vld);
             // Set LPM-related signals to perform a write operation
             LPM_Address = address;
             LPM_CMD     = command;
             LPM_LEN     = length;
             LPM_Transaction_VLD = transaction_vld;
             LPM_Data = data;
-
-            wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the reply data to be valid
-            ready = 1;                                                  // Set ready signal to indicate that the DUT is ready to respond
       endtask
 
       // //////////////////////////// LINK TRAINING ////////////////////////////
 
-      // task LINK_TRAINING (input dp_tl_sequence_item LPM);
-      //       // Set LPM-related signals for Clock Recovery Link Training
-      //       LPM_Transaction_VLD = LPM.LPM_Transaction_VLD;
-      //       LPM_Start_CR = LPM.LPM_Start_CR;
-      //       CR_DONE_VLD  = LPM.CR_DONE_VLD;
-      //       CR_DONE      = LPM.CR_DONE;
-      //       Link_LC_CR   = LPM.Link_LC_CR;
-      //       Link_BW_CR   = LPM.Link_BW_CR;
-      //       PRE          = LPM.PRE;
-      //       VTG          = LPM.VTG;
-      //       Driving_Param_VLD = LPM.Driving_Param_VLD;
-      //       Config_Param_VLD = LPM.Config_Param_VLD;
-      //       EQ_RD_Value  = LPM.EQ_RD_Value;
-      //       EQ_CR_DN     = LPM.EQ_CR_DN;
-      //       Channel_EQ   = LPM.Channel_EQ;
-      //       Symbol_Lock  = LPM.Symbol_Lock;
-      //       Lane_Align   = LPM.Lane_Align;
-      //       EQ_Data_VLD  = LPM.EQ_Data_VLD;
-      //       MAX_VTG      = LPM.MAX_VTG;
-      //       MAX_PRE      = LPM.MAX_PRE;
-      //       MAX_TPS_SUPPORTED = LPM.MAX_TPS_SUPPORTED;
-      //       MAX_TPS_SUPPORTED_VLD      = LPM.MAX_TPS_SUPPORTED_VLD;
+      // Clock Recovery Link Training task
+      // This task is used to set the parameters for the Clock Recovery Link Training phase
+      task LT_CT (input bit config_vld, driving_vld, start_cr, done_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, link_bw_cr, eq_rd_value, [3:0] cr_done, [1:0] link_lc_cr, max_vtg, max_pre);
+            // Set LPM-related signals for Clock Recovery Link Training
+            LPM_Transaction_VLD = 1'b1;
+            SPM_Transaction_VLD = 1'b0;
+            LPM_Start_CR = start_cr;
+            CR_DONE_VLD  = done_vld;
+            CR_DONE      = cr_done;
+            Link_LC_CR   = link_lc_cr;
+            Link_BW_CR   = link_bw_cr;
+            PRE          = pre;
+            VTG          = vtg;
+            MAX_VTG      = max_vtg;
+            MAX_PRE      = max_pre;
+            Driving_Param_VLD = driving_vld;
+            Config_Param_VLD = config_vld;
+            EQ_RD_Value  = eq_rd_value;
+      endtask
 
-      //       wait(LPM_Reply_Data_VLD == 1 || LPM_Reply_ACK_VLD == 1);    // Wait for the link training to complete
-      //       ready = 1;                                             // Set ready signal to indicate that the DUT is ready to respond
-      // endtask
+      // Channel Equalization Link Training task
+      // This task is used to set the parameters for the Channel Equalization Link Training phase
+      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, training_pattern_t max_tps_supported);
+            LPM_Transaction_VLD = 1'b1;
+            SPM_Transaction_VLD = 1'b0;
+            CR_DONE_VLD  = done_vld;
+            CR_DONE      = cr_done;
+            PRE          = pre;
+            VTG          = vtg;
+            Driving_Param_VLD = driving_vld;
+            
+            EQ_CR_DN     = eq_cr_dn;
+            Channel_EQ   = channel_eq;
+            Symbol_Lock  = symbol_lock;
+            Lane_Align   = lane_align;
+            EQ_Data_VLD  = eq_data_vld;
 
+            MAX_TPS_SUPPORTED = max_tps_supported;
+            MAX_TPS_SUPPORTED_VLD = logic'(max_tps_supported_vld);
+      endtask
+
+      task ISO(input bit iso_start, msa_vld, de, vsync, hsync, logic [AUX_DATA_WIDTH-1:0] adj_bw, [1:0] adj_lc, bw_sel, [47:0] pixels, [9:0] stm_bw, [7:0] msa [23:0]);
+            // Set SPM-related signals for Isochronous Transport Layer
+            SPM_Lane_BW = adj_bw;
+            SPM_Lane_Count = adj_lc;
+            SPM_BW_Sel = bw_sel;
+            SPM_ISO_start = iso_start;
+            SPM_MSA_VLD = msa_vld; // Set MSA valid signal to indicate that the MSA data is ready
+            SPM_MSA = msa ; // Set MSA data to indicate the attributes of the main stream
+            MS_Pixel_Data = pixels; // Set pixel data to indicate the pixel values for the transmitted frame
+            MS_Stm_BW = stm_bw; // Set stream bandwidth to indicate the bandwidth of the stream source
+            MS_DE = de; // Set DE signal to indicate the active period of the stream
+            MS_VSYNC = vsync; // Set Vsync signal to indicate the start of the vertical blanking period
+            MS_HSYNC = hsync; // Set Hsync signal to indicate the start of the horizontal blanking period
+      endtask
 endinterface
