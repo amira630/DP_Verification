@@ -497,9 +497,9 @@ endtask
                         ack_count++;
                     end
                 end
-                else if(ack_count==3 && seq_item.LPM_Reply_Data_VLD)
+                else if(ack_count==2 && seq_item.LPM_Reply_Data_VLD)
                     done = 0; 
-                else if(ack_count==3 && !seq_item.LPM_Reply_Data_VLD)
+                else if(ack_count==2 && !seq_item.LPM_Reply_Data_VLD)
                     done = 1; 
             end
             done = 0;
