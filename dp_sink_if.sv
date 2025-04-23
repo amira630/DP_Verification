@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk);
+interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk_AUX);
 
 
     ///////////////////////////////////////////////////////////////
@@ -34,7 +34,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     ////////////////////////// DUT ////////////////////////////////
 
     modport DUT (
-        input clk,
+        input clk_AUX,
         input PHY_START_STOP,       // The PHY_START_STOP signal indicates the start/stop of the PHY layer operation.
               HPD_Signal,           // The HPD signal indicates the connection status based on its duration
         inout AUX_IN_OUT,           // A request/reply transaction where each byte is transmitted or received during every individual clock cycle, byte-by-byte data exchange.
@@ -62,7 +62,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     // This task is used to reset the DUT by asserting and deasserting the reset signal
     // task Reset();
     //     rst_n = 1'b0;           // Assert reset
-    //     @(negedge clk);         // Wait for clock edge
+    //     @(negedge clk_AUX);         // Wait for clock edge
     //     rst_n = 1'b1;           // Deassert reset
     // endtask
 
@@ -86,7 +86,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     task drive_aux_in_out(input [7:0] value);
         aux_data = value;  // Drive the AUX_IN_OUT signal with the specified value
         PHY_START_STOP = 1'b1;  // Start the PHY operation
-        @(posedge clk);  // Wait for the next clock edge
+        @(posedge clk_AUX);  // Wait for the next clock edge
         PHY_START_STOP = 1'b0;  // Stop the PHY operation
     endtask
 

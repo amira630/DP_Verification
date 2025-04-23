@@ -29,7 +29,7 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
             // response_seq_item.aux_in_out.delete();
 
             // Drive the values to the interface according to the operation
-            @(posedge dp_sink_vif.clk);
+            @(posedge dp_sink_vif.clk_AUX);
             case (stim_seq_item.sink_operation)
                 // HPD_operation: begin
                 //     // HPD operation
@@ -64,7 +64,7 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
             // response_seq_item.copy_from_vif(dp_sink_vif);
 
             // Send response back properly via seq_item_port
-            @(negedge dp_sink_vif.clk);
+            @(negedge dp_sink_vif.clk_AUX);
             seq_item_port.item_done(response_seq_item);
 
             `uvm_info("run_phase", $sformatf("Response with %0d AUX bytes captured, reply generated", 
