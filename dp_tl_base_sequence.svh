@@ -377,8 +377,8 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_spm_sequence_item, dp_tl_
 
             seq_item_LPM.randomize(); // Randomize enabled fields
             finish_item(seq_item_LPM); // Finish transaction
-            // Wait for acknowledgment from the DUT for 2 writes and 1 read transactions
-            while(ack_count<3) begin
+            // Wait for acknowledgment from the DUT for 1 writes and 1 read transactions
+            while(ack_count<2) begin
                 get_response(seq_item_LPM);
                 if (seq_item_LPM.CTRL_Native_Failed) begin
                     `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item_LPM.LPM_CMD, seq_item_LPM.LPM_Address, seq_item_LPM.LPM_LEN +1, seq_item_LPM.LPM_Transaction_VLD), UVM_MEDIUM)

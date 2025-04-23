@@ -1103,10 +1103,15 @@ task generate_native_aux_write_transaction(
     end
 endtask
 
+// Function to generate the expected transactions for Clock Recovery Phase
 function bit generate_clock_recovery_phase(
     input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
     input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
-    output dp_transaction expected_transaction // Generated expected transaction
+    output dp_transaction expected_transaction, // Generated expected transaction
+    output bit [7:0] last_link_rate,        // Output for CURRENT_LINK_RATE
+    output bit [3:0] last_lane_count,       // Output for CURRENT_LANE_COUNT
+    output bit [1:0] last_max_vtg_temp,     // Output for MAX_VTG_temp
+    output bit [1:0] last_max_pre_temp      // Output for MAX_PRE_temp
 );
     
     // State machine for the clock recovery phase
@@ -1136,13 +1141,15 @@ function bit generate_clock_recovery_phase(
     bit [1:0]  MAX_VTG_temp, MAX_PRE_temp; // Temporary variables for max values
     bit [3:0]  full_loop_counter = 4'b0000;
     bit [3:0]  same_parameters_repeated_counter = 4'b0000;
-    bit [3:0]  CURRENT_LANE_COUNT = 2'b00; // Current lane count
+    bit [1:0]  CURRENT_LANE_COUNT = 2'b00; // Current lane count
     bit [7:0]  CURRENT_LINK_RATE = 8'h00; // Current link rate
     bit [7:0]  CURRENT_PRE;// Temporary variable for current PRE value
     bit [7:0]  CURRENT_VTG; // Temporary variable for current VTG value
     bit [7:0]  PREVIOUS_PRE;// Temporary variable for previous PRE value
     bit [7:0]  PREVIOUS_VTG; // Temporary variable for previous VTG value
     bit [7:0]  MAX_VTG_temp_Concatenated; // Concatenated max values
+    bit [1:0]  STARTING_LANE_COUNT = 2'b00; // starting lane count
+    bit [7:0]  STARTING_LINK_RATE = 8'h00; // starting link rate
 
     // Initialize the FSM
     current_state = IDLE;
@@ -1158,6 +1165,8 @@ function bit generate_clock_recovery_phase(
                 MAX_PRE_temp = tl_item.MAX_PRE;
                 CURRENT_LANE_COUNT = tl_item.Link_LC_CR;
                 CURRENT_LINK_RATE = tl_item.Link_BW_CR;
+                STARTING_LANE_COUNT = tl_item.Link_LC_CR;
+                STARTING_LINK_RATE = tl_item.Link_BW_CR;
                 CURRENT_PRE = tl_item.PRE;
                 CURRENT_VTG = tl_item.VTG;
 
@@ -1171,16 +1180,16 @@ function bit generate_clock_recovery_phase(
             end
 
             IDLE_WITH_UPDATED_BW_OR_LC: begin
-                // // Wait for the next transaction
-                // ref_model_in_port.get(tl_item); //Lpm_seq_item
+                // Wait for the next transaction
+                ref_model_in_port.get(tl_item); //Lpm_seq_item
 
-                // // Store the important values
-                // MAX_VTG_temp = tl_item.MAX_VTG;
-                // MAX_PRE_temp = tl_item.MAX_PRE;
+                // Store the important values
+                MAX_VTG_temp = tl_item.MAX_VTG;
+                MAX_PRE_temp = tl_item.MAX_PRE;
                 // CURRENT_LANE_COUNT = tl_item.Link_LC_CR;
                 // CURRENT_LINK_RATE = tl_item.Link_BW_CR;
-                // CURRENT_PRE = tl_item.PRE;
-                // CURRENT_VTG = tl_item.VTG;
+                CURRENT_PRE = tl_item.PRE;
+                CURRENT_VTG = tl_item.VTG;
 
                 if (tl_item.LPM_Start_CR && tl_item.Driving_Param_VLD && tl_item.Config_Param_VLD)
                 // Start the clock recovery process
@@ -1518,10 +1527,12 @@ function bit generate_clock_recovery_phase(
             if (CURRENT_LANE_COUNT == 2'b11)
             begin
              CURRENT_LANE_COUNT = 2'b01;
+             CURRENT_LINK_RATE = STARTING_LINK_RATE; // Reset to starting link rate
             end
             else
             begin
              CURRENT_LANE_COUNT = 2'b00;
+             CURRENT_LINK_RATE = STARTING_LINK_RATE; // Reset to starting link rate
             end  
             next_state = IDLE_WITH_UPDATED_BW_OR_LC; // Reset to IDLE for the next phase  
             end
@@ -1553,6 +1564,13 @@ function bit generate_clock_recovery_phase(
                 expected_transaction.CR_Completed = 1'b1;
                  ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
                 CR_DONE = 1;
+
+                // Assign the last values to the output arguments
+                last_link_rate = CURRENT_LINK_RATE;
+                last_lane_count = CURRENT_LANE_COUNT;
+                last_max_vtg_temp = MAX_VTG_temp;
+                last_max_pre_temp = MAX_PRE_temp;
+
                 next_state = IDLE; // Reset to IDLE for the next phase
                 break;
             end
@@ -1591,13 +1609,25 @@ endfunction
         input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
         input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
         output dp_transaction expected_transaction,
-        input bit [3:0]  NEW_LANE_COUNT = 2'b00; // Current lane count
-        input bit [7:0]  NEW_LINK_RATE = 8'h00; // Current link rate
-        input bit [7:0]  NEW_VTG = 8'h00;, // Temporary variable for max values
-        input bit [7:0]  NEW_PRE = 8'h00 // Temporary variable for max values
-        input bit [1:0]  MAX_VTG_temp = 2'b00; // Temporary variable for max values
-        input bit [1:0]  MAX_PRE_temp = 2'b00; // Temporary variable for max values
+        input bit [3:0]  NEW_LANE_COUNT, // Current lane count
+        input bit [7:0]  NEW_LINK_RATE, // Current link rate
+        input bit [7:0]  NEW_VTG, // Temporary variable for max values
+        input bit [7:0]  NEW_PRE,// Temporary variable for max values
+        input bit [1:0]  MAX_VTG_temp, // Temporary variable for max values
+        input bit [1:0]  MAX_PRE_temp, // Temporary variable for max values
+        input bit [1:0]  STARTING_LANE_COUNT, // starting lane count
+        input bit [7:0]  STARTING_LINK_RATE // starting link rate
+        output bit restart // Flag to indicate if the CR process should restart
     );
+
+        // input bit [3:0]  NEW_LANE_COUNT = 2'b00, // Current lane count
+        // input bit [7:0]  NEW_LINK_RATE = 8'h00, // Current link rate
+        // input bit [7:0]  NEW_VTG = 8'h00, // Temporary variable for max values
+        // input bit [7:0]  NEW_PRE = 8'h00,// Temporary variable for max values
+        // input bit [1:0]  MAX_VTG_temp = 2'b00, // Temporary variable for max values
+        // input bit [1:0]  MAX_PRE_temp = 2'b00, // Temporary variable for max values
+        // input bit [1:0]  STARTING_LANE_COUNT = 2'b00, // starting lane count
+        // input bit [7:0]  STARTING_LINK_RATE = 8'h00 // starting link rate
     
         // State machine for the channel equalization phase
         typedef enum logic [4:0] { // Updated to [4:0] to accommodate more states
@@ -1627,6 +1657,7 @@ endfunction
         bit [1:0] MAX_TPS_SUPPORTED_STORED = 2'b00; // Temporary variable for max values
         int Loop_Counter = 0; // Loop counter for retrying the sequence
         int Max_Loop_Counter = 0; // Maximum loop count for retrying the sequence
+        restart = 0; // Flag to indicate if the CR process should restart
     
         // Initialize the FSM
         current_state = IDLE;
@@ -1651,6 +1682,9 @@ endfunction
                 ENABLE_TRAINING_PATTERN_SEQUENCE: begin
                     // Step 1: Enable Training Pattern (Depending on MAX TPS supported) and disable scrambling
                     `uvm_info(get_type_name(), "Enabling Training Pattern and disabling scrambling", UVM_LOW);
+
+                    expected_transaction.PHY_Instruct = 2'b00; // Training pattern 1
+                    expected_transaction.PHY_Instruct_VLD = 1'b1; // Set PHY_Instruct_VLD to 1
 
                     // signals sent to phy layer to transmit TPS
                     if (CURRENT_LANE_COUNT == 2'b00) begin
@@ -1721,8 +1755,18 @@ endfunction
                               {2'b00, 1'b0, tl_item.PRE[7:6], 1'b0, tl_item.VTG[7:6]}} // Override data
                         );
                     end
+
+                    expected_transaction.PHY_Instruct_VLD = 1'b0; // Set PHY_Instruct_VLD to 0
     
-                    next_state = READ_TRAINING_INTERVAL;
+                    if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                        // If the transaction failed, move to the FAILURE state
+                        `uvm_error(get_type_name(), "Failed to enable training pattern", UVM_LOW);
+                        next_state = IDLE; // Move to IDLE state
+                    end else begin
+                        // If the transaction was successful, move to the next state
+                        next_state = READ_TRAINING_INTERVAL;
+                    end
+
                 end
     
                 READ_TRAINING_INTERVAL: begin
@@ -1737,8 +1781,16 @@ endfunction
                         20'h0000E,                  // Override address (0x0000E)
                         8'h00                       // Override length (1 byte)
                     );
+                    
+                    if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                        // If the transaction failed, move to the FAILURE state
+                        `uvm_error(get_type_name(), "Failed to read TRAINING_AUX_RD_INTERVAL", UVM_LOW);
+                        next_state = IDLE; // Move to IDLE state
+                    end else begin
+                        // If the transaction was successful, move to the next state
+                        next_state = WAIT_AND_READ_LINK_STATUS;
+                    end
     
-                    next_state = WAIT_AND_READ_LINK_STATUS;
                 end
                 
                 //     constraint eq_rd_value_constraint {
@@ -1760,8 +1812,16 @@ endfunction
                         20'h00202,                  // Override address (0x00202)
                         8'h05                       // Override length (6 bytes)
                     );
-    
-                    next_state = CHECK_CR;
+
+                    if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                        // If the transaction failed, move to the FAILURE state
+                        `uvm_error(get_type_name(), "Failed to read Link Status registers", UVM_LOW);
+                        next_state = IDLE; // Move to IDLE state
+                    end else begin
+                        // If the transaction was successful, move to the next state
+                        next_state = CHECK_CR; // Check CR_DONE and CR_DONE_VLD
+                    end
+
                 end
     
                 CHECK_CR: begin
@@ -1935,10 +1995,12 @@ endfunction
             if (CURRENT_LANE_COUNT == 2'b11)
             begin
              CURRENT_LANE_COUNT = 2'b01;
+             CURRENT_LINK_RATE = STARTING_LINK_RATE; // Reset to starting link rate
             end
             else
             begin
-             CURRENT_LANE_COUNT = 2'b01;
+             CURRENT_LANE_COUNT = 2'b00;
+             CURRENT_LINK_RATE = STARTING_LINK_RATE; // Reset to starting link rate
             end
             restart = 1 // restart CR process  
             next_state = IDLE; // Reset to IDLE for the next phase  
@@ -1950,18 +2012,22 @@ endfunction
           if (CURRENT_LINK_RATE == 8'h1E)               // HBR3
            begin
              CURRENT_LINK_RATE = 8'h14;          // HBR2
+             CURRENT_LANE_COUNT = STARTING_LANE_COUNT; // Reset to starting lane count
            end
           else if (CURRENT_LINK_RATE == 8'h14)          // HBR2
            begin
              CURRENT_LINK_RATE = 8'h0A;          // HBR
+             CURRENT_LANE_COUNT = STARTING_LANE_COUNT; // Reset to starting lane count
            end
           else if (CURRENT_LINK_RATE == 8'h0A)          // HBR
            begin
               CURRENT_LINK_RATE = 8'h06;          // RBR
+              CURRENT_LANE_COUNT = STARTING_LANE_COUNT; // Reset to starting lane count
            end
           else                                       // Default
            begin
               CURRENT_LINK_RATE = 8'h06;          // RBR
+              CURRENT_LANE_COUNT = STARTING_LANE_COUNT; // Reset to starting lane count
            end 
             restart = 1 // restart CR process
             next_state = IDLE; // Reset to IDLE for the next phase
