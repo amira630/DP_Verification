@@ -200,30 +200,30 @@ class dp_reference_model extends uvm_component;
 
                 // Byte 1
                 expected_transaction.aux_in_out = 8'b0101_0000;
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1;
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1;
 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 2
                 expected_transaction.aux_in_out = 8'b0000_0000;
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1;
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1;
 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 3
                 expected_transaction.aux_in_out = address;
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1; 
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1; 
                 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
 
-                // // Lower the PHY_START_STOP signal
-                // expected_transaction.PHY_START_STOP = 1'b0; 
+                // // Lower the AUX_START_STOP signal
+                // expected_transaction.AUX_START_STOP = 1'b0; 
                 
                 // // Send the expected transaction to the scoreboard
                 // ref_model_out_port.write(expected_transaction);
@@ -324,8 +324,8 @@ class dp_reference_model extends uvm_component;
 
                 GET_NEW_DATA: begin
 
-                    // Wait for the next transaction
-                    ref_model_in_port.get(tl_item);
+                    // // Wait for the next transaction
+                    // ref_model_in_port.get(tl_item);
 
                     next_state = DATA; // Move to DATA state
 
@@ -338,38 +338,38 @@ class dp_reference_model extends uvm_component;
 
                 // Byte 1
                 expected_transaction.aux_in_out = 8'b0101_0000;
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1;
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1;
 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 2
                 expected_transaction.aux_in_out = 8'b0000_0000;
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1;
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1;
 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 3
                 expected_transaction.aux_in_out = tl_item.SPM_Address;
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1;
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1;
                 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
 
                 // Byte 4
                 expected_transaction.aux_in_out = 8'b0000_0000;
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1;
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1;
                 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
 
-                // // Lower the PHY_START_STOP signal
-                // expected_transaction.PHY_START_STOP = 1'b0; 
+                // // Lower the AUX_START_STOP signal
+                // expected_transaction.AUX_START_STOP = 1'b0; 
                 
                 // // Send the expected transaction to the scoreboard
                 // ref_model_out_port.write(expected_transaction);
@@ -493,30 +493,30 @@ class dp_reference_model extends uvm_component;
 
                 // Byte 1
                 expected_transaction.aux_in_out = 8'b0001_0000;
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1;
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1;
 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 2
                 expected_transaction.aux_in_out = 8'b0000_0000;
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1;
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1;
 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 3
                 expected_transaction.aux_in_out = address;
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1; 
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1; 
                 
                 // Send the expected transaction to the scoreboard
                 ref_model_out_port.write(expected_transaction);
 
-                // // Lower the PHY_START_STOP signal
-                // expected_transaction.PHY_START_STOP = 1'b0; 
+                // // Lower the AUX_START_STOP signal
+                // expected_transaction.AUX_START_STOP = 1'b0; 
                 
                 // // Send the expected transaction to the scoreboard
                 // ref_model_out_port.write(expected_transaction);
@@ -672,13 +672,16 @@ task generate_native_aux_read_transaction(
     forever begin
         case (current_state)
             IDLE_MODE: begin
-                // Wait for the next transaction
-                ref_model_in_port.get(tl_item);
+                // // Wait for the next transaction
+                // ref_model_in_port.get(tl_item);
 
                 if (tl_item.LPM_Transaction_VLD) begin
                     command = (override_command != 4'b0000) ? override_command : tl_item.LPM_CMD;
                     address = (override_address != 20'h00000) ? override_address : tl_item.LPM_Address;
                     length = (override_length != 8'h00) ? override_length : tl_item.LPM_LEN;
+
+                    expected_transaction.SPM_NATIVE_I2C = 1'b0; // Set SPM_NATIVE_I2C to 0 for Native AUX Transaction
+                    expected_transaction.CTRL_Native_Failed = 1'b0; // Reset the failure flag
 
                     // Allocate the dynamic array based on the length
                     data = new[length];
@@ -702,33 +705,33 @@ task generate_native_aux_read_transaction(
     
                 // Transmit the first byte of the read request
                 expected_transaction.aux_in_out = {4'b1001, address[19:16]};
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1;
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1;
                 ;
                 ref_model_out_port.write(expected_transaction);
 
                 // Transmit the next two bytes of the address
                 expected_transaction.aux_in_out = address[15:8];
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1;
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1;
 
                 ref_model_out_port.write(expected_transaction);
 
                 expected_transaction.aux_in_out = address[7:0];
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1;
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1;
 
                 ref_model_out_port.write(expected_transaction);
 
                 // Transmit the length byte
                 expected_transaction.aux_in_out = length;
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1;
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1;
                 
                 ref_model_out_port.write(expected_transaction);
 
-                // // Lower the PHY_START_STOP signal
-                // expected_transaction.PHY_START_STOP = 1'b0; 
+                // // Lower the AUX_START_STOP signal
+                // expected_transaction.AUX_START_STOP = 1'b0; 
                 
                 // // Send the expected transaction to the scoreboard
                 // ref_model_out_port.write(expected_transaction);
@@ -764,7 +767,13 @@ task generate_native_aux_read_transaction(
                                 next_state = IDLE_MODE; // Restart from IDLE_MODE state after 8 DEFERs
                                 expected_transaction.CTRL_Native_Failed = 1'b1; // Set CTRL_Native_Failed to indicate failure
                                 `uvm_error(get_type_name(), "Native AUX Write Transaction Failed", UVM_LOW)
-                                `uvm_info(get_type_name(), "Restarting from IDLE state after 8 DEFERs", UVM_LOW);
+
+                                // Send the expected transaction to the scoreboard
+                                 ref_model_out_port.write(expected_transaction);
+
+                                 break; // Exit the loop
+
+                                // `uvm_info(get_type_name(), "Restarting from IDLE state after 8 DEFERs", UVM_LOW);
                             end 
                             else
                             begin
@@ -876,14 +885,17 @@ task generate_native_aux_write_transaction(
     forever begin
         case (current_state)
             IDLE_MODE: begin
-                // Wait for the next transaction
-                ref_model_in_port.get(tl_item);
+                // // Wait for the next transaction
+                // ref_model_in_port.get(tl_item);
 
                 if (tl_item.LPM_Transaction_VLD) begin
                     command = (override_command != 4'b0000) ? override_command : tl_item.LPM_CMD;
                     address = (override_address != 20'h00000) ? override_address : tl_item.LPM_Address;
                     length = (override_length != 8'h00) ? override_length : tl_item.LPM_LEN;
                     data = (override_data.size() > 0) ? override_data : {tl_item.LPM_Data};
+
+                    expected_transaction.SPM_NATIVE_I2C = 1'b0; // Set SPM_NATIVE_I2C to 0 for Native AUX Transaction
+                    expected_transaction.CTRL_Native_Failed = 1'b0; // Reset the failure flag
 
                     if (command == AUX_NATIVE_WRITE) begin
                         `uvm_info(get_type_name(), "Starting Native AUX Write Transaction", UVM_LOW);
@@ -904,35 +916,35 @@ task generate_native_aux_write_transaction(
 
                 // Transmit the write request
                 expected_transaction.aux_in_out = {4'b1000, address[19:16]}; // Byte 1
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
                 expected_transaction.aux_in_out = address[15:8]; // Byte 2
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
                 expected_transaction.aux_in_out = address[7:0]; // Byte 3
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
                 expected_transaction.aux_in_out = length; // Byte 4
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
                 // Transmit data bytes
                 for (int i = 0; i < length; i++) begin
                     expected_transaction.aux_in_out = data[i];
                     ref_model_out_port.write(expected_transaction);
-                    // Raise the PHY_START_STOP signal
-                    expected_transaction.PHY_START_STOP = 1'b1
+                    // Raise the AUX_START_STOP signal
+                    expected_transaction.AUX_START_STOP = 1'b1
                 end
 
-                // // Lower the PHY_START_STOP signal
-                // expected_transaction.PHY_START_STOP = 1'b0; 
+                // // Lower the AUX_START_STOP signal
+                // expected_transaction.AUX_START_STOP = 1'b0; 
                 
                 // // Send the expected transaction to the scoreboard
                 // ref_model_out_port.write(expected_transaction);
@@ -1035,35 +1047,35 @@ task generate_native_aux_write_transaction(
 
                 // Transmit the write request
                 expected_transaction.aux_in_out = {4'b1000, address[19:16]}; // Byte 1
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
                 expected_transaction.aux_in_out = address[15:8]; // Byte 2
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
                 expected_transaction.aux_in_out = address[7:0]; // Byte 3
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
                 expected_transaction.aux_in_out = (length - success_counter); // Byte 4
-                // Raise the PHY_START_STOP signal
-                expected_transaction.PHY_START_STOP = 1'b1
+                // Raise the AUX_START_STOP signal
+                expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
                 // Transmit data bytes
                 for (int i = success_counter; i <= length; i++) begin
                     expected_transaction.aux_in_out = data[i];
-                    // Raise the PHY_START_STOP signal
-                    expected_transaction.PHY_START_STOP = 1'b1
+                    // Raise the AUX_START_STOP signal
+                    expected_transaction.AUX_START_STOP = 1'b1
                     ref_model_out_port.write(expected_transaction);
                 end
 
-                // // Lower the PHY_START_STOP signal
-                // expected_transaction.PHY_START_STOP = 1'b0; 
+                // // Lower the AUX_START_STOP signal
+                // expected_transaction.AUX_START_STOP = 1'b0; 
                 
                 // // Send the expected transaction to the scoreboard
                 // ref_model_out_port.write(expected_transaction);
@@ -1077,6 +1089,7 @@ task generate_native_aux_write_transaction(
                 expected_transaction.CTRL_Native_Failed = 1'b1;
                 ref_model_out_port.write(expected_transaction);
                 next_state = IDLE_MODE;
+                break; // Exit the loop
             end
 
             default: begin
@@ -1125,6 +1138,11 @@ function bit generate_clock_recovery_phase(
     bit [3:0]  same_parameters_repeated_counter = 4'b0000;
     bit [3:0]  CURRENT_LANE_COUNT = 2'b00; // Current lane count
     bit [7:0]  CURRENT_LINK_RATE = 8'h00; // Current link rate
+    bit [7:0]  CURRENT_PRE;// Temporary variable for current PRE value
+    bit [7:0]  CURRENT_VTG; // Temporary variable for current VTG value
+    bit [7:0]  PREVIOUS_PRE;// Temporary variable for previous PRE value
+    bit [7:0]  PREVIOUS_VTG; // Temporary variable for previous VTG value
+    bit [7:0]  MAX_VTG_temp_Concatenated; // Concatenated max values
 
     // Initialize the FSM
     current_state = IDLE;
@@ -1140,6 +1158,8 @@ function bit generate_clock_recovery_phase(
                 MAX_PRE_temp = tl_item.MAX_PRE;
                 CURRENT_LANE_COUNT = tl_item.Link_LC_CR;
                 CURRENT_LINK_RATE = tl_item.Link_BW_CR;
+                CURRENT_PRE = tl_item.PRE;
+                CURRENT_VTG = tl_item.VTG;
 
                 if (tl_item.LPM_Start_CR && tl_item.Driving_Param_VLD && tl_item.Config_Param_VLD)
                 // Start the clock recovery process
@@ -1151,16 +1171,20 @@ function bit generate_clock_recovery_phase(
             end
 
             IDLE_WITH_UPDATED_BW_OR_LC: begin
-                // Wait for the next transaction
-                ref_model_in_port.get(tl_item); //Lpm_seq_item
+                // // Wait for the next transaction
+                // ref_model_in_port.get(tl_item); //Lpm_seq_item
 
-                // Store the important values
-                CURRENT_LANE_COUNT = tl_item.Link_LC_CR;
-                CURRENT_LINK_RATE = tl_item.Link_BW_CR;
+                // // Store the important values
+                // MAX_VTG_temp = tl_item.MAX_VTG;
+                // MAX_PRE_temp = tl_item.MAX_PRE;
+                // CURRENT_LANE_COUNT = tl_item.Link_LC_CR;
+                // CURRENT_LINK_RATE = tl_item.Link_BW_CR;
+                // CURRENT_PRE = tl_item.PRE;
+                // CURRENT_VTG = tl_item.VTG;
 
                 if (tl_item.LPM_Start_CR && tl_item.Driving_Param_VLD && tl_item.Config_Param_VLD)
                 // Start the clock recovery process
-                `uvm_info(get_type_name(), "Repeatinf Clock Recovery Phase with Updated Parameters", UVM_LOW);
+                `uvm_info(get_type_name(), "Repeating Clock Recovery Phase with Updated Parameters", UVM_LOW);
                 next_state = WRITE_LINK_CONFIG;
                 else begin
                     next_state = IDLE_WITH_UPDATED_BW_OR_LC; // Stay in IDLE if not valid
@@ -1177,12 +1201,21 @@ function bit generate_clock_recovery_phase(
                     expected_transaction,       // Output transaction
                     4'b1000,                    // Override command (AUX_NATIVE_WRITE)
                     20'h00100,                  // Override address (0x00100)
-                    8'h03,                      // Override length (3 byte(s))
+                    8'h02,                      // Override length (3 byte(s))
                     '{CURRENT_LINK_RATE, {3'b100, 5'(CURRENT_LANE_COUNT + 5'b01)}, 8'h00} // Override data
                 );
                 
-                next_state = ENABLE_TRAINING_PATTERN;
+                if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                    // If the transaction failed, move to the FAILURE state
+                    `uvm_error(get_type_name(), "Failed to write to Link Configuration field", UVM_LOW);
+                    next_state = IDLE; // Move to IDLE state
+                end else begin
+                    // If the transaction was successful, move to the next state
+                    next_state = ENABLE_TRAINING_PATTERN;
+                end
+
             end
+
             
             // need manual implementation of the function to generate the expected transaction for training pattern
             ENABLE_TRAINING_PATTERN: begin
@@ -1191,8 +1224,8 @@ function bit generate_clock_recovery_phase(
 
                 expected_transaction.PHY_Instruct = 2'b00; // Training pattern 1
                 expected_transaction.PHY_Instruct_VLD = 1'b1; // Set PHY_Instruct_VLD to 1
-                // expected_transaction.PHY_ADJ_BW = tl_item.Link_BW_CR
-                // expected_transaction.PHY_ADJ_LC = tl_item.Link_LC_CR
+                expected_transaction.PHY_ADJ_BW = CURRENT_LINK_RATE; // Set PHY_ADJ_BW to the current link rate
+                expected_transaction.PHY_ADJ_LC = CURRENT_LANE_COUNT; // Set PHY_ADJ_LC to the current lane count
 
                 generate_native_aux_write_transaction(
                     sink_item,       // Input transaction from sink
@@ -1204,9 +1237,17 @@ function bit generate_clock_recovery_phase(
                     8'h21                      // Override data
                 );
 
-                expected_transaction.PHY_Instruct_VLD = 1'b1; // Set PHY_Instruct_VLD to 1
+                expected_transaction.PHY_Instruct_VLD = 1'b0; // Set PHY_Instruct_VLD to 0
 
-                next_state = CONFIGURE_DRIVING_SETTINGS;
+                if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                    // If the transaction failed, move to the FAILURE state
+                    `uvm_error(get_type_name(), "Failed to enable Training Pattern 1", UVM_LOW);
+                    next_state = IDLE; // Move to IDLE state
+                end else begin
+                    // If the transaction was successful, move to the next state
+                    next_state = CONFIGURE_DRIVING_SETTINGS;
+                end
+
             end
 
             // add if conditions
@@ -1223,10 +1264,10 @@ function bit generate_clock_recovery_phase(
                         4'b1000,                    // Override command (AUX_NATIVE_WRITE)
                         20'h00103,                  // Override address (0x00103)
                         8'h00,                      // Override length (1 byte)
-                        '{(tl_item.VTG[1:0] == tl_item.MAX_VTG && tl_item.PRE[1:0] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
-                          (tl_item.VTG[1:0] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
-                          (tl_item.PRE[1:0] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]} :
-                          {2'b00, 1'b0, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]}} // Override data
+                        '{(CURRENT_VTG[1:0] == MAX_VTG_temp && CURRENT_PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[1:0], 1'b1, CURRENT_VTG[1:0]} :
+                          (CURRENT_VTG[1:0] == MAX_VTG_temp) ? {2'b00, 1'b0, CURRENT_PRE[1:0], 1'b1, CURRENT_VTG[1:0]} :
+                          (CURRENT_PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[1:0], 1'b0, CURRENT_VTG[1:0]} :
+                          {2'b00, 1'b0, CURRENT_PRE[1:0], 1'b0, CURRENT_VTG[1:0]}} // Override data
                     );
                 end else if (tl_item.Link_LC_CR == 2'b01) begin
                     // Configure Lanes 0 and 1
@@ -1237,14 +1278,14 @@ function bit generate_clock_recovery_phase(
                         4'b1000,                    // Override command (AUX_NATIVE_WRITE)
                         20'h00103,                  // Override address (0x00103)
                         8'h01,                      // Override length (2 bytes)
-                        '{(tl_item.VTG[1:0] == tl_item.MAX_VTG && tl_item.PRE[1:0] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
-                          (tl_item.VTG[1:0] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
-                          (tl_item.PRE[1:0] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]} :
-                          {2'b00, 1'b0, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]},
-                          (tl_item.VTG[3:2] == tl_item.MAX_VTG && tl_item.PRE[3:2] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
-                          (tl_item.VTG[3:2] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
-                          (tl_item.PRE[3:2] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]} :
-                          {2'b00, 1'b0, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]}} // Override data
+                        '{(CURRENT_VTG[1:0] == MAX_VTG_temp && CURRENT_PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[1:0], 1'b1, CURRENT_VTG[1:0]} :
+                          (CURRENT_VTG[1:0] == MAX_VTG_temp) ? {2'b00, 1'b0, CURRENT_PRE[1:0], 1'b1, CURRENT_VTG[1:0]} :
+                          (CURRENT_PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[1:0], 1'b0, CURRENT_VTG[1:0]} :
+                          {2'b00, 1'b0, CURRENT_PRE[1:0], 1'b0, CURRENT_VTG[1:0]},
+                          (CURRENT_VTG[3:2] == MAX_VTG_temp && CURRENT_PRE[3:2] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[3:2], 1'b1, CURRENT_VTG[3:2]} :
+                          (CURRENT_VTG[3:2] == MAX_VTG_temp) ? {2'b00, 1'b0, CURRENT_PRE[3:2], 1'b1, CURRENT_VTG[3:2]} :
+                          (CURRENT_PRE[3:2] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[3:2], 1'b0, CURRENT_VTG[3:2]} :
+                          {2'b00, 1'b0, CURRENT_PRE[3:2], 1'b0, CURRENT_VTG[3:2]}} // Override data
                     );
                 end else begin
                     // Configure Lanes 0, 1, 2, and 3
@@ -1255,26 +1296,34 @@ function bit generate_clock_recovery_phase(
                         4'b1000,                    // Override command (AUX_NATIVE_WRITE)
                         20'h00103,                  // Override address (0x00103)
                         8'h03,                      // Override length (4 bytes)
-                        '{(tl_item.VTG[1:0] == tl_item.MAX_VTG && tl_item.PRE[1:0] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
-                          (tl_item.VTG[1:0] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[1:0], 1'b1, tl_item.VTG[1:0]} :
-                          (tl_item.PRE[1:0] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]} :
-                          {2'b00, 1'b0, tl_item.PRE[1:0], 1'b0, tl_item.VTG[1:0]},
-                          (tl_item.VTG[3:2] == tl_item.MAX_VTG && tl_item.PRE[3:2] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
-                          (tl_item.VTG[3:2] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[3:2], 1'b1, tl_item.VTG[3:2]} :
-                          (tl_item.PRE[3:2] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]} :
-                          {2'b00, 1'b0, tl_item.PRE[3:2], 1'b0, tl_item.VTG[3:2]},
-                          (tl_item.VTG[5:4] == tl_item.MAX_VTG && tl_item.PRE[5:4] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[5:4], 1'b1, tl_item.VTG[5:4]} :
-                          (tl_item.VTG[5:4] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[5:4], 1'b1, tl_item.VTG[5:4]} :
-                          (tl_item.PRE[5:4] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[5:4], 1'b0, tl_item.VTG[5:4]} :
-                          {2'b00, 1'b0, tl_item.PRE[5:4], 1'b0, tl_item.VTG[5:4]},
-                          (tl_item.VTG[7:6] == tl_item.MAX_VTG && tl_item.PRE[7:6] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[7:6], 1'b1, tl_item.VTG[7:6]} :
-                          (tl_item.VTG[7:6] == tl_item.MAX_VTG) ? {2'b00, 1'b0, tl_item.PRE[7:6], 1'b1, tl_item.VTG[7:6]} :
-                          (tl_item.PRE[7:6] == tl_item.MAX_PRE) ? {2'b00, 1'b1, tl_item.PRE[7:6], 1'b0, tl_item.VTG[7:6]} :
-                          {2'b00, 1'b0, tl_item.PRE[7:6], 1'b0, tl_item.VTG[7:6]}} // Override data
+                        '{(CURRENT_VTG[1:0] == MAX_VTG_temp && CURRENT_PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[1:0], 1'b1, CURRENT_VTG[1:0]} :
+                          (CURRENT_VTG[1:0] == MAX_VTG_temp) ? {2'b00, 1'b0, CURRENT_PRE[1:0], 1'b1, CURRENT_VTG[1:0]} :
+                          (CURRENT_PRE[1:0] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[1:0], 1'b0, CURRENT_VTG[1:0]} :
+                          {2'b00, 1'b0, CURRENT_PRE[1:0], 1'b0, CURRENT_VTG[1:0]},
+                          (CURRENT_VTG[3:2] == MAX_VTG_temp && CURRENT_PRE[3:2] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[3:2], 1'b1, CURRENT_VTG[3:2]} :
+                          (CURRENT_VTG[3:2] == MAX_VTG_temp) ? {2'b00, 1'b0, CURRENT_PRE[3:2], 1'b1, CURRENT_VTG[3:2]} :
+                          (CURRENT_PRE[3:2] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[3:2], 1'b0, CURRENT_VTG[3:2]} :
+                          {2'b00, 1'b0, CURRENT_PRE[3:2], 1'b0, CURRENT_VTG[3:2]},
+                          (CURRENT_VTG[5:4] == MAX_VTG_temp && CURRENT_PRE[5:4] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[5:4], 1'b1, CURRENT_VTG[5:4]} :
+                          (CURRENT_VTG[5:4] == MAX_VTG_temp) ? {2'b00, 1'b0, CURRENT_PRE[5:4], 1'b1, CURRENT_VTG[5:4]} :
+                          (CURRENT_PRE[5:4] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[5:4], 1'b0, CURRENT_VTG[5:4]} :
+                          {2'b00, 1'b0, CURRENT_PRE[5:4], 1'b0, CURRENT_VTG[5:4]},
+                          (CURRENT_VTG[7:6] == MAX_VTG_temp && CURRENT_PRE[7:6] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[7:6], 1'b1, CURRENT_VTG[7:6]} :
+                          (CURRENT_VTG[7:6] == MAX_VTG_temp) ? {2'b00, 1'b0, CURRENT_PRE[7:6], 1'b1, CURRENT_VTG[7:6]} :
+                          (CURRENT_PRE[7:6] == MAX_PRE_temp) ? {2'b00, 1'b1, CURRENT_PRE[7:6], 1'b0, CURRENT_VTG[7:6]} :
+                          {2'b00, 1'b0, CURRENT_PRE[7:6], 1'b0, CURRENT_VTG[7:6]}} // Override data
                     );
                 end
 
-                next_state = READ_TRAINING_INTERVAL;
+                if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                    // If the transaction failed, move to the FAILURE state
+                    `uvm_error(get_type_name(), "Failed to configure initial driving settings", UVM_LOW);
+                    next_state = IDLE; // Move to IDLE state
+                end else begin
+                    // If the transaction was successful, move to the next state
+                    next_state = READ_TRAINING_INTERVAL;
+                end
+
             end
 
             READ_TRAINING_INTERVAL: begin
@@ -1288,7 +1337,16 @@ function bit generate_clock_recovery_phase(
                     20'h0000E,                  // Override address (0x0000E)
                     8'h00                       // Override length (1 byte)
                 );
-                next_state = WAIT_AND_READ_LINK_STATUS;
+
+                if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                    // If the transaction failed, move to the FAILURE state
+                    `uvm_error(get_type_name(), "Failed to read TRAINING_AUX_RD_INTERVAL", UVM_LOW);
+                    next_state = IDLE; // Move to IDLE state
+                end else begin
+                    // If the transaction was successful, move to the next state
+                    next_state = WAIT_AND_READ_LINK_STATUS;
+                end
+
             end
 
             WAIT_AND_READ_LINK_STATUS: begin
@@ -1296,6 +1354,7 @@ function bit generate_clock_recovery_phase(
     //     constraint eq_rd_value_constraint {
     //     EQ_RD_Value[7] == 1'b1; // Ensure the MSB is always 1
     //     EQ_RD_Value[6:0] inside {7'h00, 7'h01, 7'h02, 7'h03, 7'h04}; // Allowed values for the lower 7 bits
+    //     page 629 in reference
 
                 // Step 5: Wait for the interval and read Link Status registers
                 ref_model_in_port.get(tl_item); //Lpm_seq_item
@@ -1310,7 +1369,14 @@ function bit generate_clock_recovery_phase(
                     8'h05                       // Override length (6 byte(s))
                 );
 
-                next_state = CR_DONE_CHECK; 
+                if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                    // If the transaction failed, move to the FAILURE state
+                    `uvm_error(get_type_name(), "Failed to read Link Status registers", UVM_LOW);
+                    next_state = IDLE; // Move to IDLE state
+                end else begin
+                    // If the transaction was successful, move to the next state
+                    next_state = CR_DONE_CHECK;
+                end
 
             end
             
@@ -1318,24 +1384,24 @@ function bit generate_clock_recovery_phase(
             // Step 6: Check for CR_DONE and CR_DONE_VLD
             CR_DONE_CHECK: begin
             
-            same_parameters_repeated_counter = same_parameters_repeated_counter + 1;
+            // same_parameters_repeated_counter = same_parameters_repeated_counter + 1;
 
             // Wait for the next transaction
             ref_model_in_port.get(tl_item); //Lpm_seq_item
 
-		    if((tl_item.Link_LC_CR == 'b11) && (&tl_item.CR_DONE))
+		    if((CURRENT_LANE_COUNT == 'b11) && (&tl_item.CR_DONE))
              begin
               next_state = SUCCESS;			
              end
-            else if((tl_item.Link_LC_CR == 'b01) && (&tl_item.CR_DONE[1:0]))
+            else if((CURRENT_LANE_COUNT == 'b01) && (&tl_item.CR_DONE[1:0]))
              begin
               next_state = SUCCESS;			
              end
-            else if((tl_item.Link_LC_CR == 'b00) && (tl_item.CR_DONE[0]))
+            else if((CURRENT_LANE_COUNT == 'b00) && (tl_item.CR_DONE[0]))
              begin
               next_state = SUCCESS;			
              end
-            else if(tl_item.Link_LC_CR == 'b10)   // Error Value of LC so it goes to the IDLE STATE 
+            else if(CURRENT_LANE_COUNT == 'b10)   // Error Value of LC so it goes to the IDLE STATE 
              begin
               next_state = IDLE;			
              end
@@ -1358,16 +1424,38 @@ function bit generate_clock_recovery_phase(
                     20'h00206,                  // Override address (0x00202)
                     8'h01                       // Override length (2 byte(s))
                 );
+                
+                // Update Current_VTG and Current_PRE based on the read values
+                PREVIOUS_VTG == CURRENT_VTG
+                PREVIOUS_PRE == CURRENT_PRE
+                CURRENT_VTG = tl_item.VTG;
+                CURRENT_PRE = tl_item.PRE;
 
-                next_state = CHECK_NEW_CONDITIONS; 
+                if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                    // If the transaction failed, move to the FAILURE state
+                    `uvm_error(get_type_name(), "Failed to read Adjusted Training Parameters", UVM_LOW);
+                    next_state = IDLE; // Move to IDLE state
+                end else begin
+                    // If the transaction was successful, move to the next state
+                    next_state = CHECK_NEW_CONDITIONS;
+                end
 
             end
         // Conditions: 1. MAX_VTG = VTG 2. full_loop_counter > 10 3. same_parameters_repeated_counter > 5
-        // Note: Should be 3 conditions but don't know
             CHECK_NEW_CONDITIONS: begin
-          ref_model_in_port.get(tl_item); //Lpm_seq_item
+          
+          full_loop_counter = full_loop_counter + 1'b1;
+          
+          if ((CURRENT_VTG == PREVIOUS_VTG) && (CURRENT_PRE == PREVIOUS_PRE)) begin
+            same_parameters_repeated_counter = same_parameters_repeated_counter + 1'b1;
+          end
 
-           if ((full_loop_counter == 'd11) || (same_parameters_repeated_counter == 'd6) || (tl_item.VTG == MAX_VTG_temp))
+           // Concatenate MAX_VTG_temp for 4 lanes
+
+          MAX_VTG_temp_Concatenated = {MAX_VTG_temp, MAX_VTG_temp, MAX_VTG_temp, MAX_VTG_temp};	  // For 4 Lanes
+            
+           if (CURRENT_LANE_COUNT == 2'b11) begin
+           if ((full_loop_counter == 'd11) || (same_parameters_repeated_counter == 'd6) || (CURRENT_VTG == MAX_VTG_temp_Concatenated))
             begin
              next_state = CHECK_IF_RBR;
             end
@@ -1375,12 +1463,34 @@ function bit generate_clock_recovery_phase(
             begin
              next_state = CONFIGURE_DRIVING_SETTINGS; // Repeat from step 3
             end
-          end
+            end
+            else if (CURRENT_LANE_COUNT == 2'b01) begin
+            if ((full_loop_counter == 'd11) || (same_parameters_repeated_counter == 'd6) || (CURRENT_VTG[3:0] == MAX_VTG_temp_Concatenated[3:0]))
+            begin
+             next_state = CHECK_IF_RBR;
+            end
+           else
+            begin
+             next_state = CONFIGURE_DRIVING_SETTINGS; // Repeat from step 3
+            end
+            end
+            else begin
+            if ((full_loop_counter == 'd11) || (same_parameters_repeated_counter == 'd6) || (CURRENT_VTG[1:0] == MAX_VTG_temp_Concatenated[1:0]))
+            begin
+             next_state = CHECK_IF_RBR;
+            end
+           else
+            begin
+             next_state = CONFIGURE_DRIVING_SETTINGS; // Repeat from step 3
+            end
+            end
+                
+            end
 
             // Check if RBR is used
             CHECK_IF_RBR: begin
 
-           if (CURRENT_LINK_RATE == == 8'h06) // is Bandwidth used is RBR?
+           if (CURRENT_LINK_RATE == == 8'h06) // is Bandwidth used RBR?
             begin
              next_state = CHECK_IF_ONE_LANE_USED;
             end
@@ -1411,12 +1521,12 @@ function bit generate_clock_recovery_phase(
             end
             else
             begin
-             CURRENT_LANE_COUNT = 2'b01;
+             CURRENT_LANE_COUNT = 2'b00;
             end  
             next_state = IDLE_WITH_UPDATED_BW_OR_LC; // Reset to IDLE for the next phase  
             end
 
-            // Reduce Link Count
+            // Reduce Link Rate
             REDUCE_LINK_RATE: begin
           if (CURRENT_LINK_RATE == 8'h1E)               // HBR3
            begin
@@ -1454,7 +1564,7 @@ function bit generate_clock_recovery_phase(
                 ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
                 // CR_DONE = 0;
                 next_state = IDLE; // Reset to IDLE for the next phase
-                break;      
+                // break;      
             end
 
             default: begin

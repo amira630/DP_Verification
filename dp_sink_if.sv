@@ -1,12 +1,31 @@
-interface dp_sink_if(input clk);
+`timescale 1ns / 1ps
+
+interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk);
+
 
     ///////////////////////////////////////////////////////////////
+    //////////////////// AUXILIARY CHANNEL ////////////////////////
+    ///////////////////////////////////////////////////////////////
+
     ///////////////////// PHYSICAL LAYER //////////////////////////
+
+    logic [AUX_DATA_WIDTH:0]    aux_data, PHY_ADJ_BW;
+    logic [1:0]                 PHY_ADJ_LC, PHY_Instruct;
+    logic                       HPD_Signal, AUX_START_STOP, PHY_START_STOP, PHY_Instruct_VLD;
+
+    ///////////////////////////////////////////////////////////////
+    ////////////////// ISOCHRONOUS TRANSPORT //////////////////////
     ///////////////////////////////////////////////////////////////
 
-    logic [7:0] AUX_IN_OUT, CR_ADJ_BW, EQ_ADJ_BW;
-    logic [1:0] CR_PHY_Instruct, CR_ADJ_LC, EQ_PHY_Instruct, EQ_ADJ_LC;
-    logic       START_STOP, HPD_Signal;
+    ///////////////////// PHYSICAL LAYER //////////////////////////
+
+    logic [AUX_DATA_WIDTH-1:0] ISO_symbols_lane0, ISO_symbols_lane1, ISO_symbols_lane2, ISO_symbols_lane3;
+    logic                      Control_sym_flag_lane0, Control_sym_flag_lane1, Control_sym_flag_lane2, Control_sym_flag_lane3;
+
+    wire [AUX_DATA_WIDTH-1:0] AUX_IN_OUT; // The AUX_IN_OUT signal is a bidirectional signal used for the DisplayPort auxiliary channel communication. It carries the data between the source and sink devices.
+
+
+    assign AUX_IN_OUT = aux_data;
 
     ///////////////////////////////////////////////////////////////
     //////////////////////// MODPORTS /////////////////////////////
@@ -15,31 +34,60 @@ interface dp_sink_if(input clk);
     ////////////////////////// DUT ////////////////////////////////
 
     modport DUT (
-        input clk, 
+        input clk,
+        input PHY_START_STOP,       // The PHY_START_STOP signal indicates the start/stop of the PHY layer operation.
               HPD_Signal,           // The HPD signal indicates the connection status based on its duration
         inout AUX_IN_OUT,           // A request/reply transaction where each byte is transmitted or received during every individual clock cycle, byte-by-byte data exchange.
-              START_STOP,           // A single bit indicating the beginning and end of a transaction. It is set to one during the transmission or reception of the transaction and set to zero when no transaction is occurring.
-        output CR_PHY_Instruct,     // A signal which instructs the physical layer to begin sending a specific link training pattern (TPS1, 2, 3, 4) during the link training process.
-               CR_ADJ_BW,           // The value of the BW during the link training.
-               CR_ADJ_LC,           // The value of the Lane Count during the link training.
-               EQ_PHY_Instruct,     // Same description of the above 3 signals but
-               EQ_ADJ_BW,           // they are sent during EQ stage in the
-               EQ_ADJ_LC            // channel equalization phase
-    );
+        output AUX_START_STOP,
+               PHY_Instruct,        // A signal which instructs the physical layer to begin sending a specific link training pattern (TPS1, 2, 3, 4) during the link training process.
+               PHY_ADJ_BW,          // The value of the BW during the link training.
+               PHY_ADJ_LC,          // The value of the Lane Count during the link training.
+               PHY_Instruct_VLD,     // The PHY_Instruct_VLD signal indicates the validity of the PHY_Instruct signal.
+               ISO_symbols_lane0,   // Four 8-bit signals carry the processed main video stream data output from the Isochronous Transport Services Block. They are transmitted over the active lanes with the selected video format.
+               ISO_symbols_lane1, 
+               ISO_symbols_lane2, 
+               ISO_symbols_lane3,
+               Control_sym_flag_lane0, // This signal is asserted when the block outputs control symbols, enabling the Physical Layer to distinguish between control and data symbols.
+               Control_sym_flag_lane1,
+               Control_sym_flag_lane2,
+               Control_sym_flag_lane3
+    ); 
 
-    //////////////////////// DRIVER /////////////////////////////
-    
-    modport DRV (
-        input clk, CR_PHY_Instruct, CR_ADJ_BW, CR_ADJ_LC, EQ_PHY_Instruct, EQ_ADJ_BW, EQ_ADJ_LC,
-        inout AUX_IN_OUT, START_STOP,           // start_stop will be changed
-        output HPD_Signal            
-    );
 
-    //////////////////////// MOINTOR /////////////////////////////  
+    ///////////////////////////////////////////////////////////////
+    /////////////////////// TASKS AND FUNCTIONS ///////////////////
+    ///////////////////////////////////////////////////////////////
     
-    modport MONITOR (
-        input clk, HPD_Signal, AUX_IN_OUT, START_STOP, 
-              CR_PHY_Instruct, CR_ADJ_BW, CR_ADJ_LC, 
-              EQ_PHY_Instruct, EQ_ADJ_BW, EQ_ADJ_LC          
-    );  
+    // RESET task
+    // This task is used to reset the DUT by asserting and deasserting the reset signal
+    // task Reset();
+    //     rst_n = 1'b0;           // Assert reset
+    //     @(negedge clk);         // Wait for clock edge
+    //     rst_n = 1'b1;           // Deassert reset
+    // endtask
+
+    task Interrupt();
+        HPD_Signal = 1'b0;      // Assert HPD_Signal
+        #1000000;               // Wait for 1ms 
+        HPD_Signal = 1'b1;      // Deassert HPD_Signal
+    endtask
+
+    // TASK: drive_hpd_signal
+    // This task is used to drive the HPD_Signal with a specific value
+    // It takes a 1-bit value as input and drives the HPD_Signal with that value
+    // task drive_hpd_signal(input bit hpd);
+    //     HPD_Signal = hpd;  // Drive the HPD_Signal with the specified value
+    //     `uvm_info("DP_SINK_INTERFACE", $sformatf("Driving HPD_Signal = %0b", seq_item.HPD_Signal), UVM_MEDIUM);
+    // endtask
+
+    // TASK: drive_aux_in_out
+    // This task is used to drive the AUX_IN_OUT signal with a specific value
+    // It takes a 8-bit value as input and drives the AUX_IN_OUT signal with that value
+    task drive_aux_in_out(input [7:0] value);
+        aux_data = value;  // Drive the AUX_IN_OUT signal with the specified value
+        PHY_START_STOP = 1'b1;  // Start the PHY operation
+        @(posedge clk);  // Wait for the next clock edge
+        PHY_START_STOP = 1'b0;  // Stop the PHY operation
+    endtask
+
 endinterface
