@@ -1,7 +1,7 @@
 // Project: DP Verification
 // Description: Top module for the DisplayPort verification environment
-// Time Scale: 1ns / 1ps
-`timescale 1ns / 1ps
+// Time Scale: 1ns / 1fs
+`timescale 1ns / 1fs
 
 // Standard UVM import & include:
 import uvm_pkg::*;
@@ -11,20 +11,45 @@ import uvm_pkg::*;
 import dp_source_test_pkg::*;
 
 module top();
-    bit clk;
+    bit clk_AUX, clk_RBR, clk_HBR, clk_HBR2, clk_HBR3, MS_Stm_CLK;
 
     // Create the interfaces for Transport Layer and the Sink Link Layer
-    dp_tl_if #(.AUX_ADDRESS_WIDTH(20), .AUX_DATA_WIDTH(8))  tl_if (clk);
-    dp_sink_if #(.AUX_ADDRESS_WIDTH(20), .AUX_DATA_WIDTH(8)) sink_if (clk);
+    dp_tl_if #(.AUX_ADDRESS_WIDTH(20), .AUX_DATA_WIDTH(8))  tl_if (clk_AUX, clk_RBR, clk_HBR, clk_HBR2, clk_HBR3, MS_Stm_CLK);
+    dp_sink_if #(.AUX_ADDRESS_WIDTH(20), .AUX_DATA_WIDTH(8)) sink_if (clk_AUX);
 
     dp_source DUT (tl_if, sink_if);
 
 
-    // start the clock
+    // start the clocks
     initial begin
-        clk = 1;
-        forever
-            #10000 clk = ~clk;
+        clk_AUX = 1; clk_RBR = 1; clk_HBR = 1; clk_HBR2 = 1; clk_HBR3 = 1; MS_Stm_CLK = 1;
+
+        fork
+            begin
+                forever
+                    #3.086419753 clk_RBR = ~clk_RBR; // will round to 3.086420ns
+            end
+            begin
+                forever
+                    #1.851851852 clk_HBR = ~clk_HBR; // will round to 1.851852ns
+            end
+            begin
+                forever
+                    #0.925925926 clk_HBR2 = ~clk_HBR2; // will round to 0.925926ns
+            end
+            begin
+                forever
+                    #0.06172839505 clk_HBR3 = ~clk_HBR3; // will round to 0.061728ns
+            end
+            begin
+                forever
+                    #6.25 MS_Stm_CLK = ~MS_Stm_CLK; // 80MHs so 12.5ns
+            end
+            begin
+                forever
+                    #5000 clk_AUX = ~clk_AUX;
+            end
+        join
     end
 
     initial begin

@@ -18,7 +18,7 @@ class dp_tl_monitor extends uvm_monitor;
    super.run_phase(phase);
    forever begin
     rsp_seq_item = dp_tl_sequence_item::type_id::create("rsp_seq_item");
-    @(negedge dp_tl_vif.clk);
+    @(negedge dp_tl_vif.clk_AUX);
      
     // Read the signals from the DUT and assign them to the sequence item
     

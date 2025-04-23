@@ -1,4 +1,4 @@
-interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk);
+interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk_AUX, clk_RBR, clk_HBR, clk_HBR2, clk_HBR3, MS_Stm_CLK);
 
     
     logic rst_n;   // Reset is asynchronous active low
@@ -48,7 +48,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
 
     logic [47:0] MS_Pixel_Data;
     logic [9:0]  MS_Stm_BW;
-    logic        MS_Stm_CLK, MS_DE, MS_VSYNC, MS_HSYNC;
+    logic        MS_DE, MS_VSYNC, MS_HSYNC;
 
     ///////////////////////////////////////////////////////////////
     //////////////////////// MODPORTS /////////////////////////////
@@ -57,7 +57,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
     ////////////////////////// DUT ////////////////////////////////
 
     modport DUT (
-          input clk, rst_n,
+          input clk_AUX, rst_n, clk_RBR, clk_HBR, clk_HBR2, clk_HBR3,
           // MSS - ISO
                 MS_Pixel_Data,        // A 48-bit pixel data signal representing the pixel values for the transmitted frame.
                 MS_Stm_CLK,           // This signal represents the clock signal for the stream rate.
@@ -130,60 +130,12 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
                  EQ_FSM_CR_Failed,        // Signal indicating the failure of the Clock Recovery phase during EQ phase of link training.  
                  Timer_Timeout            // Signal indicating the timeout of the timer during link training process.
     );
-
-
-    //////////////////////// DRIVER /////////////////////////////
-
-      modport DRV (
-        // SPM - AUX
-        output rst_n, SPM_Address, SPM_Data, SPM_LEN, SPM_CMD, SPM_Transaction_VLD, 
-        // LPM - AUX      
-               LPM_Data, LPM_Address, LPM_LEN, LPM_CMD, LPM_Transaction_VLD, 
-        // LPM - Link Training      
-               LPM_Start_CR, CR_DONE, Link_LC_CR, Link_BW_CR, PRE, VTG, Driving_Param_VLD, 
-               EQ_RD_Value, EQ_CR_DN, Channel_EQ, Symbol_Lock, Lane_Align, EQ_Data_VLD, MAX_VTG,
-               MAX_PRE, MAX_TPS_SUPPORTED, MAX_TPS_SUPPORTED_VLD, Config_Param_VLD, CR_DONE_VLD,
-        // MSS - ISO
-               MS_Pixel_Data, MS_Stm_CLK, MS_DE, MS_Stm_BW, MS_VSYNC, MS_HSYNC,
-        // SPM - ISO
-               SPM_ISO_start, SPM_Lane_Count, SPM_Lane_BW, SPM_MSA, SPM_MSA_VLD, SPM_BW_Sel,        
-        // SPM - AUX       
-        input clk, SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, CTRL_I2C_Failed,         
-        // LPM - AUX
-              HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_NATIVE_I2C, CTRL_Native_Failed,         
-        // LPM - Link Training
-              FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC, CR_Completed, EQ_FSM_CR_Failed, Timer_Timeout
-    );
-
-    //////////////////////// MONITOR /////////////////////////////
-    
-      modport MONITOR (
-        input clk, rst_n,
-        // SPM - AUX
-              SPM_Address, SPM_Data, SPM_LEN, SPM_CMD, SPM_Transaction_VLD, 
-        // LPM - AUX      
-              LPM_Data, LPM_Address, LPM_LEN, LPM_CMD, LPM_Transaction_VLD, 
-        // LPM - Link Training      
-              LPM_Start_CR, CR_DONE, Link_LC_CR, Link_BW_CR, PRE, VTG, Driving_Param_VLD, 
-              EQ_RD_Value, EQ_CR_DN, Channel_EQ, Symbol_Lock, Lane_Align, EQ_Data_VLD, MAX_VTG,
-              MAX_PRE, MAX_TPS_SUPPORTED, MAX_TPS_SUPPORTED_VLD, Config_Param_VLD, CR_DONE_VLD,
-        // SPM - AUX      
-              SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_ACK_VLD, SPM_Reply_Data_VLD, SPM_NATIVE_I2C, CTRL_I2C_Failed,         
-        // LPM - AUX
-              HPD_Detect, HPD_IRQ, LPM_Reply_Data, LPM_Reply_Data_VLD, LPM_Reply_ACK, LPM_Reply_ACK_VLD, LPM_NATIVE_I2C, CTRL_Native_Failed,        
-        // LPM - Link Training
-              FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, EQ_Final_ADJ_BW, EQ_Final_ADJ_LC, CR_Completed , EQ_FSM_CR_Failed, Timer_Timeout,
-        // MSS - ISO
-              MS_Pixel_Data, MS_Stm_CLK, MS_DE, MS_Stm_BW, MS_VSYNC, MS_HSYNC,
-        // SPM - ISO
-              SPM_ISO_start, SPM_Lane_Count, SPM_Lane_BW, SPM_MSA, SPM_MSA_VLD, SPM_BW_Sel      
-    );
     
       // RESET task
       // This task is used to reset the DUT by asserting and deasserting the reset signal
       task Reset();
             rst_n = 1'b0;           // Assert reset
-            @(negedge clk);         // Wait for clock edge
+            @(negedge clk_AUX);         // Wait for clock edge
             rst_n = 1'b1;           // Deassert reset
       endtask
 

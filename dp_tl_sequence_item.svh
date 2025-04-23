@@ -88,11 +88,10 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     rand logic [47:0] MS_Pixel_Data;
     rand logic [9:0]  MS_Stm_BW;        // takes values on MHz max 1Ghz
     rand logic        MS_DE, MS_VSYNC, MS_HSYNC;
-    rand bit          MS_Stm_CLK;
+    //rand bit          MS_Stm_CLK;
 
 
     op_code operation;
-
     
     bit     link_values_locked = 0; // State variable to lock values after first randomization
     bit [AUX_DATA_WIDTH-1:0] prev_vtg;

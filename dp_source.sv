@@ -108,7 +108,7 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
 
 
     // Inputs
-    assign clk = tl_if.clk;              
+    assign clk = tl_if.clk_AUX;              
     assign rst_n = tl_if.rst_n;              
     assign spm_transaction_vld = tl_if.SPM_Transaction_VLD;
     assign spm_cmd = tl_if.SPM_CMD;          

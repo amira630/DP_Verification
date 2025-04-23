@@ -62,7 +62,7 @@ class dp_scoreboard extends uvm_scoreboard;
     endtask
 
     // task check_results(dp_tl_sequence_item sequence_item_chk_tl, dp_sink_sequence_item sequence_item_chk_sink);
-    //     @(negedge DP_TL_scoreboard_vif.clk);
+    //     @(negedge DP_TL_scoreboard_vif.clk_AUX);
     //     if (sequence_item_chk_tl.out == sequence_item_chk_sink.out && sequence_item_chk_tl.leds == sequence_item_chk_sink.leds) begin
     //         `uvm_info("check_results", "Transaction matches expected output.", UVM_HIGH);
     //         correct_count++;

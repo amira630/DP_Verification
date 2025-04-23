@@ -18,7 +18,7 @@ class dp_sink_monitor extends uvm_monitor;
    super.run_phase(phase);
    forever begin
      rsp_sink_seq_item = dp_sink_sequence_item::type_id::create("rsp_sink_seq_item");
-     @(negedge dp_sink_vif.clk);
+     @(negedge dp_sink_vif.clk_AUX);
 
       // Read the signals from the DUT and assign them to the sequence item
       // Input Data to DUT

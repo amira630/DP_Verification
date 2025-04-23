@@ -27,7 +27,7 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
             end
 
             // Check if the sequence item is SPM or LPM then drive the values to the interface according to the operation
-            @(posedge dp_tl_vif.clk);
+            @(posedge dp_tl_vif.clk_AUX);
             if(stimulus_seq_item.SPM_Transaction_VLD == 1 && stimulus_seq_item.LPM_Transaction_VLD == 0) begin
                 // SPM transaction
                 case (stimulus_seq_item.operation)
@@ -74,7 +74,7 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
             // response_seq_item.copy_from_vif(dp_tl_vif);
 
             // Send response back properly via seq_item_port
-            @(negedge dp_tl_vif.clk);
+            @(negedge dp_tl_vif.clk_AUX);
             seq_item_port.item_done(stimulus_seq_item);
 
             `uvm_info("run_phase", $sformatf("Driver Done"), UVM_HIGH);
