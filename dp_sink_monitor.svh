@@ -22,7 +22,6 @@ class dp_sink_monitor extends uvm_monitor;
 
       // Read the signals from the DUT and assign them to the sequence item
       // Input Data to DUT
-      rsp_sink_seq_item.rst_n = dp_sink_vif.rst_n;
       rsp_sink_seq_item.HPD_Signal = dp_sink_vif.HPD_Signal;
       rsp_sink_seq_item.AUX_START_STOP = dp_sink_vif.AUX_START_STOP;
       rsp_sink_seq_item.PHY_START_STOP = dp_sink_vif.PHY_START_STOP;

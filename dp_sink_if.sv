@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk);
 
 
@@ -7,7 +9,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
 
     ///////////////////// PHYSICAL LAYER //////////////////////////
 
-    logic [AUX_DATA_WIDTH:0]   AUX_IN_OUT, PHY_ADJ_BW;
+    logic [AUX_DATA_WIDTH:0]    aux_data, PHY_ADJ_BW;
     logic [1:0]                 PHY_ADJ_LC, PHY_Instruct;
     logic                       HPD_Signal, AUX_START_STOP, PHY_START_STOP, PHY_Instruct_VLD;
 
@@ -20,7 +22,10 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     logic [AUX_DATA_WIDTH-1:0] ISO_symbols_lane0, ISO_symbols_lane1, ISO_symbols_lane2, ISO_symbols_lane3;
     logic                      Control_sym_flag_lane0, Control_sym_flag_lane1, Control_sym_flag_lane2, Control_sym_flag_lane3;
 
+    wire [AUX_DATA_WIDTH-1:0] AUX_IN_OUT; // The AUX_IN_OUT signal is a bidirectional signal used for the DisplayPort auxiliary channel communication. It carries the data between the source and sink devices.
 
+
+    assign AUX_IN_OUT = aux_data;
 
     ///////////////////////////////////////////////////////////////
     //////////////////////// MODPORTS /////////////////////////////
@@ -46,23 +51,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
                Control_sym_flag_lane1,
                Control_sym_flag_lane2,
                Control_sym_flag_lane3
-    );
-
-    //////////////////////// DRIVER /////////////////////////////
-    
-    modport DRV (
-        input clk, AUX_START_STOP, PHY_Instruct, PHY_ADJ_BW, PHY_ADJ_LC, PHY_Instruct_VLD,
-        inout AUX_IN_OUT,           // start_stop will be changed
-        output HPD_Signal , PHY_START_STOP       
-    );
-
-    //////////////////////// MOINTOR /////////////////////////////  
-    
-    modport MONITOR (
-        input clk, HPD_Signal, AUX_IN_OUT, AUX_START_STOP, PHY_START_STOP,
-              PHY_Instruct, PHY_ADJ_BW, PHY_ADJ_LC, PHY_Instruct_VLD,   // Four 8-bit signals carry the processed main video stream data output from the Isochronous Transport Services Block. They are transmitted over the active lanes with the selected video format.
-              ISO_symbols_lane0, ISO_symbols_lane1, ISO_symbols_lane2, ISO_symbols_lane3, Control_sym_flag_lane0, Control_sym_flag_lane1, Control_sym_flag_lane2, Control_sym_flag_lane3
-    );  
+    ); 
 
 
     ///////////////////////////////////////////////////////////////
@@ -95,7 +84,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     // This task is used to drive the AUX_IN_OUT signal with a specific value
     // It takes a 8-bit value as input and drives the AUX_IN_OUT signal with that value
     task drive_aux_in_out(input [7:0] value);
-        AUX_IN_OUT = value;  // Drive the AUX_IN_OUT signal with the specified value
+        aux_data = value;  // Drive the AUX_IN_OUT signal with the specified value
         PHY_START_STOP = 1'b1;  // Start the PHY operation
         @(posedge clk);  // Wait for the next clock edge
         PHY_START_STOP = 1'b0;  // Stop the PHY operation

@@ -7,7 +7,6 @@ class dp_sink_coverage extends uvm_component;
 
     covergroup sink_cvr_grp;
         // Coverpoints for the sink sequence item signals
-        rst_n_c:                coverpoint cov_sink_seq_item.rst_n;
         HPD_Signal_c:           coverpoint cov_sink_seq_item.HPD_Signal;
         AUX_START_STOP_c:       coverpoint cov_sink_seq_item.AUX_START_STOP;
         PHY_START_STOP_c:       coverpoint cov_sink_seq_item.PHY_START_STOP;

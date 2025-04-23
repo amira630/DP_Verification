@@ -5,10 +5,12 @@ class dp_tl_sequence_item extends uvm_sequence_item;
   `uvm_object_utils(dp_tl_sequence_item);
   
   rand bit rst_n;   // Reset is asynchronous active low
+
+    ///////////////////////////////////////////////////////////////
+    //////////////////// AUXILIARY CHANNEL ////////////////////////
+    ///////////////////////////////////////////////////////////////  
     
-    ///////////////////////////////////////////////////////////////
     /////////////////// STREAM POLICY MAKER ///////////////////////
-    ///////////////////////////////////////////////////////////////
 
 // input Data from the stream policy maker to DUT
     rand logic [AUX_DATA_WIDTH-1:0]    SPM_Data; // Randomized only if write will be supported
@@ -22,15 +24,12 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     logic [1:0]                SPM_Reply_ACK;
     logic                      SPM_NATIVE_I2C, SPM_Reply_Data_VLD, SPM_Reply_ACK_VLD, CTRL_I2C_Failed;
 
-
-    ///////////////////////////////////////////////////////////////
     //////////////////// LINK POLICY MAKER ////////////////////////
-    ///////////////////////////////////////////////////////////////
     
     // input Data to DUT
     logic [AUX_ADDRESS_WIDTH-1:0]      LPM_Address;
     rand logic [AUX_DATA_WIDTH-1:0]    LPM_LEN;
-    logic [AUX_DATA_WIDTH-1:0]    LPM_Data;
+    logic [AUX_DATA_WIDTH-1:0]         LPM_Data;
     rand native_aux_request_cmd_e      LPM_CMD; // 00 Write and 01 Read
     bit                                LPM_Transaction_VLD;
 
@@ -82,17 +81,19 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     rand logic [7:0]  MISC0;        // for bpc and color format
     rand logic [7:0]  MISC1;        // for colorimetry and colorimetry range
 
-    logic [15:0] HFront, HBack, VFront, VBack;
+    rand logic [15:0] HFront, HBack, VFront, VBack;
 
     /////////////////// MAIN STREAM SOURCE ///////////////////////
 
     rand logic [47:0] MS_Pixel_Data;
-    rand logic [9:0]  MS_Stm_BW;
+    rand logic [9:0]  MS_Stm_BW;        // takes values on MHz max 1Ghz
     rand logic        MS_DE, MS_VSYNC, MS_HSYNC;
     rand bit          MS_Stm_CLK;
 
 
     op_code operation;
+
+    
     bit     link_values_locked = 0; // State variable to lock values after first randomization
     bit [AUX_DATA_WIDTH-1:0] prev_vtg;
     bit [AUX_DATA_WIDTH-1:0] prev_pre;
@@ -100,6 +101,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     bit [1:0] ISO_LC;
     bit [AUX_DATA_WIDTH-1:0] ISO_BW;
     rand logic [AUX_DATA_WIDTH-1:0]    LPM_Data_queue[$];
+
+    bit LT_Failed, LT_Pass;
 
     ///////////////////////////////////////////////////////////////
     /////////////////////// SPM CONSTRAINTS ///////////////////////
@@ -118,7 +121,83 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     }
 
     constraint operation_type_dist {
-       operation inside {[Reset:EQ_LT]};
+       operation inside {[reset_op:EQ_LT]};
+    }
+
+    constraint hsp_vsp_constraint {
+        HSP dist {1'b1 := 90, 1'b0 := 10}; // HSP is 1 90% of the time
+        VSP dist {1'b1 := 90, 1'b0 := 10}; // VSP is 1 90% of the time
+    }
+
+    constraint vtotal_constraint {
+        (VHeight + VStart - 1) == VTotal; // Ensure VTotal equals VHeight + VStart - 1
+    }
+
+    constraint htotal_constraint {
+        (HWidth + HStart - 1) == HTotal; // Ensure HTotal equals HWidth + HStart - 1
+    }
+
+    constraint hstart_constraint {
+        HStart inside {[0:HTotal]}; // Ensure HStart is within the range of HTotal
+    }
+
+    constraint vstart_constraint {
+        VStart inside {[0:VTotal]}; // Ensure VStart is within the range of VTotal
+    }
+
+    constraint hwidth_constraint {
+        HWidth inside {[0:HTotal]}; // Ensure HWidth is within the range of HTotal
+    }
+
+    constraint vheight_constraint {
+        VHeight inside {[0:VTotal]}; // Ensure VHeight is within the range of VTotal
+    }
+
+    constraint misc1_constraint {
+        MISC1[7:6] == 2'b00; // Ensure bits 7 and 6 are always 0
+        // MISC1[5:0] can be anything, no constraint needed
+    }
+
+    constraint misc0_constraint {
+        MISC0[7:5] inside {3'b001, 3'b100}; // 8bpc or 16bpc
+        MISC0[4] == 1'b0;                  // MISC0[4] must always be 0
+        MISC0[3] inside {1'b0, 1'b1};      // RGB or YCbCr
+        if (MISC0[3] == 1'b0) {
+            MISC0[2:1] == 2'b00;           // RGB
+        } else {
+            MISC0[2:1] == 2'b10;           // YCbCr (4:4:4)
+        }
+        // MISC0[0] can be anything, no constraint needed
+    }
+
+    constraint hsw_constraint {
+        HSW == (HStart - 1) - HBack - HFront; // Ensure HSW is calculated correctly
+    }
+    
+    constraint vsw_constraint {
+        VSW == (VStart - 1) - VBack - VFront; // Ensure VSW is calculated correctly
+    }
+
+    constraint hback_constraint {
+        HBack == (HStart - HSW); // Ensure HBack equals HStart - HSW
+    }
+
+    constraint vback_constraint {
+        VBack == (VStart - VSW); // Ensure HBack equals VStart - VSW
+    }    
+
+    constraint hfront_constraint {
+        HFront == (HTotal - (HStart + HWidth)); // Ensure HFront equals HTotal - (HStart + HWidth)
+    }
+
+    constraint vfront_constraint {
+        VFront == (VTotal - (VStart + VHeight)); // Ensure VFront equals VTotal - (VStart + VHeight)
+    } 
+
+    constraint ms_pixel_data_constraint {
+        if (MISC0[7:5] == 3'b001) {
+            MS_Pixel_Data[47:24] == 24'bx; // Most significant 24 bits are zero for 8bpc mode
+        } 
     }
 
     ///////////////////////////////////////////////////////////////
@@ -212,22 +291,22 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         }
     }
 
-    constraint pre_vtg_constraint {
-        foreach (PRE[i]) {
-            VTG[i*2 +: 2] <= MAX_VTG[i*2 +: 2]; // VTG must be less than or equal to MAX_VTG
-            PRE[i*2 +: 2] <= MAX_PRE[i*2 +: 2]; // PRE must be less than or equal to MAX_PRE
+    // constraint pre_vtg_constraint {
+    //     foreach (PRE[i]) {
+    //         VTG[i*2 +: 2] <= MAX_VTG[i*2 +: 2]; // VTG must be less than or equal to MAX_VTG
+    //         PRE[i*2 +: 2] <= MAX_PRE[i*2 +: 2]; // PRE must be less than or equal to MAX_PRE
 
-            // Lock VTG if it equals MAX_VTG and LPM_Start_CR is 0
-            if (!LPM_Start_CR && prev_vtg[i*2 +: 2] == MAX_VTG[i*2 +: 2]) {
-                VTG[i*2 +: 2] == prev_vtg[i*2 +: 2];
-            }
+    //         // Lock VTG if it equals MAX_VTG and LPM_Start_CR is 0
+    //         if (!LPM_Start_CR && prev_vtg[i*2 +: 2] == MAX_VTG[i*2 +: 2]) {
+    //             VTG[i*2 +: 2] == prev_vtg[i*2 +: 2];
+    //         }
             
-            // Lock PRE if it equals MAX_PRE and LPM_Start_CR is 0
-            if (!LPM_Start_CR && prev_pre[i*2 +: 2] == MAX_PRE[i*2 +: 2]) {
-                PRE[i*2 +: 2] == prev_pre[i*2 +: 2];
-            }
-        }
-    }
+    //         // Lock PRE if it equals MAX_PRE and LPM_Start_CR is 0
+    //         if (!LPM_Start_CR && prev_pre[i*2 +: 2] == MAX_PRE[i*2 +: 2]) {
+    //             PRE[i*2 +: 2] == prev_pre[i*2 +: 2];
+    //         }
+    //     }
+    // }
             
     constraint vtg_pre_relationship {
         foreach (VTG[i]) {

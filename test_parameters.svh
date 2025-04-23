@@ -37,6 +37,12 @@
     parameter int AUX_DATA_WIDTH = 8;      // 8-bit AUX data
 
 // typedef enums
+    typedef enum bit [1:0] {
+        DETECTING = 2'b00,
+        CR_STAGE = 2'b01,
+        EQ_STAGE = 2'b10,
+        ISO_STAGE = 2'b11
+    } flow_stages_e;
 
 // Training Patterns
     typedef enum bit [1:0] {
@@ -136,7 +142,7 @@
 
 // AUX Channel Operation
     typedef enum logic [3:0] {
-        Reset           = 4'b0000,  
+        reset_op        = 4'b0000,  
         I2C_READ        = 4'b0001,
         I2C_WRITE       = 4'b0010,
         NATIVE_READ     = 4'b0011,

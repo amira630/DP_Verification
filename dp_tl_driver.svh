@@ -32,8 +32,8 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
                 // SPM transaction
                 case (stimulus_seq_item.operation)
                     4'b0000: dp_tl_vif.Reset();                             // Reset the interface
-                    4'b0001: dp_tl_vif.I2C_READ(stimulus_seq_item);      // I2C READ
-                    4'b0010: dp_tl_vif.I2C_WRITE(stimulus_seq_item);     // I2C WRITE
+                    4'b0001: dp_tl_vif.I2C_READ(stimulus_seq_item.SPM_Address,stimulus_seq_item.SPM_LEN,stimulus_seq_item.SPM_CMD,stimulus_seq_item.SPM_Transaction_VLD);      // I2C READ
+                    4'b0010: dp_tl_vif.I2C_WRITE(stimulus_seq_item.SPM_Address,stimulus_seq_item.SPM_LEN,stimulus_seq_item.SPM_CMD,stimulus_seq_item.SPM_Transaction_VLD, stimulus_seq_item.SPM_Data);     // I2C WRITE
                     default: begin
                         dp_tl_vif = null; // Set the interface to null if the operation is not supported
                         `uvm_error("DP_TL_DRIVER", "Unsupported operation in SPM transaction")
@@ -44,10 +44,10 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
                 // LPM transaction
                 case (stimulus_seq_item.operation)
                     4'b0000: dp_tl_vif.Reset();
-                    4'b0011: dp_tl_vif.NATIVE_READ(stimulus_seq_item);       // NATIVE READ
-                    4'b0100: dp_tl_vif.NATIVE_WRITE(stimulus_seq_item);      // NATIVE WRITE
-                    4'b0101: dp_tl_vif.LINK_TRAINING(stimulus_seq_item);             // CR_LT
-                    4'b0110: dp_tl_vif.LINK_TRAINING(stimulus_seq_item);             // EQ_LT
+                    4'b0011: dp_tl_vif.NATIVE_READ(stimulus_seq_item.LPM_Address,stimulus_seq_item.LPM_LEN,stimulus_seq_item.LPM_CMD,stimulus_seq_item.LPM_Transaction_VLD);       // NATIVE READ
+                    4'b0100: dp_tl_vif.NATIVE_WRITE(stimulus_seq_item.LPM_Address,stimulus_seq_item.LPM_LEN,stimulus_seq_item.LPM_CMD,stimulus_seq_item.LPM_Transaction_VLD, stimulus_seq_item.LPM_Data);      // NATIVE WRITE
+                    // 4'b0101: dp_tl_vif.LINK_TRAINING(stimulus_seq_item);             // CR_LT
+                    // 4'b0110: dp_tl_vif.LINK_TRAINING(stimulus_seq_item);             // EQ_LT
                     default: begin
                         dp_tl_vif = null;    // Set the interface to null if the operation is not supported
                         `uvm_error("DP_TL_DRIVER", "Unsupported operation in SPM transaction")
@@ -68,14 +68,14 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
             $cast(response_seq_item, stimulus_seq_item.clone());
 
             // Wait for DUT reponse
-            wait(dp_tl_vif.ready == 1)
+            // wait(dp_tl_vif.ready == 1)
             
             // Copy the values from the DUT to the response sequence item
             // response_seq_item.copy_from_vif(dp_tl_vif);
 
             // Send response back properly via seq_item_port
             @(negedge dp_tl_vif.clk);
-            seq_item_port.item_done(response_seq_item);
+            seq_item_port.item_done(stimulus_seq_item);
 
             `uvm_info("run_phase", $sformatf("Driver Done"), UVM_HIGH);
             `uvm_info("run_phase", stimulus_seq_item.convert2string(), UVM_HIGH);

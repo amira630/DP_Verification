@@ -10,6 +10,7 @@ class dp_source_test extends uvm_test;
     virtual dp_sink_if dp_sink_vif;
     
     // Sequences
+    dp_tl_reset_seq dp_tl_rst_seq;
     //dp_tl_base_sequence dp_tl_seq;
     // dp_tl_i2c_sequence dp_tl_i2c_seq;
     // dp_tl_native_ext_receiver_cap_sequence dp_tl_native_ext_receiver_cap_seq;
@@ -29,8 +30,12 @@ class dp_source_test extends uvm_test;
         env = dp_source_env::type_id::create("env",this);
         dp_source_cfg = dp_source_config::type_id::create("dp_source_cfg");
         
+
+        dp_tl_rst_seq = dp_tl_reset_seq::type_id::create("dp_tl_rst_seq", this);
         //dp_tl_i2c_seq = dp_tl_i2c_sequence::type_id::create("dp_tl_i2c_seq", this);
         //dp_tl_seq = dp_tl_sequence::type_id::create("dp_tl_seq", this);
+
+
         dp_sink_intr_seq = dp_sink_interrupt_seq::type_id::create("dp_sink_intr_seq", this);
         
         // add virtual interfaces for each interface to the configurations database
@@ -52,11 +57,16 @@ class dp_source_test extends uvm_test;
         phase.raise_objection(this);
         fork
             begin
-                `uvm_info("run_phase", "TL I2C stimulus generation started", UVM_LOW);
-                dp_sink_intr_seq.start(env.tl_agt.sqr);
-                `uvm_info("run_phase", "TL I2C stimulus generation ended", UVM_LOW);
+                `uvm_info("run_phase", "TL Interrupt stimulus generation started", UVM_LOW);
+                dp_sink_intr_seq.start(env.sink_agt.sqr);
+                `uvm_info("run_phase", "TL Interrupt stimulus generation ended", UVM_LOW);
             end
             
+            begin
+                `uvm_info("run_phase", "TL Reset stimulus generation started", UVM_LOW);
+                dp_tl_rst_seq.start(env.tl_agt.sqr);
+                `uvm_info("run_phase", "TL Reset stimulus generation ended", UVM_LOW);
+            end
 
             // DP Transport Layer I2C Sequence (Read EDID)
             // begin
