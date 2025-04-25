@@ -2,9 +2,9 @@ import uvm_pkg::*;
     `include "uvm_macros.svh"
     `include "test_parameters.svh"
 class dp_tl_sequence_item extends uvm_sequence_item;
-  `uvm_object_utils(dp_tl_sequence_item);
+    `uvm_object_utils(dp_tl_sequence_item);
   
-  rand bit rst_n;   // Reset is asynchronous active low
+    rand bit rst_n;   // Reset is asynchronous active low
 
     ///////////////////////////////////////////////////////////////
     //////////////////// AUXILIARY CHANNEL ////////////////////////
@@ -87,7 +87,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
     rand logic [47:0] MS_Pixel_Data;
     rand logic [9:0]  MS_Stm_BW;        // takes values on MHz max 1Ghz
-    rand bit        MS_DE, MS_VSYNC, MS_HSYNC;
+    rand bit          MS_DE, MS_VSYNC, MS_HSYNC;
     //rand bit          MS_Stm_CLK;
 
     op_code operation;
@@ -100,7 +100,10 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     bit [AUX_DATA_WIDTH-1:0] ISO_BW;
     rand logic [AUX_DATA_WIDTH-1:0]    LPM_Data_queue[$];
 
-    bit LT_Failed, LT_Pass;
+    bit      LT_Failed, LT_Pass;
+    rand bit error_flag;
+
+    real CLOCK_PERIOD; // Clock period in ns
 
     ///////////////////////////////////////////////////////////////
     /////////////////////// SPM CONSTRAINTS ///////////////////////
@@ -196,6 +199,14 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         if (MISC0[7:5] == 3'b001) {
             MS_Pixel_Data[47:24] == 24'bx; // Most significant 24 bits are zero for 8bpc mode
         } 
+    }
+
+    constraint ms_stm_bw_constraint {
+        MS_Stm_BW inside {[10:90]}; // Ensure MS_Stm_BW is within the range 10 to 90
+    }
+
+    constraint error_flag_constraint {
+        error_flag dist {1'b0 := 90, 1'b1 := 10}; // 90% chance of being 0, 10% chance of being 1
     }
 
     ///////////////////////////////////////////////////////////////
