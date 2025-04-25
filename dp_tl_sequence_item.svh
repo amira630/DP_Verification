@@ -100,7 +100,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     bit [AUX_DATA_WIDTH-1:0] ISO_BW;
     rand logic [AUX_DATA_WIDTH-1:0]    LPM_Data_queue[$];
 
-    bit      LT_Failed, LT_Pass;
+    bit      LT_Failed, LT_Pass, isflow;
     rand bit error_flag;
 
     real CLOCK_PERIOD; // Clock period in ns

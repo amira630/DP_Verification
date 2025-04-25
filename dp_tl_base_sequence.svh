@@ -217,7 +217,8 @@ endtask
     task CR_LT();
         int ack_count = 0;
         bit done = 0;
-        //seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        if(!seq_item.isflow)
+            seq_item = dp_tl_sequence_item::type_id::create("seq_item");
         seq_item.LT_Failed = 1'b0; 
         seq_item.LT_Pass = 1'b0;
         seq_item.operation = CR_LT;
@@ -658,6 +659,8 @@ endtask
     endtask
 
     task ISO_INIT();
+        if(!seq_item.isflow)
+            seq_item = dp_tl_sequence_item::type_id::create("seq_item");
         start_item(seq_item);
         seq_item.rand_mode(0);
         seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1); seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
@@ -789,6 +792,7 @@ endtask
 
     task FLOW_FSM();
         seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        seq_item.isflow= 1'b1; // Set the isflow flag to indicate that this is a flow sequence
         fork
             begin
                 forever begin
@@ -884,6 +888,7 @@ endtask
                 end
             end
         join 
+        seq_item.isflow= 1'b0;
     endtask
 
     // Prevent the base sequence from running directly
