@@ -3,6 +3,16 @@
 
 // Parameters for DisplayPort UVM Environment
 
+// Contol Link Symbols
+    parameter logic [7:0] SR = 8'h0F; // SR (Scramble Reset) symbol
+    parameter logic [7:0] BS = 8'hBC; // BS (Blanking Start) symbol
+    parameter logic [7:0] BE = 8'hBE; // BE (Blanking End) symbol
+    parameter logic [7:0] BF = 8'hBD; // BF (Blanking Fill) symbol
+    parameter logic [7:0] SS = 8'hDC; // SS (Secondary data Start) symbol
+    parameter logic [7:0] SE = 8'hDE; // SE (Secondary data End) symbol
+    parameter logic [7:0] FS = 8'hFC; // BS (Fill Start) symbol
+    parameter logic [7:0] FE = 8'hFE; // BE (Fill End) symbol 
+
 // Data Rates in Gbps per lane
     parameter int RBR  = 1620;          // 1.62 Gbps/lane, meaning 162MHz, which means a clock period of 6.172839506 ns
     parameter int HBR  = 2700;          // 2.7 Gbps/lane, meaning 270MHz, which means a clock period of 3.703703704 ns
@@ -152,6 +162,13 @@
         ISO             = 4'b0111,
         DETECT          = 4'b1000
     } op_code;
+
+    typedef enum logic [1:0] {
+        ISO_IDLE        = 2'b00,  // Sending IDLE pattern
+        ISO_VBLANK      = 2'b01,  // Vblank period
+        ISO_HBLANK      = 2'b10,  // Hblank period
+        ISO_ACTIVE      = 2'b11   // Active video period
+    } iso_op_code;
 
 // Sink Driver Operation
     typedef enum logic [1:0] {

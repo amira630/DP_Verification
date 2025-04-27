@@ -21,9 +21,10 @@ task reset_task();
     start_item(seq_item);
         seq_item.operation = reset_op;
         seq_item.LPM_Transaction_VLD = 1'b1; // LPM is on
+        seq_item.LT_Failed = 1'b0; 
+        seq_item.LT_Pass = 1'b0;
     finish_item(seq_item);
     `uvm_info(get_type_name(), "DUT Reset complete", UVM_MEDIUM)
-    
 endtask
 
 
@@ -38,6 +39,7 @@ endtask
             assert(seq_item.randomize());                 // Randomize the data
             if (seq_item.error_flag) begin
                 seq_item.SPM_ISO_start = 1'b0;
+                seq_item.LT_Pass = 1'b0;
             end
         finish_item(seq_item);
     endtask
