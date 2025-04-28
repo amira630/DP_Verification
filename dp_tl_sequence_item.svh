@@ -65,7 +65,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     logic [AUX_DATA_WIDTH-1:0] SPM_Lane_BW;
     logic [7:0]                SPM_MSA [23:0];
     logic [1:0]                SPM_Lane_Count, SPM_BW_Sel;
-    logic                      SPM_ISO_start, SPM_MSA_VLD;
+    bit                        SPM_ISO_start, SPM_MSA_VLD;
 
     rand logic [23:0] Mvid;         //
     rand logic [23:0] Nvid;
@@ -101,7 +101,10 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     bit [AUX_DATA_WIDTH-1:0] ISO_BW;
     rand logic [AUX_DATA_WIDTH-1:0]    LPM_Data_queue[$];
 
-    bit LT_Failed, LT_Pass;
+    bit LT_Failed, LT_Pass, isflow;
+    rand bit error_flag;
+
+    real CLOCK_PERIOD; // Clock period in ns
 
     ///////////////////////////////////////////////////////////////
     /////////////////////// SPM CONSTRAINTS ///////////////////////
@@ -197,6 +200,14 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         if (MISC0[7:5] == 3'b001) {
             MS_Pixel_Data[47:24] == 24'bx; // Most significant 24 bits are zero for 8bpc mode
         } 
+    }
+
+    constraint ms_stm_bw_constraint {
+        MS_Stm_BW inside {[10:90]}; // Ensure MS_Stm_BW is within the range 10 to 90
+    }
+
+    constraint error_flag_constraint {
+        error_flag dist {1'b0 := 90, 1'b1 := 10}; // 90% chance of being 0, 10% chance of being 1
     }
 
     ///////////////////////////////////////////////////////////////
@@ -363,7 +374,6 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
     function new(string name = "dp_tl_sequence_item");
       super.new(name);
-      `uvm_info(get_type_name(), "dp_tl_sequence_item constructor called", UVM_LOW)
     endfunction
 
     ///////////////////////////////////////////////////////////////
@@ -390,57 +400,12 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         end
     endfunction
 
-    // Copy the values from the virtual interface to the sequence item
-    // This function is used to initialize the sequence item with values from the DUT
-    // It is called by the driver to get the current state of the DUT
-    // and store it in the sequence item for later use
-    
-    // function void copy_from_vif(virtual dp_tl_if vif);
-
-    //     // Signals from DUT to LPM
-    //         this.lpm.LPM_Reply_Data = vif.LPM_Reply_Data;
-    //         this.lpm.LPM_Reply_ACK = vif.LPM_Reply_ACK;
-    //         this.lpm.LPM_NATIVE_I2C = vif.LPM_NATIVE_I2C;
-    //         this.lpm.LPM_Reply_Data_VLD = vif.LPM_Reply_Data_VLD;
-    //         this.lpm.LPM_Reply_ACK_VLD = vif.LPM_Reply_ACK_VLD;
-    //         this.lpm.CTRL_Native_Failed = vif.CTRL_Native_Failed;
-    //         this.lpm.HPD_Detect = vif.HPD_Detect;
-    //         this.lpm.HPD_IRQ = vif.HPD_IRQ;
-    //         this.lpm.Timer_Timeout = vif.Timer_Timeout;
-    //             // Link Training Signals
-    //         this.lpm.EQ_Final_ADJ_BW = vif.EQ_Final_ADJ_BW;
-    //         this.lpm.EQ_Final_ADJ_LC = vif.EQ_Final_ADJ_LC;
-    //         this.lpm.FSM_CR_Failed = vif.FSM_CR_Failed;
-    //         this.lpm.EQ_Failed = vif.EQ_Failed;
-    //         this.lpm.EQ_LT_Pass = vif.EQ_LT_Pass;
-    //         this.lpm.CR_Completed = vif.CR_Completed;
-    //         this.lpm.EQ_FSM_CR_Failed = vif.EQ_FSM_CR_Failed;
-        
-    //     // Signals from DUT to SPM
-    //         this.spm.SPM_Reply_Data = vif.SPM_Reply_Data;
-    //         this.spm.SPM_Reply_ACK = vif.SPM_Reply_ACK;
-    //         this.spm.SPM_NATIVE_I2C = vif.SPM_NATIVE_I2C;
-    //         this.spm.SPM_Reply_Data_VLD = vif.SPM_Reply_Data_VLD;
-    //         this.spm.SPM_Reply_ACK_VLD = vif.SPM_Reply_ACK_VLD;
-    //         this.spm.CTRL_I2C_Failed = vif.CTRL_I2C_Failed;
-    //         this.spm.HPD_Detect = vif.HPD_Detect;
-        
-    // endfunction
-
   // Convert the sequence item to a string representation
   function string convert2string();
-    if (SPM_Transaction_VLD == 1 && LPM_Transaction_VLD == 0) begin
-      return $sformatf("%s Operation: %0s, SPM_DATA = %0b, SPM_ADDRESS = %0b, SPM_LEN = %0b, SPM_CMD = %0b, SPM_TRANS_VALID = %0b, SPM_Reply_Data = %0b, SPM_Reply_ACK = %0b, SPM_Reply_Data_VLD = %0b, SPM_Reply_ACK_VLD = %0b, SPM_NATIVE_I2C = %0b, CTRL_I2C_Failed = %0b", super.convert2string(), operation, SPM_Data, SPM_Address, SPM_LEN, SPM_CMD, SPM_Transaction_VLD, SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_Data_VLD, SPM_Reply_ACK_VLD, SPM_NATIVE_I2C, CTRL_I2C_Failed);
-    end
-    else if (SPM_Transaction_VLD == 0 && LPM_Transaction_VLD == 1) begin
-      return $sformatf("%s Operation: %0s, LPM_Data = %0b, LPM_ADDRESS = %0b, LPM_LENGTH = %0b, LPM_CMD = %0b, LPM_TRANS_VALID = %0b,LPM_REPLY_DATA = %0b, LPM_REPLY_ACK = %0b, LPM_REPLY_DATA_VALID = %0b, LPM_REPLY_ACK_VALID = %0b, LPM_NATIVE_I2C = %0bو CTRL_Native_Failed = %0b, HPD_Detect = %0b, HPD_IRQ = %0b", super.convert2string(), operation, LPM_Data, LPM_Address, LPM_LEN, LPM_CMD, LPM_Transaction_VLD, LPM_Reply_Data, LPM_Reply_ACK, LPM_Reply_Data_VLD, LPM_Reply_ACK_VLD, LPM_NATIVE_I2C, CTRL_Native_Failed, HPD_Detect, HPD_IRQ);
-    end
-    else if (SPM_Transaction_VLD == 1 && LPM_Transaction_VLD == 1) begin
-      `uvm_fatal("ERROR", "Both SPM and LPM transactions are valid. Please check the sequence item.")
-    end
-    else begin
-      return $sformatf("%s Operation: %0s, No transaction is valid", super.convert2string(), operation);
-    end
+      return $sformatf("%s Operation: %0s, SPM_DATA = %0b, SPM_ADDRESS = %0b, SPM_LEN = %0b, SPM_CMD = %0b, SPM_TRANS_VALID = %0b, SPM_Reply_Data = %0b, SPM_Reply_ACK = %0b, SPM_Reply_Data_VLD = %0b, SPM_Reply_ACK_VLD = %0b, SPM_NATIVE_I2C = %0b, CTRL_I2C_Failed = %0b, LPM_Data = %0b, LPM_ADDRESS = %0b, LPM_LENGTH = %0b, LPM_CMD = %0b, LPM_TRANS_VALID = %0b,LPM_REPLY_DATA = %0b, LPM_REPLY_ACK = %0b, LPM_REPLY_DATA_VALID = %0b, LPM_REPLY_ACK_VALID = %0b, LPM_NATIVE_I2C = %0bو CTRL_Native_Failed = %0b, HPD_Detect = %0b, HPD_IRQ = %0b", super.convert2string(), operation, SPM_Data, SPM_Address, SPM_LEN, SPM_CMD, SPM_Transaction_VLD, SPM_Reply_Data, SPM_Reply_ACK, SPM_Reply_Data_VLD, SPM_Reply_ACK_VLD, SPM_NATIVE_I2C, CTRL_I2C_Failed, LPM_Data, LPM_Address, LPM_LEN, LPM_CMD, LPM_Transaction_VLD, LPM_Reply_Data, LPM_Reply_ACK, LPM_Reply_Data_VLD, LPM_Reply_ACK_VLD, LPM_NATIVE_I2C, CTRL_Native_Failed, HPD_Detect, HPD_IRQ);
   endfunction
+
+    // ******** Need to add anther convert2string function for the iso signals *********
+
 
 endclass

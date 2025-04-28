@@ -1,4 +1,6 @@
 `timescale 1ns / 1ps
+import uvm_pkg::*;
+    `include "uvm_macros.svh"
 
 interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk_AUX);
 
@@ -58,36 +60,57 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     /////////////////////// TASKS AND FUNCTIONS ///////////////////
     ///////////////////////////////////////////////////////////////
     
-    // RESET task
+    // TASK: SINK_Reset
     // This task is used to reset the DUT by asserting and deasserting the reset signal
-    // task Reset();
-    //     rst_n = 1'b0;           // Assert reset
-    //     @(negedge clk_AUX);         // Wait for clock edge
-    //     rst_n = 1'b1;           // Deassert reset
-    // endtask
-
-    task Interrupt();
-        HPD_Signal = 1'b0;      // Assert HPD_Signal
-        #1000000;               // Wait for 1ms 
-        HPD_Signal = 1'b1;      // Deassert HPD_Signal
+    task SINK_Reset();
+        HPD_Signal = 1'b0;          // Deassert reset
+        aux_data = 8'b0;
+        PHY_START_STOP = 1'b0;      // Deassert PHY_START_STOP
     endtask
 
-    // TASK: drive_hpd_signal
-    // This task is used to drive the HPD_Signal with a specific value
-    // It takes a 1-bit value as input and drives the HPD_Signal with that value
-    // task drive_hpd_signal(input bit hpd);
-    //     HPD_Signal = hpd;  // Drive the HPD_Signal with the specified value
-    //     `uvm_info("DP_SINK_INTERFACE", $sformatf("Driving HPD_Signal = %0b", seq_item.HPD_Signal), UVM_MEDIUM);
-    // endtask
+    // TASK: Active
+    // This task is used to assert the HPD_Signal
+    task Active(output logic aux_start_stop);
+        HPD_Signal = 1'b1;                      // Drive the HPD_Signal with the specified value
+        PHY_START_STOP = 1'b0;                  // Deassert PHY_START_STOP
+        aux_data = 8'b0;                        // Set the AUX_IN_OUT signal to zero
+        aux_start_stop = AUX_START_STOP;        // Return the value of AUX_START_STOP
+        `uvm_info("DP_SINK_INTERFACE", $sformatf("Active Sink: HPD_Signal"), UVM_MEDIUM);
+    endtask
+
+    // TASK: read_aux_in_out
+    // Reads the current value on the AUX_IN_OUT bus
+    task automatic read_aux_in_out(output logic [7:0] value);
+        value = AUX_IN_OUT;
+        HPD_Signal = 1'b1;              // Assert HPD_Signal
+        `uvm_info("DP_SINK_INTERFACE", $sformatf("Read AUX_IN_OUT = 0x%0h", value), UVM_LOW);
+    endtask
 
     // TASK: drive_aux_in_out
     // This task is used to drive the AUX_IN_OUT signal with a specific value
     // It takes a 8-bit value as input and drives the AUX_IN_OUT signal with that value
-    task drive_aux_in_out(input [7:0] value);
-        aux_data = value;  // Drive the AUX_IN_OUT signal with the specified value
-        PHY_START_STOP = 1'b1;  // Start the PHY operation
-        @(posedge clk_AUX);  // Wait for the next clock edge
-        PHY_START_STOP = 1'b0;  // Stop the PHY operation
+    task drive_aux_in_out(input logic [7:0] value);
+        HPD_Signal = 1'b1;              // Assert HPD_Signal
+        aux_data = value;               // Drive the AUX_IN_OUT signal with the specified value
+        PHY_START_STOP = 1'b1;          // Start the PHY operation
+    endtask
+
+    // TASK: Interrupt
+    task HPD_Interrupt();
+        `uvm_info("DP_SINK_INTERFACE", $sformatf("Driving Interrupt _NOW "), UVM_MEDIUM)
+        HPD_Signal = 1'b0;              // Assert HPD_Signal
+        #1000000;                       // Wait for 1ms 
+        HPD_Signal = 1'b1;              // Deassert HPD_Signal
+        `uvm_info("DP_SINK_INTERFACE", $sformatf("Driving Interrupt _DONE "), UVM_MEDIUM)
+    endtask
+
+    // TASK: Random HPD (HPD Testing)
+    task HPD_Test();
+        `uvm_info("DP_SINK_INTERFACE", $sformatf("Start Driving 0.1ms HPD "), UVM_MEDIUM)
+        HPD_Signal = 1'b0;              // Assert HPD_Signal
+        #100000;                       // Wait for 0.1ms 
+        HPD_Signal = 1'b1; 
+        `uvm_info("DP_SINK_INTERFACE", $sformatf("Finish Driving 0.1ms HPD "), UVM_MEDIUM)
     endtask
 
 endinterface

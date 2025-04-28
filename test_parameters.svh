@@ -3,6 +3,16 @@
 
 // Parameters for DisplayPort UVM Environment
 
+// Contol Link Symbols
+    parameter logic [7:0] SR = 8'h0F; // SR (Scramble Reset) symbol
+    parameter logic [7:0] BS = 8'hBC; // BS (Blanking Start) symbol
+    parameter logic [7:0] BE = 8'hBE; // BE (Blanking End) symbol
+    parameter logic [7:0] BF = 8'hBD; // BF (Blanking Fill) symbol
+    parameter logic [7:0] SS = 8'hDC; // SS (Secondary data Start) symbol
+    parameter logic [7:0] SE = 8'hDE; // SE (Secondary data End) symbol
+    parameter logic [7:0] FS = 8'hFC; // BS (Fill Start) symbol
+    parameter logic [7:0] FE = 8'hFE; // BE (Fill End) symbol 
+
 // Data Rates in Gbps per lane
     parameter int RBR  = 1620;          // 1.62 Gbps/lane, meaning 162MHz, which means a clock period of 6.172839506 ns
     parameter int HBR  = 2700;          // 2.7 Gbps/lane, meaning 270MHz, which means a clock period of 3.703703704 ns
@@ -42,7 +52,13 @@
         CR_STAGE = 2'b01,
         EQ_STAGE = 2'b10,
         ISO_STAGE = 2'b11
-    } flow_stages_e;
+    } tl_flow_stages_e;
+
+    typedef enum bit [1:0] {
+        SINK_NOT_READY = 2'b00,
+        SINK_LISTEN = 2'b01,
+        SINK_TALK = 2'b10
+    } sink_flow_stages_e;
 
 // Training Patterns
     typedef enum bit [1:0] {
@@ -81,12 +97,6 @@
         TALK_MODE, 
         LISTEN_MODE
     } source_mode_e;
-
-// LTTPR MODES
-    typedef enum bit {
-        LTTPR_NON_TRANSPARENT_MODE, 
-        LTTPR_TRANSPARENT_MODE
-    } lttpr_mode_e;
 
 // DPTX AUX_CH FSM
     typedef enum logic [3:0] {
@@ -140,7 +150,7 @@
         LINK_READY = 2'b10              // Link Training has been successful
     } link_training_phase_t;
 
-// AUX Channel Operation
+// AUX Channel Operation (TL)
     typedef enum logic [3:0] {
         reset_op        = 4'b0000,  
         I2C_READ        = 4'b0001,
@@ -148,16 +158,20 @@
         NATIVE_READ     = 4'b0011,
         NATIVE_WRITE    = 4'b0100,
         CR_LT           = 4'b0101,
-        EQ_LT           = 4'b0110
+        EQ_LT           = 4'b0110,
+        ISO             = 4'b0111,
+        DETECT          = 4'b1000
     } op_code;
 
 // Sink Driver Operation
-    typedef enum logic [1:0] {
-        HPD_operation   = 2'b00,  
-        Interrupt_operation       = 2'b01,
-        Reply_operation = 2'b10
+    typedef enum logic [3:0] {
+        Reset                   = 4'b0000,
+        Ready                   = 4'b0001,
+        Receive_op              = 4'b0010,
+        Reply_operation         = 4'b0011,
+        HPD_test_operation      = 4'b0100,
+        Interrupt_operation     = 4'b0101
     } sink_op_code;
 
-    // 
 
 `endif // DP_UVM_PARAMS_SVH

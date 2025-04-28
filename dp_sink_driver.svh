@@ -3,7 +3,6 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
 
     virtual dp_sink_if dp_sink_vif;
     dp_sink_sequence_item stim_seq_item;
-    dp_sink_sequence_item response_seq_item;
     
     function new(string name = "dp_sink_driver", uvm_component parent = null);
         super.new(name, parent);
@@ -25,26 +24,38 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
                 `uvm_fatal("DP_SINK_DRIVER", "Sequence item is not set")
             end
 
-            // Clear previous aux data
-            // response_seq_item.aux_in_out.delete();
-
             // Drive the values to the interface according to the operation
             @(posedge dp_sink_vif.clk_AUX);
             case (stim_seq_item.sink_operation)
-                // HPD_operation: begin
-                //     // HPD operation
-                //     `uvm_info("DP_SINK_DRIVER", $sformatf("Driving HPD_Signal = %0b", stim_seq_item.HPD_Signal), UVM_MEDIUM);
-                //     dp_sink_vif.drive_hpd_signal(stim_seq_item.HPD_Signal);
-                // end
+                Reset: begin
+                    // Reset operation
+                    `uvm_info("DP_SINK_DRIVER", $sformatf("NOT ACTIVE SINK"), UVM_MEDIUM);
+                    dp_sink_vif.SINK_Reset();
+                end
+                Ready: begin
+                    // HPD operation
+                    `uvm_info("DP_SINK_DRIVER", $sformatf("ACTIVE SINK"), UVM_MEDIUM);
+                    dp_sink_vif.Active(stim_seq_item.AUX_START_STOP);
+                end
+                Receive_op: begin
+                    // Receive operation
+                    `uvm_info("DP_SINK_DRIVER", $sformatf("Receive operation"), UVM_MEDIUM);
+                    dp_sink_vif.read_aux_in_out(stim_seq_item.AUX_IN_OUT);
+                end
+                Reply_operation: begin
+                    // Reply operation
+                    dp_sink_vif.drive_aux_in_out(stim_seq_item.PHY_IN_OUT);
+                end
                 Interrupt_operation: begin
                     // Interrupt sequence
                     `uvm_info("DP_SINK_DRIVER", $sformatf("Driving Interrupt"), UVM_MEDIUM);
-                    dp_sink_vif.Interrupt();
+                    dp_sink_vif.HPD_Interrupt();
                 end
-                // Reply_operation: begin
-                //     // Reply operation
-                //     dp_sink_vif.drive_aux_in_out(stim_seq_item.AUX_IN_OUT);
-                // end
+                HPD_test_operation: begin
+                    // Random HPD sequence
+                    `uvm_info("DP_SINK_DRIVER", $sformatf("Driving TEST HPD"), UVM_MEDIUM);
+                    dp_sink_vif.HPD_Test();
+                end
                 default: 
                     begin
                         dp_sink_vif = null; // Set the interface to null if the operation is not supported
@@ -53,22 +64,9 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
                     end
             endcase
 
-            // Copy the values from the stimulus to the response sequence item
-            // This is done to ensure that the response sequence item has the same values as the stimulus
-            $cast(response_seq_item, stim_seq_item.clone());
-
-            // Wait for DUT response
-            wait(dp_sink_vif.AUX_START_STOP == 1);
-
-            // Copy the values from the DUT to the response sequence item
-            // response_seq_item.copy_from_vif(dp_sink_vif);
-
             // Send response back properly via seq_item_port
             @(negedge dp_sink_vif.clk_AUX);
-            seq_item_port.item_done(response_seq_item);
-
-            `uvm_info("run_phase", $sformatf("Response with %0d AUX bytes captured, reply generated", 
-                    response_seq_item.aux_in_out.size()), UVM_HIGH);
+            seq_item_port.item_done(stim_seq_item);
             `uvm_info("run_phase", stim_seq_item.convert2string(), UVM_HIGH);
         end
     endtask

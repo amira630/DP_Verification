@@ -9,16 +9,26 @@ class dp_source_test extends uvm_test;
     virtual dp_tl_if dp_tl_vif;
     virtual dp_sink_if dp_sink_vif;
     
-    // Sequences
-    dp_tl_reset_seq dp_tl_rst_seq;
-    //dp_tl_base_sequence dp_tl_seq;
-    // dp_tl_i2c_sequence dp_tl_i2c_seq;
-    // dp_tl_native_ext_receiver_cap_sequence dp_tl_native_ext_receiver_cap_seq;
-    // dp_tl_native_link_config_sequence dp_tl_native_link_config_seq;
-    // dp_tl_native_receiver_cap_sequence dp_tl_native_receiver_cap_seq;
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////// Sequences /////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    //dp_sink_base_sequence dp_sink_seq;
+    /////////////////////////////////////////////// TL Sequences //////////////////////////////////////////
+
+    dp_tl_flow_fsm_sequence dp_tl_seq;
+    dp_tl_reset_seq dp_tl_rst_seq;
+    dp_tl_lt_sequence dp_tl_lt_seq;
+    dp_tl_i2c_sequence dp_tl_i2c_seq;
+    dp_tl_native_ext_receiver_cap_sequence dp_tl_native_ext_receiver_cap_seq;
+    dp_tl_native_link_config_sequence dp_tl_native_link_config_seq;
+    dp_tl_native_receiver_cap_sequence dp_tl_native_receiver_cap_seq;
+
+    ////////////////////////////////////////////// Sink Sequences //////////////////////////////////////////
+
+    dp_sink_full_flow_seq dp_sink_seq;
     dp_sink_interrupt_seq dp_sink_intr_seq;
+    dp_sink_hpd_test_seq dp_sink_hpd_seq;
+
 
     function new(string name = "dp_source_test", uvm_component parent = null);
         super.new(name, parent);
@@ -30,13 +40,19 @@ class dp_source_test extends uvm_test;
         env = dp_source_env::type_id::create("env",this);
         dp_source_cfg = dp_source_config::type_id::create("dp_source_cfg");
         
-
+        // TL Sequences creation
+        dp_tl_seq = dp_tl_flow_fsm_sequence::type_id::create("dp_tl_seq", this);
         dp_tl_rst_seq = dp_tl_reset_seq::type_id::create("dp_tl_rst_seq", this);
-        //dp_tl_i2c_seq = dp_tl_i2c_sequence::type_id::create("dp_tl_i2c_seq", this);
-        //dp_tl_seq = dp_tl_sequence::type_id::create("dp_tl_seq", this);
+        dp_tl_i2c_seq = dp_tl_i2c_sequence::type_id::create("dp_tl_i2c_seq", this);
+        dp_tl_lt_seq = dp_tl_lt_sequence::type_id::create("dp_tl_lt_seq", this);
+        dp_tl_native_ext_receiver_cap_seq = dp_tl_native_ext_receiver_cap_sequence::type_id::create("dp_tl_native_ext_receiver_cap_seq", this);
+        dp_tl_native_link_config_seq = dp_tl_native_link_config_sequence::type_id::create("dp_tl_native_link_config_seq", this);
+        dp_tl_native_receiver_cap_seq = dp_tl_native_receiver_cap_sequence::type_id::create("dp_tl_native_receiver_cap_seq", this);
 
-
+        // Sink Sequences creation
+        dp_sink_seq = dp_sink_full_flow_seq::type_id::create("dp_sink_seq", this);
         dp_sink_intr_seq = dp_sink_interrupt_seq::type_id::create("dp_sink_intr_seq", this);
+        dp_sink_hpd_seq = dp_sink_hpd_test_seq::type_id::create("dp_sink_hpd_seq", this);
         
         // add virtual interfaces for each interface to the configurations database
         if(!uvm_config_db #(virtual dp_tl_if):: get(this, "","dp_tl_vif", dp_source_cfg.dp_tl_vif))
@@ -57,15 +73,23 @@ class dp_source_test extends uvm_test;
         phase.raise_objection(this);
         fork
             begin
-                `uvm_info("run_phase", "TL Interrupt stimulus generation started", UVM_LOW);
-                dp_sink_intr_seq.start(env.sink_agt.sqr);
-                `uvm_info("run_phase", "TL Interrupt stimulus generation ended", UVM_LOW);
-            end
-            
-            begin
                 `uvm_info("run_phase", "TL Reset stimulus generation started", UVM_LOW);
                 dp_tl_rst_seq.start(env.tl_agt.sqr);
                 `uvm_info("run_phase", "TL Reset stimulus generation ended", UVM_LOW);
+            end
+
+            // Transport Layer Sequence
+            // begin
+            //     `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
+            //     dp_tl_seq.start(env.tl_agt.sqr);
+            //     `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
+            // end
+
+            // DP Sink Sequences
+            begin
+                `uvm_info("run_phase", "Sink Full Flow stimulus generation started", UVM_LOW);
+                dp_sink_seq.start(env.sink_agt.sqr);
+                `uvm_info("run_phase", "Sink Full Flow stimulus generation ended", UVM_LOW);
             end
 
             // DP Transport Layer I2C Sequence (Read EDID)
@@ -75,18 +99,18 @@ class dp_source_test extends uvm_test;
             //     `uvm_info("run_phase", "TL I2C stimulus generation ended", UVM_LOW);
             // end
 
-            // // Transport Layer Sequence
+            // Sink Interrupt Sequence
             // begin
-            //     `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
-            //     dp_tl_seq.start(env.tl_agt.sqr);
-            //     `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
+            //     `uvm_info("run_phase", "Sink Interrupt stimulus generation started", UVM_LOW);
+            //     dp_sink_intr_seq.start(env.sink_agt.sqr);
+            //     `uvm_info("run_phase", "Sink Interrupt stimulus generation ended", UVM_LOW);
             // end
-            
-            // DP Sink Sequence
+
+            // Sink HPD Sequence
             // begin
-            //     `uvm_info("run_phase", "Sink stimulus generation started", UVM_LOW);
-            //     dp_sink_seq.start(env.sink_agt.sqr);
-            //     `uvm_info("run_phase", "Sink stimulus generation ended", UVM_LOW);
+            //     `uvm_info("run_phase", "HPD stimulus generation started", UVM_LOW);
+            //     dp_sink_hpd_seq.start(env.sink_agt.sqr);
+            //     `uvm_info("run_phase", "HPD stimulus generation ended", UVM_LOW);
             // end
         join
         phase.drop_objection(this);

@@ -7,14 +7,16 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     rand bit HPD_Signal;
     
     bit AUX_START_STOP, PHY_START_STOP;
-    bit [7:0] AUX_IN_OUT;  
+    logic [7:0] AUX_IN_OUT;       // AUX_IN_OUT signal from the DUT (To receive the dut output data)
+
+    logic [7:0] PHY_IN_OUT;       // PHY_IN_OUT signal from the sink (To send the data to the dut)
 
 // Reply Command Signal 
     rand i2c_aux_reply_cmd_e i2c_reply_cmd;
     rand native_aux_reply_cmd_e native_reply_cmd;
 
 // Reply Data Signal
-    rand bit [7:0] reply_data; // Reply data from the PHY Layer
+//    rand logic [7:0] reply_data; // Reply data from the PHY Layer
 
 // Output Signals across from DUT to the PHY Layer
     logic [1:0] PHY_ADJ_LC, PHY_Instruct;
@@ -34,28 +36,35 @@ class dp_sink_sequence_item extends uvm_sequence_item;
 // Flags
     sink_op_code sink_operation; // Operation type (HPD or Reply)
 
-// constraints
-    constraint valid_i2c_aux_reply_cmd_c {
-        i2c_reply_cmd dist {
-            // Strongly prefer ACK, but occasionally allow NACK or DEFER
-            I2C_ACK      := 96,  // 90% of the time
-            I2C_NACK     := 2,   // 5% of the time
-            I2C_DEFER    := 2    // 5% of the time
-        };
-    }
-
-    constraint valid_native_aux_reply_cmd_c {
-        // Strongly prefer ACK, but occasionally allow NACK or DEFER
-        native_reply_cmd dist {
-            AUX_ACK      := 90,
-            AUX_NACK     := 5,
-            AUX_DEFER    := 5
-        };
-    }
-
     ///////////////////////////////////////////////////////////////
     /////////////////////// CONSTRAINTS ///////////////////////////
     ///////////////////////////////////////////////////////////////
+
+    constraint valid_i2c_aux_reply_cmd_c {
+        i2c_reply_cmd == I2C_ACK;  // Always set to ACK
+    }
+
+    constraint valid_native_aux_reply_cmd_c {
+        native_reply_cmd == AUX_ACK;  // Always set to ACK
+    }
+
+    // constraint valid_i2c_aux_reply_cmd_c {
+    //     i2c_reply_cmd dist {
+    //         // Strongly prefer ACK, but occasionally allow NACK or DEFER
+    //         I2C_ACK      := 96,  // 90% of the time
+    //         I2C_NACK     := 2,   // 5% of the time
+    //         I2C_DEFER    := 2    // 5% of the time
+    //     };
+    // }
+
+    // constraint valid_native_aux_reply_cmd_c {
+    //     // Strongly prefer ACK, but occasionally allow NACK or DEFER
+    //     native_reply_cmd dist {
+    //         AUX_ACK      := 90,
+    //         AUX_NACK     := 5,
+    //         AUX_DEFER    := 5
+    //     };
+    // }
 
     ///////////////////////////////////////////////////////////////
     /////////////////////// CONSTRUCTOR ///////////////////////////
@@ -68,19 +77,6 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     ///////////////////////////////////////////////////////////////
     ///////////////////////// METHODS /////////////////////////////
     ///////////////////////////////////////////////////////////////
-
-    // Copy the values from the virtual interface to the sequence item
-    // This function is used to initialize the sequence item with values from the DUT
-    // It is called by the driver to get the current state of the DUT
-    // and store it in the sequence item for later use
-    // function void copy_from_vif(virtual dp_sink_if vif);
-    //     this.AUX_START_STOP = vif.AUX_START_STOP;
-    //     this.AUX_IN_OUT = vif.AUX_IN_OUT;
-    //     this.PHY_ADJ_LC = vif.PHY_ADJ_LC;
-    //     this.PHY_ADJ_BW = vif.PHY_ADJ_BW;
-    //     this.PHY_Instruct = vif.PHY_Instruct;
-    //     this.PHY_Instruct_VLD = vif.PHY_Instruct_VLD;
-    // endfunction    
 
     function string convert2string();
         string aux_data = "";
