@@ -1,17 +1,25 @@
-import uvm_pkg::*;
+    import uvm_pkg::*;
     `include "uvm_macros.svh"
 
-    // Any further package imports:
-    import dp_transactions_pkg::*;
-
+    import test_parameters_pkg::*;
 class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
     `uvm_object_utils(dp_tl_base_sequence);
 
     dp_tl_sequence_item seq_item;
 
+    dp_source_config seq_cfg; 
+
     function new(string name = "dp_tl_base_sequence");
         super.new(name);
     endfunction //new()
+
+    // function void pre_start();
+    //     super.pre_start();
+        
+    //     `uvm_info("TL BASE SEQ", "Trying to get CFG now!", UVM_MEDIUM);
+    //     if (!uvm_config_db #(dp_source_config)::get(this, "", "CFG", seq_cfg))
+    //         `uvm_fatal("SEQ_build_phase","Unable to get configuration object in TL Agent");
+    // endfunction
 
 /////////////////////////// Reset /////////////////////////////////////
 
@@ -225,7 +233,7 @@ endtask
         
         seq_item.LT_Failed = 1'b0; 
         seq_item.LT_Pass = 1'b0;
-        seq_item.operation = CR_LT;
+        seq_item.operation = CR_LT_op;
         // We go in the first cycle, give the LL all the max allowed values and minimum VTG and PRE
         start_item(seq_item);
         seq_item.rand_mode(0);
@@ -479,7 +487,7 @@ endtask
         bit done = 0; 
         // Create a sequence item for link policy maker (LPM) communication
        // seq_item = dp_tl_sequence_item::type_id::create("seq_item");
-       seq_item.operation = EQ_LT;
+       seq_item.operation = EQ_LT_op;
         
         // Loop until equalization succeeds
         while (restart) begin
@@ -663,142 +671,142 @@ endtask
         end
     endtask
 
-    //     task ISO_INIT();
-    //     if(!seq_item.isflow)
-    //         seq_item = dp_tl_sequence_item::type_id::create("seq_item");
-    //     start_item(seq_item);
-    //     seq_item.rand_mode(0);
-    //     seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1); seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
-    //     seq_item.HSW.rand_mode(1); seq_item.VSW.rand_mode(1); seq_item.HWidth.rand_mode(1); seq_item.VHeight.rand_mode(1); seq_item.MISC0.rand_mode(1); seq_item.MISC1.rand_mode(1);
-    //     seq_item.SPM_Transaction_VLD = 1'b0;
-    //     seq_item.LPM_Transaction_VLD = 1'b0;
-    //     seq_item.SPM_MSA_VLD = 1'b1;
-    //     seq_item.SPM_Lane_BW = seq_item.ISO_BW; 
-    //     seq_item.SPM_Lane_Count = seq_item.ISO_LC;
-    //     seq_item.SPM_ISO_start = 1'b1;
-    //     seq_item.operation = ISO;
-    //     case (seq_item.ISO_BW)
-    //         8'h06: seq_item.SPM_BW_Sel = 2'b00;
-    //         8'h0A: seq_item.SPM_BW_Sel = 2'b01;
-    //         8'h14: seq_item.SPM_BW_Sel = 2'b10;
-    //         8'h1E: seq_item.SPM_BW_Sel = 2'b11;
-    //         default: begin
-    //             seq_item.SPM_BW_Sel = 2'b00;
-    //             `uvm_info("TL_ISO_INIT_SEQ", $sformatf("The stored lane BW is incorrect!"), UVM_MEDIUM)
-    //         end
-    //     endcase     
-    //     seq_item.MS_Stm_BW.rand_mode(1); // Randomize the stream bandwidth
-    //     //seq_item.MS_Stm_BW = 10'd80; // 80MHz for now, should be randomized
-    //     seq_item.MS_DE = 0;
-    //     assert(seq_item.randomize());   
-    //     seq_item.SPM_MSA[0]  = seq_item.Mvid[7:0];     seq_item.SPM_MSA[1]  = seq_item.Mvid[15:8];               seq_item.SPM_MSA[2] = seq_item.Mvid[23:16];
-    //     seq_item.SPM_MSA[3]  = seq_item.Nvid[7:0];     seq_item.SPM_MSA[4]  = seq_item.Nvid[15:8];               seq_item.SPM_MSA[5] = seq_item.Nvid[23:16];
-    //     seq_item.SPM_MSA[6]  = seq_item.HTotal[7:0];   seq_item.SPM_MSA[7]  = seq_item.HTotal[15:8];             seq_item.SPM_MSA[8] = seq_item.VTotal[7:0];
-    //     seq_item.SPM_MSA[9]  = seq_item.VTotal[15:8];  seq_item.SPM_MSA[10] = seq_item.HStart[7:0];              seq_item.SPM_MSA[11] = seq_item.HStart[15:8];
-    //     seq_item.SPM_MSA[12] = seq_item.VStart[7:0];   seq_item.SPM_MSA[13] = seq_item.VStart[15:8];             seq_item.SPM_MSA[14] = {seq_item.HSW[6:0], seq_item.HSP};
-    //     seq_item.SPM_MSA[15] = seq_item.HSW[14:7];     seq_item.SPM_MSA[16] = {seq_item.VSW[6:0], seq_item.VSP}; seq_item.SPM_MSA[17] = seq_item.VSW[14:7];
-    //     seq_item.SPM_MSA[18] = seq_item.HWidth[7:0];   seq_item.SPM_MSA[19] = seq_item.HWidth[15:8];             seq_item.SPM_MSA[20] = seq_item.VHeight[7:0];
-    //     seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
-    //     if(seq_item.HSP) // HSP is active high, so set MS_HSYNC to 0 
-    //         seq_item.MS_HSYNC = 1'b0; // HSP is active high, so set MS_HSYNC to 0
-    //     else
-    //         seq_item.MS_HSYNC = 1'b1; // HSP is active low, so set MS_HSYNC to 1
-    //     if(seq_item.VSP) // VSP is active high, so set MS_VSYNC to 0
-    //         seq_item.MS_VSYNC = 1'b0; // VSP is active high, so set MS_VSYNC to 0
-    //     else
-    //         seq_item.MS_VSYNC = 1'b1; // VSP is active low, so set MS_VSYNC to 1
-    //     if(MISC0[7:5] == 3'b001)
-    //         seq_item.CLOCK_PERIOD = (24/seq_item.MS_Stm_BW);
-    //     else if(MISC0[7:5] == 3'b100)
-    //         seq_item.CLOCK_PERIOD = (48/seq_item.MS_Stm_BW);
-    //     finish_item(seq_item);
-    //     `uvm_info("TL_ISO_INIT_SEQ", $sformatf("ISO_INIT_SPM: ISO_start=%0b, SPM_Lane_BW=0x%0h, SPM_Lane_Count=0x%0h, Mvid=0x%0h, Nvid=0x%0h, HTotal=0x%0h, VTotal=0x%0h, HStart=0x%0h, VStart=0x%0h, HSP=0x%0h, VSP=0x%0h, HSW=0x%0h, VSW=0x%0h, HWidth=0x%0h, VHeight=0x%0h, MISC0=0x%0h, MISC1=0x%0h", seq_item.SPM_ISO_start, seq_item.SPM_Lane_BW, seq_item.SPM_Lane_Count, seq_item.Mvid, seq_item.Nvid, seq_item.HTotal, seq_item.VTotal, seq_item.HStart, seq_item.VStart, seq_item.HSP, seq_item.VSP, seq_item.HSW, seq_item.VSW, seq_item.HWidth, seq_item.VHeight, seq_item.MISC0, seq_item.MISC1), UVM_MEDIUM);
-    // endtask
+    task ISO_INIT();
+        if(!seq_item.isflow)
+            seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        start_item(seq_item);
+        seq_item.rand_mode(0);
+        seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1); seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
+        seq_item.HSW.rand_mode(1); seq_item.VSW.rand_mode(1); seq_item.HWidth.rand_mode(1); seq_item.VHeight.rand_mode(1); seq_item.MISC0.rand_mode(1); seq_item.MISC1.rand_mode(1);
+        seq_item.SPM_Transaction_VLD = 1'b0;
+        seq_item.LPM_Transaction_VLD = 1'b0;
+        seq_item.SPM_MSA_VLD = 1'b1;
+        seq_item.SPM_Lane_BW = seq_item.ISO_BW; 
+        seq_item.SPM_Lane_Count = seq_item.ISO_LC;
+        seq_item.SPM_ISO_start = 1'b1;
+        seq_item.operation = ISO;
+        case (seq_item.ISO_BW)
+            8'h06: seq_item.SPM_BW_Sel = 2'b00;
+            8'h0A: seq_item.SPM_BW_Sel = 2'b01;
+            8'h14: seq_item.SPM_BW_Sel = 2'b10;
+            8'h1E: seq_item.SPM_BW_Sel = 2'b11;
+            default: begin
+                seq_item.SPM_BW_Sel = 2'b00;
+                `uvm_info("TL_ISO_INIT_SEQ", $sformatf("The stored lane BW is incorrect!"), UVM_MEDIUM)
+            end
+        endcase     
+        seq_item.MS_Stm_BW.rand_mode(1); // Randomize the stream bandwidth
+        //seq_item.MS_Stm_BW = 10'd80; // 80MHz for now, should be randomized
+        seq_item.MS_DE = 0;
+        assert(seq_item.randomize());   
+        seq_item.SPM_MSA[0]  = seq_item.Mvid[7:0];     seq_item.SPM_MSA[1]  = seq_item.Mvid[15:8];               seq_item.SPM_MSA[2] = seq_item.Mvid[23:16];
+        seq_item.SPM_MSA[3]  = seq_item.Nvid[7:0];     seq_item.SPM_MSA[4]  = seq_item.Nvid[15:8];               seq_item.SPM_MSA[5] = seq_item.Nvid[23:16];
+        seq_item.SPM_MSA[6]  = seq_item.HTotal[7:0];   seq_item.SPM_MSA[7]  = seq_item.HTotal[15:8];             seq_item.SPM_MSA[8] = seq_item.VTotal[7:0];
+        seq_item.SPM_MSA[9]  = seq_item.VTotal[15:8];  seq_item.SPM_MSA[10] = seq_item.HStart[7:0];              seq_item.SPM_MSA[11] = seq_item.HStart[15:8];
+        seq_item.SPM_MSA[12] = seq_item.VStart[7:0];   seq_item.SPM_MSA[13] = seq_item.VStart[15:8];             seq_item.SPM_MSA[14] = {seq_item.HSW[6:0], seq_item.HSP};
+        seq_item.SPM_MSA[15] = seq_item.HSW[14:7];     seq_item.SPM_MSA[16] = {seq_item.VSW[6:0], seq_item.VSP}; seq_item.SPM_MSA[17] = seq_item.VSW[14:7];
+        seq_item.SPM_MSA[18] = seq_item.HWidth[7:0];   seq_item.SPM_MSA[19] = seq_item.HWidth[15:8];             seq_item.SPM_MSA[20] = seq_item.VHeight[7:0];
+        seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
+        if(seq_item.HSP) // HSP is active high, so set MS_HSYNC to 0 
+            seq_item.MS_HSYNC = 1'b0; // HSP is active high, so set MS_HSYNC to 0
+        else
+            seq_item.MS_HSYNC = 1'b1; // HSP is active low, so set MS_HSYNC to 1
+        if(seq_item.VSP) // VSP is active high, so set MS_VSYNC to 0
+            seq_item.MS_VSYNC = 1'b0; // VSP is active high, so set MS_VSYNC to 0
+        else
+            seq_item.MS_VSYNC = 1'b1; // VSP is active low, so set MS_VSYNC to 1
+        if(seq_item.MISC0[7:5] == 3'b001)
+            seq_item.CLOCK_PERIOD = (24/seq_item.MS_Stm_BW);
+        else if(seq_item.MISC0[7:5] == 3'b100)
+            seq_item.CLOCK_PERIOD = (48/seq_item.MS_Stm_BW);
+        finish_item(seq_item);
+        `uvm_info("TL_ISO_INIT_SEQ", $sformatf("ISO_INIT_SPM: ISO_start=%0b, SPM_Lane_BW=0x%0h, SPM_Lane_Count=0x%0h, Mvid=0x%0h, Nvid=0x%0h, HTotal=0x%0h, VTotal=0x%0h, HStart=0x%0h, VStart=0x%0h, HSP=0x%0h, VSP=0x%0h, HSW=0x%0h, VSW=0x%0h, HWidth=0x%0h, VHeight=0x%0h, MISC0=0x%0h, MISC1=0x%0h", seq_item.SPM_ISO_start, seq_item.SPM_Lane_BW, seq_item.SPM_Lane_Count, seq_item.Mvid, seq_item.Nvid, seq_item.HTotal, seq_item.VTotal, seq_item.HStart, seq_item.VStart, seq_item.HSP, seq_item.VSP, seq_item.HSW, seq_item.VSW, seq_item.HWidth, seq_item.VHeight, seq_item.MISC0, seq_item.MISC1), UVM_MEDIUM);
+    endtask
 
 
-    // task Main_Stream(input [15:0] frames);
-    //     int countv = 1;
-    //     int counth = 1;
-    //     bit new_frame;
-    //     // New Video Stream
-    //     repeat(frames) begin // Start new frame
-    //         new_frame = 1;
-    //         repeat(seq_item.VTotal) begin // Start new line
-    //             repeat(seq_item.HTotal) begin // start new pixel
-    //                 start_item(seq_item);
-    //                 seq_item.rand_mode(0);
-    //                 seq_item.SPM_Transaction_VLD = 1'b0;
-    //                 if(new_frame) begin
-    //                     seq_item.SPM_MSA_VLD = 1'b1;
-    //                     /*seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1);*/ seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
-    //                     seq_item.HSW.rand_mode(1); seq_item.VSW.rand_mode(1); seq_item.HWidth.rand_mode(1); seq_item.VHeight.rand_mode(1); //seq_item.MISC0.rand_mode(1); seq_item.MISC1.rand_mode(1);
-    //                     new_frame = 0;
-    //                 end
-    //                 else
-    //                     seq_item.SPM_MSA_VLD = 1'b0;
-    //                 if(countv >= seq_item.VStart && counth >= seq_item.HStart) begin // inside active video
-    //                     seq_item.MS_DE = 1;
-    //                     seq_item.MS_Pixel_Data.rand_mode(1);
-    //                 end
-    //                 else begin // outside active video
-    //                     seq_item.MS_DE = 0;
-    //                 end
-    //                 assert(seq_item.randomize());
-    //                 seq_item.SPM_MSA[0]  = seq_item.Mvid[7:0];     seq_item.SPM_MSA[1]  = seq_item.Mvid[15:8];               seq_item.SPM_MSA[2] = seq_item.Mvid[23:16];
-    //                 seq_item.SPM_MSA[3]  = seq_item.Nvid[7:0];     seq_item.SPM_MSA[4]  = seq_item.Nvid[15:8];               seq_item.SPM_MSA[5] = seq_item.Nvid[23:16];
-    //                 seq_item.SPM_MSA[6]  = seq_item.HTotal[7:0];   seq_item.SPM_MSA[7]  = seq_item.HTotal[15:8];             seq_item.SPM_MSA[8] = seq_item.VTotal[7:0];
-    //                 seq_item.SPM_MSA[9]  = seq_item.VTotal[15:8];  seq_item.SPM_MSA[10] = seq_item.HStart[7:0];              seq_item.SPM_MSA[11] = seq_item.HStart[15:8];
-    //                 seq_item.SPM_MSA[12] = seq_item.VStart[7:0];   seq_item.SPM_MSA[13] = seq_item.VStart[15:8];             seq_item.SPM_MSA[14] = {seq_item.HSW[6:0], seq_item.HSP};
-    //                 seq_item.SPM_MSA[15] = seq_item.HSW[14:7];     seq_item.SPM_MSA[16] = {seq_item.VSW[6:0], seq_item.VSP}; seq_item.SPM_MSA[17] = seq_item.VSW[14:7];
-    //                 seq_item.SPM_MSA[18] = seq_item.HWidth[7:0];   seq_item.SPM_MSA[19] = seq_item.HWidth[15:8];             seq_item.SPM_MSA[20] = seq_item.VHeight[7:0];
-    //                 seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
+    task Main_Stream(input [15:0] frames);
+        int countv = 1;
+        int counth = 1;
+        bit new_frame;
+        // New Video Stream
+        repeat(frames) begin // Start new frame
+            new_frame = 1;
+            repeat(seq_item.VTotal) begin // Start new line
+                repeat(seq_item.HTotal) begin // start new pixel
+                    start_item(seq_item);
+                    seq_item.rand_mode(0);
+                    seq_item.SPM_Transaction_VLD = 1'b0;
+                    if(new_frame) begin
+                        seq_item.SPM_MSA_VLD = 1'b1;
+                        /*seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1);*/ seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
+                        seq_item.HSW.rand_mode(1); seq_item.VSW.rand_mode(1); seq_item.HWidth.rand_mode(1); seq_item.VHeight.rand_mode(1); //seq_item.MISC0.rand_mode(1); seq_item.MISC1.rand_mode(1);
+                        new_frame = 0;
+                    end
+                    else
+                        seq_item.SPM_MSA_VLD = 1'b0;
+                    if(countv >= seq_item.VStart && counth >= seq_item.HStart) begin // inside active video
+                        seq_item.MS_DE = 1;
+                        seq_item.MS_Pixel_Data.rand_mode(1);
+                    end
+                    else begin // outside active video
+                        seq_item.MS_DE = 0;
+                    end
+                    assert(seq_item.randomize());
+                    seq_item.SPM_MSA[0]  = seq_item.Mvid[7:0];     seq_item.SPM_MSA[1]  = seq_item.Mvid[15:8];               seq_item.SPM_MSA[2] = seq_item.Mvid[23:16];
+                    seq_item.SPM_MSA[3]  = seq_item.Nvid[7:0];     seq_item.SPM_MSA[4]  = seq_item.Nvid[15:8];               seq_item.SPM_MSA[5] = seq_item.Nvid[23:16];
+                    seq_item.SPM_MSA[6]  = seq_item.HTotal[7:0];   seq_item.SPM_MSA[7]  = seq_item.HTotal[15:8];             seq_item.SPM_MSA[8] = seq_item.VTotal[7:0];
+                    seq_item.SPM_MSA[9]  = seq_item.VTotal[15:8];  seq_item.SPM_MSA[10] = seq_item.HStart[7:0];              seq_item.SPM_MSA[11] = seq_item.HStart[15:8];
+                    seq_item.SPM_MSA[12] = seq_item.VStart[7:0];   seq_item.SPM_MSA[13] = seq_item.VStart[15:8];             seq_item.SPM_MSA[14] = {seq_item.HSW[6:0], seq_item.HSP};
+                    seq_item.SPM_MSA[15] = seq_item.HSW[14:7];     seq_item.SPM_MSA[16] = {seq_item.VSW[6:0], seq_item.VSP}; seq_item.SPM_MSA[17] = seq_item.VSW[14:7];
+                    seq_item.SPM_MSA[18] = seq_item.HWidth[7:0];   seq_item.SPM_MSA[19] = seq_item.HWidth[15:8];             seq_item.SPM_MSA[20] = seq_item.VHeight[7:0];
+                    seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
 
-    //                 if(countv >= seq_item.VFront && countv < seq_item.VFront + seq_item.VSW) begin // turn on VSYNC
-    //                     if(seq_item.VSP) // VSP is active high, so set MS_VSYNC to  turning on VSYNC
-    //                         seq_item.MS_VSYNC = 1'b1; // VSP is active high, so set MS_VSYNC to 1
-    //                     else
-    //                         seq_item.MS_VSYNC = 1'b0; // VSP is active low, so set MS_VSYNC to 0
-    //                 end
-    //                 else begin 
-    //                     if(seq_item.VSP) // VSP is active high, so set MS_VSYNC to 0, turning off VSYNC
-    //                         seq_item.MS_VSYNC = 1'b0; // VSP is active high, so set MS_VSYNC to 0
-    //                     else
-    //                         seq_item.MS_VSYNC = 1'b1; // VSP is active low, so set MS_VSYNC to 1
-    //                 end
-    //                 if(counth >= seq_item.HFront && counth < seq_item.HFront + seq_item.HSW) begin // turn on HSYNC
-    //                     if(seq_item.HSP) // HSP is active high, so set MS_HSYNC to 1
-    //                         seq_item.MS_HSYNC = 1'b1; // HSP is active high, so set MS_HSYNC to 1
-    //                     else
-    //                         seq_item.MS_HSYNC = 1'b0; // HSP is active low, so set MS_HSYNC to 0
-    //                     counth = 0; // reset the counter    
-    //                 end
-    //                 else begin
-    //                     if(seq_item.HSP) // HSP is active high, so set MS_HSYNC to 0, turning off HSYNC
-    //                         seq_item.MS_HSYNC = 1'b0; // HSP is active high, so set MS_HSYNC to 0
-    //                     else
-    //                         seq_item.MS_HSYNC = 1'b1; // HSP is active low, so set MS_HSYNC to 1
-    //                 end
-    //                 counth++;
-    //                 finish_item(seq_item);
-    //             end
-    //             counth = 0; // reset the counter
-    //             countv++;
-    //         end
-    //         countv=0;
-    //     end
-    //     start_item(seq_item);
-    //     seq_item.rand_mode(0);
-    //     seq_item.SPM_Transaction_VLD = 1'b0;
-    //     seq_item.SPM_MSA_VLD = 1'b0;
-    //     seq_item.SPM_ISO_start = 1'b0; // NEED TO ADD A CONDITION FOR ERROR THAT RELATES TO THE HPD_IRQ // I think I will need to add a flag in the IRQ task that I will check here
-    //     finish_item(seq_item);
-    // endtask
-
+                    if(countv >= seq_item.VFront && countv < seq_item.VFront + seq_item.VSW) begin // turn on VSYNC
+                        if(seq_item.VSP) // VSP is active high, so set MS_VSYNC to  turning on VSYNC
+                            seq_item.MS_VSYNC = 1'b1; // VSP is active high, so set MS_VSYNC to 1
+                        else
+                            seq_item.MS_VSYNC = 1'b0; // VSP is active low, so set MS_VSYNC to 0
+                    end
+                    else begin 
+                        if(seq_item.VSP) // VSP is active high, so set MS_VSYNC to 0, turning off VSYNC
+                            seq_item.MS_VSYNC = 1'b0; // VSP is active high, so set MS_VSYNC to 0
+                        else
+                            seq_item.MS_VSYNC = 1'b1; // VSP is active low, so set MS_VSYNC to 1
+                    end
+                    if(counth >= seq_item.HFront && counth < seq_item.HFront + seq_item.HSW) begin // turn on HSYNC
+                        if(seq_item.HSP) // HSP is active high, so set MS_HSYNC to 1
+                            seq_item.MS_HSYNC = 1'b1; // HSP is active high, so set MS_HSYNC to 1
+                        else
+                            seq_item.MS_HSYNC = 1'b0; // HSP is active low, so set MS_HSYNC to 0
+                        counth = 0; // reset the counter    
+                    end
+                    else begin
+                        if(seq_item.HSP) // HSP is active high, so set MS_HSYNC to 0, turning off HSYNC
+                            seq_item.MS_HSYNC = 1'b0; // HSP is active high, so set MS_HSYNC to 0
+                        else
+                            seq_item.MS_HSYNC = 1'b1; // HSP is active low, so set MS_HSYNC to 1
+                    end
+                    counth++;
+                    finish_item(seq_item);
+                end
+                counth = 0; // reset the counter
+                countv++;
+            end
+            countv=0;
+        end
+        start_item(seq_item);
+        seq_item.rand_mode(0);
+        seq_item.SPM_Transaction_VLD = 1'b0;
+        seq_item.SPM_MSA_VLD = 1'b0;
+        seq_item.SPM_ISO_start = 1'b0; // NEED TO ADD A CONDITION FOR ERROR THAT RELATES TO THE HPD_IRQ // I think I will need to add a flag in the IRQ task that I will check here
+        finish_item(seq_item);
+    endtask
 
     task FLOW_FSM();
         tl_flow_stages_e cs, ns; // Declare current and next state variables
         
         seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        seq_item.rst_n = seq_cfg.rst_n; // Reset signal for the sequence item
         seq_item.isflow= 1'b1; // Set the isflow flag to indicate that this is a flow sequence
         fork
             begin
@@ -901,5 +909,9 @@ endtask
     // Prevent the base sequence from running directly
     task body();
         `uvm_fatal("TL_BASE_SEQ", "Base sequence should not be executed directly!")
+
+        `uvm_info("TL BASE SEQ", "Trying to get CFG now!", UVM_MEDIUM);
+        if (!uvm_config_db #(dp_source_config)::get(this, "", "CFG", seq_cfg))
+            `uvm_fatal("SEQ_build_phase","Unable to get configuration object in TL Agent");
     endtask
 endclass //dp_tl_base_sequence extends superClass

@@ -1,3 +1,7 @@
+    import uvm_pkg::*;
+    `include "uvm_macros.svh"
+
+    import test_parameters_pkg::*;
 class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
     `uvm_component_utils(dp_sink_driver);
 

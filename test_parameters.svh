@@ -157,8 +157,8 @@
         I2C_WRITE       = 4'b0010,
         NATIVE_READ     = 4'b0011,
         NATIVE_WRITE    = 4'b0100,
-        CR_LT           = 4'b0101,
-        EQ_LT           = 4'b0110,
+        CR_LT_op        = 4'b0101,
+        EQ_LT_op        = 4'b0110,
         ISO             = 4'b0111,
         DETECT          = 4'b1000
     } op_code;

@@ -1,5 +1,6 @@
 import uvm_pkg::*;
     `include "uvm_macros.svh"
+      import test_parameters_pkg::*;
 
 interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk_AUX, clk_RBR, clk_HBR, clk_HBR2, clk_HBR3, MS_Stm_CLK);
 
@@ -137,11 +138,11 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
     
       // RESET task
       // This task is used to reset the DUT by asserting and deasserting the reset signal
-      task Reset();
-            rst_n = 1'b0;           // Assert reset
-            @(negedge clk_AUX);         // Wait for clock edge
-            rst_n = 1'b1;           // Deassert reset
-      endtask
+      // task Reset();
+      //       rst_n = 1'b0;           // Assert reset
+      //       @(negedge clk_AUX);         // Wait for clock edge
+      //       rst_n = 1'b1;           // Deassert reset
+      // endtask
 
       // I2C_READ task
       task I2C_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
@@ -239,7 +240,8 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             MS_DE = de; // Set DE signal to indicate the active period of the stream
             MS_VSYNC = vsync; // Set Vsync signal to indicate the start of the vertical blanking period
             MS_HSYNC = hsync; // Set Hsync signal to indicate the start of the horizontal blanking period
-            HPD_IRQ = irq;
+            
+            force HPD_IRQ = irq;
       endtask
       
 endinterface

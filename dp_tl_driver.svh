@@ -1,3 +1,7 @@
+    import uvm_pkg::*;
+    `include "uvm_macros.svh"
+
+    import test_parameters_pkg::*;
 class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
     `uvm_component_utils(dp_tl_driver);
 
@@ -7,6 +11,22 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
     
     function new(string name = "dp_tl_driver", uvm_component parent = null);
         super.new(name, parent);
+    endfunction
+
+    function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+
+        if (tl_drv_Database == null) begin
+            `uvm_fatal("DP_TL_DRIVER", "Config Database (tl_drv_Database) is not set!")
+        end
+
+        if (tl_drv_Database.dp_tl_vif == null) begin
+            `uvm_fatal("DP_TL_DRIVER", "Virtual Interface inside Config Database is not set!")
+        end
+
+        // Now assign the vif
+        dp_tl_vif = tl_drv_Database.dp_tl_vif;
+        dp_tl_vif.rst_n = tl_drv_Database.rst_n;
     endfunction
 
     task run_phase(uvm_phase phase);
@@ -31,7 +51,12 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
             if(stimulus_seq_item.SPM_Transaction_VLD == 1 && stimulus_seq_item.LPM_Transaction_VLD == 0) begin
                 // SPM transaction
                 case (stimulus_seq_item.operation)
-                    reset_op: dp_tl_vif.Reset();                             // Reset the interface
+                    reset_op: begin
+                        // dp_tl_vif.Reset();                  // Reset the interface
+                        tl_drv_Database.rst_n = 1'b0;       // Set the reset signal to low
+                        #10000                              // Wait for 10us to allow the reset to propagate
+                        tl_drv_Database.rst_n = 1'b1;       // Set the reset signal to high
+                    end 
                     I2C_READ: dp_tl_vif.I2C_READ(stimulus_seq_item.SPM_Address,stimulus_seq_item.SPM_LEN,stimulus_seq_item.SPM_CMD,stimulus_seq_item.SPM_Transaction_VLD);      // I2C READ
                     I2C_WRITE: dp_tl_vif.I2C_WRITE(stimulus_seq_item.SPM_Address,stimulus_seq_item.SPM_LEN,stimulus_seq_item.SPM_CMD, stimulus_seq_item.SPM_Data, stimulus_seq_item.SPM_Transaction_VLD);     // I2C WRITE
                     ISO: dp_tl_vif.ISO(stimulus_seq_item.SPM_ISO_start, stimulus_seq_item.SPM_MSA_VLD, stimulus_seq_item.MS_DE, stimulus_seq_item.MS_VSYNC, stimulus_seq_item.MS_HSYNC, stimulus_seq_item.HPD_IRQ,stimulus_seq_item.SPM_Lane_BW, stimulus_seq_item.SPM_Lane_Count, stimulus_seq_item.SPM_BW_Sel, stimulus_seq_item.MS_Pixel_Data, stimulus_seq_item.MS_Stm_BW, stimulus_seq_item.SPM_MSA); // ISO
@@ -45,11 +70,16 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
             else if (stimulus_seq_item.SPM_Transaction_VLD == 0 && stimulus_seq_item.LPM_Transaction_VLD == 1) begin
                 // LPM transaction
                 case (stimulus_seq_item.operation)
-                    reset_op: dp_tl_vif.Reset();
+                    reset_op: begin
+                        // dp_tl_vif.Reset();                  // Reset the interface
+                        tl_drv_Database.rst_n = 1'b0;       // Set the reset signal to low
+                        #10000                              // Wait for 10us to allow the reset to propagate
+                        tl_drv_Database.rst_n = 1'b1;       // Set the reset signal to high
+                    end 
                     NATIVE_READ: dp_tl_vif.NATIVE_READ(stimulus_seq_item.LPM_Address,stimulus_seq_item.LPM_LEN,stimulus_seq_item.LPM_CMD,stimulus_seq_item.LPM_Transaction_VLD);       // NATIVE READ
                     NATIVE_WRITE: dp_tl_vif.NATIVE_WRITE(stimulus_seq_item.LPM_Address,stimulus_seq_item.LPM_LEN,stimulus_seq_item.LPM_CMD, stimulus_seq_item.LPM_Data, stimulus_seq_item.LPM_Transaction_VLD);      // NATIVE WRITE
-                    CR_LT: dp_tl_vif.LT_CT(stimulus_seq_item.Config_Param_VLD, stimulus_seq_item.Driving_Param_VLD, stimulus_seq_item.LPM_Start_CR, stimulus_seq_item.CR_DONE_VLD, stimulus_seq_item.PRE, stimulus_seq_item.VTG, stimulus_seq_item.Link_BW_CR, stimulus_seq_item.EQ_RD_Value, stimulus_seq_item.CR_DONE, stimulus_seq_item.Link_LC_CR, stimulus_seq_item.MAX_VTG, stimulus_seq_item.MAX_PRE); // CR_LT
-                    EQ_LT: dp_tl_vif.LT_EQ(stimulus_seq_item.Driving_Param_VLD, stimulus_seq_item.CR_DONE_VLD, stimulus_seq_item.EQ_Data_VLD, stimulus_seq_item.MAX_TPS_SUPPORTED_VLD, stimulus_seq_item.PRE, stimulus_seq_item.VTG, stimulus_seq_item.Lane_Align, stimulus_seq_item.CR_DONE, stimulus_seq_item.EQ_CR_DN, stimulus_seq_item.Channel_EQ, stimulus_seq_item.Symbol_Lock, stimulus_seq_item.MAX_TPS_SUPPORTED);  // EQ_LT
+                    CR_LT_op: dp_tl_vif.LT_CT(stimulus_seq_item.Config_Param_VLD, stimulus_seq_item.Driving_Param_VLD, stimulus_seq_item.LPM_Start_CR, stimulus_seq_item.CR_DONE_VLD, stimulus_seq_item.PRE, stimulus_seq_item.VTG, stimulus_seq_item.Link_BW_CR, stimulus_seq_item.EQ_RD_Value, stimulus_seq_item.CR_DONE, stimulus_seq_item.Link_LC_CR, stimulus_seq_item.MAX_VTG, stimulus_seq_item.MAX_PRE); // CR_LT
+                    EQ_LT_op: dp_tl_vif.LT_EQ(stimulus_seq_item.Driving_Param_VLD, stimulus_seq_item.CR_DONE_VLD, stimulus_seq_item.EQ_Data_VLD, stimulus_seq_item.MAX_TPS_SUPPORTED_VLD, stimulus_seq_item.PRE, stimulus_seq_item.VTG, stimulus_seq_item.Lane_Align, stimulus_seq_item.CR_DONE, stimulus_seq_item.EQ_CR_DN, stimulus_seq_item.Channel_EQ, stimulus_seq_item.Symbol_Lock, stimulus_seq_item.MAX_TPS_SUPPORTED);  // EQ_LT
                     ISO: dp_tl_vif.ISO(stimulus_seq_item.SPM_ISO_start, stimulus_seq_item.SPM_MSA_VLD, stimulus_seq_item.MS_DE, stimulus_seq_item.MS_VSYNC, stimulus_seq_item.MS_HSYNC, stimulus_seq_item.HPD_IRQ,stimulus_seq_item.SPM_Lane_BW, stimulus_seq_item.SPM_Lane_Count, stimulus_seq_item.SPM_BW_Sel, stimulus_seq_item.MS_Pixel_Data, stimulus_seq_item.MS_Stm_BW, stimulus_seq_item.SPM_MSA); // ISO
                     DETECT: `uvm_info("DP_TL_DRIVER", "Source is still detecting the sink.", UVM_MEDIUM) // Detect
                     default: begin
@@ -60,7 +90,12 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
             end
             else begin
                 case (stimulus_seq_item.operation)
-                    reset_op: dp_tl_vif.Reset();    
+                    reset_op: begin
+                        // dp_tl_vif.Reset();                  // Reset the interface
+                        tl_drv_Database.rst_n = 1'b0;       // Set the reset signal to low
+                        #10000                              // Wait for 10us to allow the reset to propagate
+                        tl_drv_Database.rst_n = 1'b1;       // Set the reset signal to high
+                    end    
                     ISO: dp_tl_vif.ISO(stimulus_seq_item.SPM_ISO_start, stimulus_seq_item.SPM_MSA_VLD, stimulus_seq_item.MS_DE, stimulus_seq_item.MS_VSYNC, stimulus_seq_item.MS_HSYNC, stimulus_seq_item.HPD_IRQ,stimulus_seq_item.SPM_Lane_BW, stimulus_seq_item.SPM_Lane_Count, stimulus_seq_item.SPM_BW_Sel, stimulus_seq_item.MS_Pixel_Data, stimulus_seq_item.MS_Stm_BW, stimulus_seq_item.SPM_MSA); // ISO                         // Reset the interface
                     DETECT: `uvm_info("DP_TL_DRIVER", "Source is still detecting the sink.", UVM_MEDIUM) // Detect
                     default: begin

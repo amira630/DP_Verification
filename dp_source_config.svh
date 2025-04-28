@@ -1,7 +1,7 @@
 class dp_source_config extends uvm_object;
     `uvm_object_utils(dp_source_config)
 
-    bit rst_n; // Active low Reset signal
+    rand bit rst_n; // Active low Reset signal
     
     // Virtual Interfaces
     virtual dp_tl_if dp_tl_vif;

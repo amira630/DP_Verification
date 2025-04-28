@@ -1,10 +1,7 @@
-import uvm_pkg::*;
-    `include "uvm_macros.svh"
-    `include "test_parameters.svh"
 class dp_tl_sequence_item extends uvm_sequence_item;
   `uvm_object_utils(dp_tl_sequence_item);
   
-  rand bit rst_n;   // Reset is asynchronous active low
+    rand bit rst_n;   // Reset is asynchronous active low
 
     ///////////////////////////////////////////////////////////////
     //////////////////// AUXILIARY CHANNEL ////////////////////////
@@ -123,7 +120,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     }
 
     constraint operation_type_dist {
-       operation inside {[reset_op:EQ_LT]};
+       operation inside {[reset_op:EQ_LT_op]};
     }
 
     constraint hsp_vsp_constraint {

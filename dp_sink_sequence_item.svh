@@ -1,10 +1,9 @@
-import uvm_pkg::*;
-    `include "uvm_macros.svh"
-    `include "test_parameters.svh"
 class dp_sink_sequence_item extends uvm_sequence_item;
     `uvm_object_utils(dp_sink_sequence_item);
 
     rand bit HPD_Signal;
+
+    bit rst_n;           // Reset signal for the PHY Layer
     
     bit AUX_START_STOP, PHY_START_STOP;
     logic [7:0] AUX_IN_OUT;       // AUX_IN_OUT signal from the DUT (To receive the dut output data)

@@ -1,14 +1,15 @@
-import uvm_pkg::*;
+    import uvm_pkg::*;
     `include "uvm_macros.svh"
 
-    // Any further package imports:
-    import dp_transactions_pkg::*;
+    import test_parameters_pkg::*;
 class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
     `uvm_object_utils(dp_sink_base_sequence);
 
     dp_sink_sequence_item seq_item;
     dp_sink_sequence_item rsp_item;             // To capture responses
     dp_sink_sequence_item reply_seq_item;       // To rend the reply
+
+    dp_source_config sink_seq_cfg;
     
     // Register arrays 
     rand bit [7:0] EDID_registers [128];
@@ -24,6 +25,14 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
     function new(string name = "dp_sink_base_sequence");
         super.new(name);
     endfunction //new()
+
+    // function void pre_start();
+    //     super.pre_start();
+        
+    //     `uvm_info("SINK BASE SEQ", "Trying to get CFG now!", UVM_MEDIUM);
+    //     if (!uvm_config_db #(dp_source_config)::get(this, "", "CFG", sink_seq_cfg))
+    //         `uvm_fatal("SEQ_build_phase","Unable to get configuration object in TL Agent");
+    // endfunction
 
     // Flow FSM Task
     task Sink_FSM();
@@ -43,6 +52,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
 
         // Initialize the state machine
         seq_item = dp_sink_sequence_item::type_id::create("seq_item");
+        seq_item.rst_n = sink_seq_cfg.rst_n; // Set the reset signal from the configuration database
         fork
             begin
                 forever begin
@@ -210,7 +220,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         reply_item = dp_sink_sequence_item::type_id::create("reply_seq_item");
         if (reply_item == null) begin
             `uvm_info(get_type_name(), "reply_seq_item creation failed", UVM_MEDIUM)
-            wait(reply_item != null);
+            return;
         end
         
         if (rsp_item.command[3]) begin                      // Native 
@@ -271,7 +281,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                 if (i2c_count == 129) begin
                     `uvm_info(get_type_name(), "Reached the end of the I2C register space", UVM_MEDIUM)
                     `uvm_error(get_type_name(), "Reached the end of the I2C register space, will stop processing the reply transaction")  
-                    break; // Stop processing the reply transaction
+                    return;
                 end 
                 else begin
                     `uvm_info(get_type_name(), $sformatf("i2c_count = %0d, will continue to process the reply transaction", i2c_count-1), UVM_MEDIUM)
@@ -369,5 +379,16 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         finish_item(seq_item);                          // Send the sequence item to the driver
         `uvm_info(get_type_name(), "finish_item for HPD test", UVM_MEDIUM)
     endtask
+
+    // Prevent the base sequence from running directly
+    task body();
+        `uvm_fatal("TL_BASE_SEQ", "Base sequence should not be executed directly!")
+
+        `uvm_info("SINK BASE SEQ", "Trying to get CFG now!", UVM_MEDIUM);
+        if (!uvm_config_db #(dp_source_config)::get(this, "", "CFG", sink_seq_cfg))
+            `uvm_fatal("SEQ_build_phase","Unable to get configuration object in TL Agent");
+    endtask
+
+
 
 endclass //dp_sink_base_sequence extends superClass
