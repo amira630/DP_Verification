@@ -72,18 +72,12 @@ class dp_source_test extends uvm_test;
 
         phase.raise_objection(this);
         fork
-            begin
-                `uvm_info("run_phase", "TL Reset stimulus generation started", UVM_LOW);
-                dp_tl_rst_seq.start(env.tl_agt.sqr);
-                `uvm_info("run_phase", "TL Reset stimulus generation ended", UVM_LOW);
-            end
-
             // Transport Layer Sequence
-            // begin
-            //     `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
-            //     dp_tl_seq.start(env.tl_agt.sqr);
-            //     `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
-            // end
+            begin
+                `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
+                dp_tl_seq.start(env.tl_agt.sqr);
+                `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
+            end
 
             // DP Sink Sequences
             begin
@@ -91,27 +85,6 @@ class dp_source_test extends uvm_test;
                 dp_sink_seq.start(env.sink_agt.sqr);
                 `uvm_info("run_phase", "Sink Full Flow stimulus generation ended", UVM_LOW);
             end
-
-            // DP Transport Layer I2C Sequence (Read EDID)
-            // begin
-            //     `uvm_info("run_phase", "TL I2C stimulus generation started", UVM_LOW);
-            //     dp_tl_i2c_seq.start(env.tl_agt.sqr);
-            //     `uvm_info("run_phase", "TL I2C stimulus generation ended", UVM_LOW);
-            // end
-
-            // Sink Interrupt Sequence
-            // begin
-            //     `uvm_info("run_phase", "Sink Interrupt stimulus generation started", UVM_LOW);
-            //     dp_sink_intr_seq.start(env.sink_agt.sqr);
-            //     `uvm_info("run_phase", "Sink Interrupt stimulus generation ended", UVM_LOW);
-            // end
-
-            // Sink HPD Sequence
-            // begin
-            //     `uvm_info("run_phase", "HPD stimulus generation started", UVM_LOW);
-            //     dp_sink_hpd_seq.start(env.sink_agt.sqr);
-            //     `uvm_info("run_phase", "HPD stimulus generation ended", UVM_LOW);
-            // end
         join
         phase.drop_objection(this);
     endtask      

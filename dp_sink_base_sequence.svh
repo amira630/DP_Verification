@@ -24,15 +24,20 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
 
     function new(string name = "dp_sink_base_sequence");
         super.new(name);
+
+        // `uvm_info("SINK BASE SEQ", "Trying to get CFG now!", UVM_MEDIUM);
+        // if (!uvm_config_db #(dp_source_config)::get(uvm_root::get(), "uvm_test_top.*", "CFG",sink_seq_cfg))
+        //     `uvm_fatal("SEQ_build_phase","Unable to get configuration object in SINK base sequence");
     endfunction //new()
 
-    // function void pre_start();
-    //     super.pre_start();
+    task pre_body();
+        super.pre_body();
+        `uvm_info("TL BASE SEQ", "Trying to get CFG now!", UVM_MEDIUM);
         
-    //     `uvm_info("SINK BASE SEQ", "Trying to get CFG now!", UVM_MEDIUM);
-    //     if (!uvm_config_db #(dp_source_config)::get(this, "", "CFG", sink_seq_cfg))
-    //         `uvm_fatal("SEQ_build_phase","Unable to get configuration object in TL Agent");
-    // endfunction
+        // Try to get config with more specific paths
+         if (!uvm_config_db #(dp_source_config)::get(uvm_root::get(), "uvm_test_top.*", "CFG",sink_seq_cfg))
+             `uvm_fatal("SEQ_build_phase","Unable to get configuration object in SINK base sequence");
+    endtask
 
     // Flow FSM Task
     task Sink_FSM();
@@ -379,16 +384,5 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         finish_item(seq_item);                          // Send the sequence item to the driver
         `uvm_info(get_type_name(), "finish_item for HPD test", UVM_MEDIUM)
     endtask
-
-    // Prevent the base sequence from running directly
-    task body();
-        `uvm_fatal("TL_BASE_SEQ", "Base sequence should not be executed directly!")
-
-        `uvm_info("SINK BASE SEQ", "Trying to get CFG now!", UVM_MEDIUM);
-        if (!uvm_config_db #(dp_source_config)::get(this, "", "CFG", sink_seq_cfg))
-            `uvm_fatal("SEQ_build_phase","Unable to get configuration object in TL Agent");
-    endtask
-
-
 
 endclass //dp_sink_base_sequence extends superClass
