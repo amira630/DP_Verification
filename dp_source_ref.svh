@@ -1,9 +1,14 @@
+// Some things to be added
+//1- Waiting EQ_RD_VALUE
+//2- MAKING HPD TASK RUN FOREVER
+//3- How to handle timer_timeout signal
+
 class dp_reference_model extends uvm_component;
     `uvm_component_utils(dp_reference_model)
 
     // Input and output analysis ports for connecting to the scoreboard
-    uvm_analysis_imp #(dp_sink_sequence_item) sink_in_port;  // Receives transactions from dp_sink_monitor
-    uvm_analysis_imp #(dp_tl_sequence_item) tl_in_port;      // Receives transactions from dp_tl_monitor
+    uvm_analysis_export #(dp_sink_sequence_item) sink_in_port;  // Receives transactions from dp_sink_monitor
+    uvm_analysis_export #(dp_tl_sequence_item) tl_in_port;      // Receives transactions from dp_tl_monitor
     uvm_analysis_port #(dp_transaction) ref_model_out_port; // Sends expected transactions to the scoreboard
 
     // Transaction variables for output of Reference model
@@ -56,19 +61,6 @@ class dp_reference_model extends uvm_component;
         // Connection Detection Scenario
         generate_connection_detection(sink_item, tl_item, expected_transaction);
 
-        // // Link Training Scenario //
-
-        // // I2C-over-AUX Transaction Scenario (EDID Read)
-        // generate_i2c_over_aux_transaction(sink_item, tl_item, expected_transaction);
-
-        // // Native AUX Transaction Scenario
-        // generate_native_aux_transaction(sink_item, tl_item, expected_transaction);
-
-        // // Link Training Flow
-        // generate_link_training_flow(sink_item, tl_item, expected_transaction);
-        
-        // // End of link training flow
-
         // Log the generated expected transaction
         `uvm_info(get_type_name(), $sformatf("Generated expected transaction: %s", expected_transaction.convert2string()), UVM_LOW)
     endfunction
@@ -76,7 +68,7 @@ class dp_reference_model extends uvm_component;
 
     // need to modify a bit
     // Function to handle the Connection Detection Scenario
-    function void generate_connection_detection(
+    task void generate_connection_detection(
     input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
     input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
     output dp_transaction expected_transaction // Generated expected transaction
@@ -125,7 +117,7 @@ class dp_reference_model extends uvm_component;
 
         //Note to self: need to make this function run continuously
 
-    endfunction
+    endtask
 
 
 
@@ -195,11 +187,11 @@ class dp_reference_model extends uvm_component;
 
                 address = tl_item.SPM_Address; // Extract the address from the received transaction
 
-                // Assign the encoded value to aux_in_out
+                // Assign the encoded value to AUX_IN_OUT
                 // Encoded value: 0101|0000 -> 00000000 -> SPM_Address
 
                 // Byte 1
-                expected_transaction.aux_in_out = 8'b0101_0000;
+                expected_transaction.AUX_IN_OUT = 8'b0101_0000;
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1;
 
@@ -207,7 +199,7 @@ class dp_reference_model extends uvm_component;
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 2
-                expected_transaction.aux_in_out = 8'b0000_0000;
+                expected_transaction.AUX_IN_OUT = 8'b0000_0000;
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1;
 
@@ -215,7 +207,7 @@ class dp_reference_model extends uvm_component;
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 3
-                expected_transaction.aux_in_out = address;
+                expected_transaction.AUX_IN_OUT = address;
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1; 
                 
@@ -236,7 +228,7 @@ class dp_reference_model extends uvm_component;
                 ref_model_in_port.get(sink_item);
                 
                     // Extract the command
-                    command = sink_item.aux_in_out[7:4]; // First 4 bits
+                    command = sink_item.AUX_IN_OUT[7:4]; // First 4 bits
 
                     // Take action based on the command
                     case (command)
@@ -333,11 +325,11 @@ class dp_reference_model extends uvm_component;
     
                 DATA: begin
 
-                // Assign the encoded value to aux_in_out
+                // Assign the encoded value to AUX_IN_OUT
                 // Encoded value: 0101|0000 -> 00000000 -> SPM_Address -> 00000000
 
                 // Byte 1
-                expected_transaction.aux_in_out = 8'b0101_0000;
+                expected_transaction.AUX_IN_OUT = 8'b0101_0000;
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1;
 
@@ -345,7 +337,7 @@ class dp_reference_model extends uvm_component;
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 2
-                expected_transaction.aux_in_out = 8'b0000_0000;
+                expected_transaction.AUX_IN_OUT = 8'b0000_0000;
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1;
 
@@ -353,7 +345,7 @@ class dp_reference_model extends uvm_component;
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 3
-                expected_transaction.aux_in_out = tl_item.SPM_Address;
+                expected_transaction.AUX_IN_OUT = tl_item.SPM_Address;
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1;
                 
@@ -361,7 +353,7 @@ class dp_reference_model extends uvm_component;
                 ref_model_out_port.write(expected_transaction);
 
                 // Byte 4
-                expected_transaction.aux_in_out = 8'b0000_0000;
+                expected_transaction.AUX_IN_OUT = 8'b0000_0000;
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1;
                 
@@ -381,13 +373,13 @@ class dp_reference_model extends uvm_component;
                 ref_model_in_port.get(sink_item);
                 
                     // Extract the command
-                    command = sink_item.aux_in_out[7:4]; // First 4 bits
+                    command = sink_item.AUX_IN_OUT[7:4]; // First 4 bits
 
                     // Wait for the next transaction
                     ref_model_in_port.get(sink_item);  
                     
                     // Extract the data
-                    data = sink_item.aux_in_out[7:0]; // Second 8 bits  
+                    data = sink_item.AUX_IN_OUT[7:0]; // Second 8 bits  
                 
                     // Take action based on the command
                     case (command)
@@ -488,11 +480,11 @@ class dp_reference_model extends uvm_component;
                 // ref_model_in_port.get(tl_item);
 
                 
-                // Assign the encoded value to aux_in_out
+                // Assign the encoded value to AUX_IN_OUT
                 // Encoded value: 0001|0000 -> 00000000 -> SPM_Address -> 00000000
 
                 // Byte 1
-                expected_transaction.aux_in_out = 8'b0001_0000;
+                expected_transaction.AUX_IN_OUT = 8'b0001_0000;
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1;
 
@@ -500,7 +492,7 @@ class dp_reference_model extends uvm_component;
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 2
-                expected_transaction.aux_in_out = 8'b0000_0000;
+                expected_transaction.AUX_IN_OUT = 8'b0000_0000;
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1;
 
@@ -508,7 +500,7 @@ class dp_reference_model extends uvm_component;
                 ref_model_out_port.write(expected_transaction);
                 
                 // Byte 3
-                expected_transaction.aux_in_out = address;
+                expected_transaction.AUX_IN_OUT = address;
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1; 
                 
@@ -529,7 +521,7 @@ class dp_reference_model extends uvm_component;
                 ref_model_in_port.get(sink_item);
                 
                     // Extract the command
-                    command = sink_item.aux_in_out[7:4]; // First 4 bits
+                    command = sink_item.AUX_IN_OUT[7:4]; // First 4 bits
                 
                     // Take action based on the command
                     case (command)
@@ -700,31 +692,31 @@ task generate_native_aux_read_transaction(
 
             NATIVE_TALK_MODE: begin
 
-                // Assign the encoded value to aux_in_out
+                // Assign the encoded value to AUX_IN_OUT
                 // Encoded value: 1001|Address -> Address -> Address -> Length
     
                 // Transmit the first byte of the read request
-                expected_transaction.aux_in_out = {4'b1001, address[19:16]};
+                expected_transaction.AUX_IN_OUT = {4'b1001, address[19:16]};
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1;
                 ;
                 ref_model_out_port.write(expected_transaction);
 
                 // Transmit the next two bytes of the address
-                expected_transaction.aux_in_out = address[15:8];
+                expected_transaction.AUX_IN_OUT = address[15:8];
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1;
 
                 ref_model_out_port.write(expected_transaction);
 
-                expected_transaction.aux_in_out = address[7:0];
+                expected_transaction.AUX_IN_OUT = address[7:0];
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1;
 
                 ref_model_out_port.write(expected_transaction);
 
                 // Transmit the length byte
-                expected_transaction.aux_in_out = length;
+                expected_transaction.AUX_IN_OUT = length;
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1;
                 
@@ -745,7 +737,7 @@ task generate_native_aux_read_transaction(
                     ref_model_in_port.get(sink_item);
     
                     // Extract the command
-                    command = sink_item.aux_in_out[3:0]; // Second 4 bits
+                    command = sink_item.AUX_IN_OUT[3:0]; // Second 4 bits
 
                     case (command)
                         AUX_ACK: begin // ACK
@@ -803,7 +795,7 @@ task generate_native_aux_read_transaction(
                 if (data_counter > 8'b00000000) begin
                 
                     ref_model_in_port.get(sink_item);
-                    data = sink_item.aux_in_out[7:0]; // Extract the data byte
+                    data = sink_item.AUX_IN_OUT[7:0]; // Extract the data byte
                     data_counter = data_counter - 1'b1; // Decrement the data counter
                 
                 end
@@ -911,33 +903,33 @@ task generate_native_aux_write_transaction(
 
             NATIVE_TALK_MODE: begin
 
-                // Assign the encoded value to aux_in_out
+                // Assign the encoded value to AUX_IN_OUT
                 // Encoded value: 1000|LPM_Address -> LPM_Address -> LPM_Address -> LPM_LEN -> LPM_Data
 
                 // Transmit the write request
-                expected_transaction.aux_in_out = {4'b1000, address[19:16]}; // Byte 1
+                expected_transaction.AUX_IN_OUT = {4'b1000, address[19:16]}; // Byte 1
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
-                expected_transaction.aux_in_out = address[15:8]; // Byte 2
+                expected_transaction.AUX_IN_OUT = address[15:8]; // Byte 2
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
-                expected_transaction.aux_in_out = address[7:0]; // Byte 3
+                expected_transaction.AUX_IN_OUT = address[7:0]; // Byte 3
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
-                expected_transaction.aux_in_out = length; // Byte 4
+                expected_transaction.AUX_IN_OUT = length; // Byte 4
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
                 // Transmit data bytes
                 for (int i = 0; i < length; i++) begin
-                    expected_transaction.aux_in_out = data[i];
+                    expected_transaction.AUX_IN_OUT = data[i];
                     ref_model_out_port.write(expected_transaction);
                     // Raise the AUX_START_STOP signal
                     expected_transaction.AUX_START_STOP = 1'b1
@@ -958,7 +950,7 @@ task generate_native_aux_write_transaction(
                 ref_model_in_port.get(sink_item);
 
                 // Extract the command
-                command = sink_item.aux_in_out[3:0]; // Second 4 bits
+                command = sink_item.AUX_IN_OUT[3:0]; // Second 4 bits
 
                 case (command)
                     AUX_ACK: begin // ACK
@@ -1040,35 +1032,35 @@ task generate_native_aux_write_transaction(
                 // Wait for the next transaction
                 ref_model_in_port.get(tl_item);
 
-                success_counter = tl_item.aux_in_out [7:0]; // Extract the number of successful bytes written
+                success_counter = tl_item.AUX_IN_OUT [7:0]; // Extract the number of successful bytes written
                 
-                // Assign the encoded value to aux_in_out
+                // Assign the encoded value to AUX_IN_OUT
                 // Encoded value: 1000|LPM_Address -> LPM_Address -> LPM_Address -> (length - success_counter) -> Remaining Data
 
                 // Transmit the write request
-                expected_transaction.aux_in_out = {4'b1000, address[19:16]}; // Byte 1
+                expected_transaction.AUX_IN_OUT = {4'b1000, address[19:16]}; // Byte 1
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
-                expected_transaction.aux_in_out = address[15:8]; // Byte 2
+                expected_transaction.AUX_IN_OUT = address[15:8]; // Byte 2
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
-                expected_transaction.aux_in_out = address[7:0]; // Byte 3
+                expected_transaction.AUX_IN_OUT = address[7:0]; // Byte 3
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
-                expected_transaction.aux_in_out = (length - success_counter); // Byte 4
+                expected_transaction.AUX_IN_OUT = (length - success_counter); // Byte 4
                 // Raise the AUX_START_STOP signal
                 expected_transaction.AUX_START_STOP = 1'b1
                 ref_model_out_port.write(expected_transaction);
 
                 // Transmit data bytes
                 for (int i = success_counter; i <= length; i++) begin
-                    expected_transaction.aux_in_out = data[i];
+                    expected_transaction.AUX_IN_OUT = data[i];
                     // Raise the AUX_START_STOP signal
                     expected_transaction.AUX_START_STOP = 1'b1
                     ref_model_out_port.write(expected_transaction);
@@ -1104,21 +1096,31 @@ task generate_native_aux_write_transaction(
 endtask
 
 // Function to generate the expected transactions for Clock Recovery Phase
-function bit generate_clock_recovery_phase(
+task bit generate_clock_recovery_phase(
     input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
     input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
     output dp_transaction expected_transaction, // Generated expected transaction
     output bit [7:0] last_link_rate,        // Output for CURRENT_LINK_RATE
-    output bit [3:0] last_lane_count,       // Output for CURRENT_LANE_COUNT
+    output bit [1:0] last_lane_count,       // Output for CURRENT_LANE_COUNT
     output bit [1:0] last_max_vtg_temp,     // Output for MAX_VTG_temp
-    output bit [1:0] last_max_pre_temp      // Output for MAX_PRE_temp
+    output bit [1:0] last_max_pre_temp,     // Output for MAX_PRE_temp
+    output bit [7:0] last_vtg,              // Output for CURRENT_VTG
+    output bit [7:0] last_pre,              // Output for CURRENT_PRE
+    output bit [1:0] starting_lane_count_temp, // Output for STARTING_LANE_COUNT
+    output bit [7:0] starting_link_rate_temp, // Output for STARTING_LINK_RATE
+    input bit UPDATE,                        // Flag to indicate if parameters need to be updated
+    input bit restart, // Flag to indicate if the CR process should restart
+    input bit [7:0] RESTART_CR_BW, // Restart bandwidth
+    input bit [1:0] RESTART_CR_LC, // Restart lane count
+    input bit [1:0] RESTART_CR_MAX_VTG, // Restart VTG
+    input bit [1:0] RESTART_CR_MAX_PRE // Restart PRE
+    input
 );
     
     // State machine for the clock recovery phase
     // Define the states for the FSM
     typedef enum logic [3:0] { // Updated to [3:0] to accommodate more states
         IDLE,
-        IDLE_WITH_UPDATED_BW_OR_LC,
         WRITE_LINK_CONFIG,
         ENABLE_TRAINING_PATTERN,
         CONFIGURE_DRIVING_SETTINGS,
@@ -1150,6 +1152,7 @@ function bit generate_clock_recovery_phase(
     bit [7:0]  MAX_VTG_temp_Concatenated; // Concatenated max values
     bit [1:0]  STARTING_LANE_COUNT = 2'b00; // starting lane count
     bit [7:0]  STARTING_LINK_RATE = 8'h00; // starting link rate
+    bit restart_temp = restart; // Temporary variable for restart flag
 
     // Initialize the FSM
     current_state = IDLE;
@@ -1160,6 +1163,31 @@ function bit generate_clock_recovery_phase(
                 // Wait for the next transaction
                 ref_model_in_port.get(tl_item); //Lpm_seq_item
 
+                if (restart_temp == 1'b1) begin
+                
+                // Store the important values
+                MAX_VTG_temp = RESTART_CR_MAX_VTG;
+                MAX_PRE_temp = RESTART_CR_MAX_PRE;
+                CURRENT_LANE_COUNT = RESTART_CR_LC;
+                CURRENT_LINK_RATE = RESTART_CR_BW;
+                STARTING_LANE_COUNT = RESTART_CR_LC;
+                STARTING_LINK_RATE = RESTART_CR_BW;
+                CURRENT_PRE = tl_item.PRE;
+                CURRENT_VTG = tl_item.VTG;
+                
+                // add condition for restart after eq
+                // flag
+                if (tl_item.LPM_Start_CR && tl_item.Driving_Param_VLD && !tl_item.Config_Param_VLD)
+                // Start the clock recovery process
+                `uvm_info(get_type_name(), "Restarting Clock Recovery Phase With Updated Parameters from Equalization", UVM_LOW);
+                next_state = WRITE_LINK_CONFIG;
+                restart_temp == 1'b0;
+                else begin
+                    next_state = IDLE; // Stay in IDLE if not valid
+                end
+
+                end else if (UPDATE == 1'b0) begin
+
                 // Store the important values
                 MAX_VTG_temp = tl_item.MAX_VTG;
                 MAX_PRE_temp = tl_item.MAX_PRE;
@@ -1169,7 +1197,9 @@ function bit generate_clock_recovery_phase(
                 STARTING_LINK_RATE = tl_item.Link_BW_CR;
                 CURRENT_PRE = tl_item.PRE;
                 CURRENT_VTG = tl_item.VTG;
-
+                
+                // add condition for restart after eq
+                // flag
                 if (tl_item.LPM_Start_CR && tl_item.Driving_Param_VLD && tl_item.Config_Param_VLD)
                 // Start the clock recovery process
                 `uvm_info(get_type_name(), "Starting Clock Recovery Phase", UVM_LOW);
@@ -1177,12 +1207,10 @@ function bit generate_clock_recovery_phase(
                 else begin
                     next_state = IDLE; // Stay in IDLE if not valid
                 end
-            end
 
-            IDLE_WITH_UPDATED_BW_OR_LC: begin
-                // Wait for the next transaction
-                ref_model_in_port.get(tl_item); //Lpm_seq_item
 
+                end else begin
+                
                 // Store the important values
                 MAX_VTG_temp = tl_item.MAX_VTG;
                 MAX_PRE_temp = tl_item.MAX_PRE;
@@ -1196,8 +1224,10 @@ function bit generate_clock_recovery_phase(
                 `uvm_info(get_type_name(), "Repeating Clock Recovery Phase with Updated Parameters", UVM_LOW);
                 next_state = WRITE_LINK_CONFIG;
                 else begin
-                    next_state = IDLE_WITH_UPDATED_BW_OR_LC; // Stay in IDLE if not valid
+                    next_state = IDLE; // Stay in IDLE if not valid
                 end
+                end
+
             end
 
             WRITE_LINK_CONFIG: begin
@@ -1214,7 +1244,7 @@ function bit generate_clock_recovery_phase(
                     '{CURRENT_LINK_RATE, {3'b100, 5'(CURRENT_LANE_COUNT + 5'b01)}, 8'h00} // Override data
                 );
                 
-                if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                if (expected_transaction.CTRL_Native_Failed == 1'b1) begin
                     // If the transaction failed, move to the FAILURE state
                     `uvm_error(get_type_name(), "Failed to write to Link Configuration field", UVM_LOW);
                     next_state = IDLE; // Move to IDLE state
@@ -1248,7 +1278,7 @@ function bit generate_clock_recovery_phase(
 
                 expected_transaction.PHY_Instruct_VLD = 1'b0; // Set PHY_Instruct_VLD to 0
 
-                if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                if (expected_transaction.CTRL_Native_Failed == 1'b1) begin
                     // If the transaction failed, move to the FAILURE state
                     `uvm_error(get_type_name(), "Failed to enable Training Pattern 1", UVM_LOW);
                     next_state = IDLE; // Move to IDLE state
@@ -1324,7 +1354,7 @@ function bit generate_clock_recovery_phase(
                     );
                 end
 
-                if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                if (expected_transaction.CTRL_Native_Failed == 1'b1) begin
                     // If the transaction failed, move to the FAILURE state
                     `uvm_error(get_type_name(), "Failed to configure initial driving settings", UVM_LOW);
                     next_state = IDLE; // Move to IDLE state
@@ -1347,7 +1377,7 @@ function bit generate_clock_recovery_phase(
                     8'h00                       // Override length (1 byte)
                 );
 
-                if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                if (expected_transaction.CTRL_Native_Failed == 1'b1) begin
                     // If the transaction failed, move to the FAILURE state
                     `uvm_error(get_type_name(), "Failed to read TRAINING_AUX_RD_INTERVAL", UVM_LOW);
                     next_state = IDLE; // Move to IDLE state
@@ -1375,10 +1405,10 @@ function bit generate_clock_recovery_phase(
                     expected_transaction,       // Output transaction
                     4'b1001,                    // Override command (AUX_NATIVE_READ)
                     20'h00202,                  // Override address (0x00202)
-                    8'h05                       // Override length (6 byte(s))
+                    8'h01                       // Override length (2 byte(s))
                 );
 
-                if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                if (expected_transaction.CTRL_Native_Failed == 1'b1) begin
                     // If the transaction failed, move to the FAILURE state
                     `uvm_error(get_type_name(), "Failed to read Link Status registers", UVM_LOW);
                     next_state = IDLE; // Move to IDLE state
@@ -1389,6 +1419,7 @@ function bit generate_clock_recovery_phase(
 
             end
             
+            // Bug (design needs to do better)
             // Need to maybe store Link_LC_CR in a temp variable
             // Step 6: Check for CR_DONE and CR_DONE_VLD
             CR_DONE_CHECK: begin
@@ -1440,7 +1471,7 @@ function bit generate_clock_recovery_phase(
                 CURRENT_VTG = tl_item.VTG;
                 CURRENT_PRE = tl_item.PRE;
 
-                if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                if (expected_transaction.CTRL_Native_Failed == 1'b1) begin
                     // If the transaction failed, move to the FAILURE state
                     `uvm_error(get_type_name(), "Failed to read Adjusted Training Parameters", UVM_LOW);
                     next_state = IDLE; // Move to IDLE state
@@ -1499,7 +1530,7 @@ function bit generate_clock_recovery_phase(
             // Check if RBR is used
             CHECK_IF_RBR: begin
 
-           if (CURRENT_LINK_RATE == == 8'h06) // is Bandwidth used RBR?
+           if (CURRENT_LINK_RATE == 8'h06) // is Bandwidth used RBR?
             begin
              next_state = CHECK_IF_ONE_LANE_USED;
             end
@@ -1533,8 +1564,9 @@ function bit generate_clock_recovery_phase(
             begin
              CURRENT_LANE_COUNT = 2'b00;
              CURRENT_LINK_RATE = STARTING_LINK_RATE; // Reset to starting link rate
-            end  
-            next_state = IDLE_WITH_UPDATED_BW_OR_LC; // Reset to IDLE for the next phase  
+            end
+            UPDATE = 1'b1; // Set the update flag to indicate a change in parameters  
+            next_state = IDLE; // Reset to IDLE for the next phase  
             end
 
             // Reduce Link Rate
@@ -1555,7 +1587,8 @@ function bit generate_clock_recovery_phase(
            begin
               CURRENT_LINK_RATE = 8'h06;          // RBR
            end 
-            next_state = IDLE_WITH_UPDATED_BW_OR_LC; // Reset to IDLE for the next phase 
+            UPDATE = 1'b1; // Set the update flag to indicate a change in parameters  
+            next_state = IDLE; // Reset to IDLE for the next phase 
             end
 
             SUCCESS: begin
@@ -1570,19 +1603,23 @@ function bit generate_clock_recovery_phase(
                 last_lane_count = CURRENT_LANE_COUNT;
                 last_max_vtg_temp = MAX_VTG_temp;
                 last_max_pre_temp = MAX_PRE_temp;
+                last_vtg = CURRENT_VTG;
+                last_pre = CURRENT_PRE;
+                starting_lane_count_temp = STARTING_LANE_COUNT
+                starting_link_rate_temp = STARTING_LINK_RATE
 
                 next_state = IDLE; // Reset to IDLE for the next phase
                 break;
             end
-               FSM_CR_Failed,           // A Signal indicating the failure of the Clock Recovery phase during link training, meaning the sink failed to acquire the clock frequency during the training process
+           
             FAILURE: begin
                 // Clock Recovery failed
                 `uvm_error(get_type_name(), "Clock Recovery failed", UVM_LOW);
                 expected_transaction.FSM_CR_Failed = 1'b1;
                 ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
-                // CR_DONE = 0;
+                CR_DONE = 0;
                 next_state = IDLE; // Reset to IDLE for the next phase
-                // break;      
+                break;      
             end
 
             default: begin
@@ -1594,18 +1631,14 @@ function bit generate_clock_recovery_phase(
         // Update the current state
         current_state = next_state;
 
-        // Exit the loop if the process is complete
-        if (current_state == IDLE && (CR_DONE || next_state == FAILURE)) begin
-            break;
-        end
     end
 
     return CR_DONE;
-endfunction
+endtask
 
         // add a value to retry CR
         // Function to generate the expected transaction for channel equalization phase
-        function bit generate_channel_equalization_phase(
+        task bit generate_channel_equalization_phase(
         input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
         input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
         output dp_transaction expected_transaction,
@@ -1616,9 +1649,15 @@ endfunction
         input bit [1:0]  MAX_VTG_temp, // Temporary variable for max values
         input bit [1:0]  MAX_PRE_temp, // Temporary variable for max values
         input bit [1:0]  STARTING_LANE_COUNT, // starting lane count
-        input bit [7:0]  STARTING_LINK_RATE // starting link rate
-        output bit restart // Flag to indicate if the CR process should restart
-    );
+        input bit [7:0]  STARTING_LINK_RATE, // starting link rate
+        output bit restart, // Flag to indicate if the CR process should restart
+        output bit [7:0] EQ_Final_ADJ_BW, // Final adjusted bandwidth
+        output bit [1:0] EQ_Final_ADJ_LC, // Final adjusted lane count
+        output bit [7:0] RESTART_CR_BW, // Restart bandwidth
+        output bit [1:0] RESTART_CR_LC, // Restart lane count
+        output bit [1:0] RESTART_CR_MAX_VTG, // Restart VTG
+        output bit [1:0] RESTART_CR_MAX_PRE // Restart PRE
+        );
 
         // input bit [3:0]  NEW_LANE_COUNT = 2'b00, // Current lane count
         // input bit [7:0]  NEW_LINK_RATE = 8'h00, // Current link rate
@@ -1650,13 +1689,19 @@ endfunction
         fsm_state_e current_state, next_state;
         int ack_count = 0;  // Ack counter
         bit [3:0] retry_counter = 4'b0000;  // Retry counter for Sequence 2
-        bit [3:0] CURRENT_LANE_COUNT = NEW_LANE_COUNT; // Current lane count
+        bit [1:0] CURRENT_LANE_COUNT = NEW_LANE_COUNT; // Current lane count
         bit [7:0] CURRENT_LINK_RATE = NEW_LINK_RATE; // Current link rate
         bit [7:0] CURRENT_PRE = NEW_PRE;// Temporary variable for VTG and PRE values
         bit [7:0] CURRENT_VTG = NEW_VTG; // Temporary variable for VTG and PRE values
         bit [1:0] MAX_TPS_SUPPORTED_STORED = 2'b00; // Temporary variable for max values
         int Loop_Counter = 0; // Loop counter for retrying the sequence
-        int Max_Loop_Counter = 0; // Maximum loop count for retrying the sequence
+        // Initialize output variables to 0
+        EQ_Final_ADJ_BW = 8'b0;
+        EQ_Final_ADJ_LC = 2'b0;
+        RESTART_CR_BW = 8'b0;
+        RESTART_CR_LC = 2'b0;
+        RESTART_CR_MAX_VTG = 2'b0;
+        RESTART_CR_MAX_PRE = 2'b0;
         restart = 0; // Flag to indicate if the CR process should restart
     
         // Initialize the FSM
@@ -1758,11 +1803,12 @@ endfunction
 
                     expected_transaction.PHY_Instruct_VLD = 1'b0; // Set PHY_Instruct_VLD to 0
     
-                    if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                    if (expected_transaction.CTRL_Native_Failed == 1'b1) begin
                         // If the transaction failed, move to the FAILURE state
                         `uvm_error(get_type_name(), "Failed to enable training pattern", UVM_LOW);
                         next_state = IDLE; // Move to IDLE state
                     end else begin
+                        Loop_Counter == 1'b0; // Reset the loop counter
                         // If the transaction was successful, move to the next state
                         next_state = READ_TRAINING_INTERVAL;
                     end
@@ -1782,7 +1828,7 @@ endfunction
                         8'h00                       // Override length (1 byte)
                     );
                     
-                    if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                    if (expected_transaction.CTRL_Native_Failed == 1'b1) begin
                         // If the transaction failed, move to the FAILURE state
                         `uvm_error(get_type_name(), "Failed to read TRAINING_AUX_RD_INTERVAL", UVM_LOW);
                         next_state = IDLE; // Move to IDLE state
@@ -1813,7 +1859,7 @@ endfunction
                         8'h05                       // Override length (6 bytes)
                     );
 
-                    if (expected_transaction.CTRL_Native_Failed = 1'b1) begin
+                    if (expected_transaction.CTRL_Native_Failed == 1'b1) begin
                         // If the transaction failed, move to the FAILURE state
                         `uvm_error(get_type_name(), "Failed to read Link Status registers", UVM_LOW);
                         next_state = IDLE; // Move to IDLE state
@@ -1825,21 +1871,21 @@ endfunction
                 end
     
                 CHECK_CR: begin
-                // Step 4: Check CR_DONE
+                // Step 4: Check EQ_CR_DN
                 `uvm_info(get_type_name(), "Checking CR parameters", UVM_LOW);
 
                     // Wait for the next transaction
                     ref_model_in_port.get(tl_item); //Lpm_seq_item   
 
-		           if((CURRENT_LANE_COUNT == 'b11) && (&tl_item.CR_DONE))
+		           if((CURRENT_LANE_COUNT == 'b11) && (&tl_item.EQ_CR_DN))
                    begin
                     next_state = CHECK_EQUALIZATION;			
                    end
-                   else if((CURRENT_LANE_COUNT == 'b01) && (&tl_item.CR_DONE[1:0]))
+                   else if((CURRENT_LANE_COUNT == 'b01) && (&tl_item.EQ_CR_DN[1:0]))
                    begin
                     next_state = CHECK_EQUALIZATION;			
                    end
-                   else if((CURRENT_LANE_COUNT == 'b00) && (tl_item.CR_DONE[0]))
+                   else if((CURRENT_LANE_COUNT == 'b00) && (tl_item.EQ_CR_DN[0]))
                    begin
                     next_state = CHECK_EQUALIZATION;			
                    end
@@ -1849,7 +1895,7 @@ endfunction
                    end
 			       else
 			       begin
-                    expected_transaction.FSM_CR_Failed = 1'b1;
+                    expected_transaction.EQ_FSM_CR_Failed = 1'b1;
                     ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard 
                     next_state = CHECK_IF_ONE_LANE_USED; // Check if one lane is used
                    end
@@ -1881,10 +1927,9 @@ endfunction
                     Loop_Counter = Loop_Counter + 1; 
                     if(Loop_Counter == 6)
                     begin
-                        next_state = IDLE;
-                        Max_Loop_Counter = 1;
-                        expected_transaction.FSM_CR_Failed = 1'b1;
-                        ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard                   
+                        expected_transaction.EQ_FSM_CR_Failed = 1'b1;
+                        ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard     
+                        next_state = REDUCE_LANE_COUNT;              
                     end
                     else
                     begin
@@ -1959,8 +2004,16 @@ endfunction
                               {2'b00, 1'b0, tl_item.PRE[7:6], 1'b0, tl_item.VTG[7:6]}} // Override data
                         );
                     end
-    
-                    next_state = READ_TRAINING_INTERVAL;
+
+                    if (expected_transaction.CTRL_Native_Failed == 1'b1) begin
+                        // If the transaction failed, move to the FAILURE state
+                        `uvm_error(get_type_name(), "Failed to write adjusted driving parameters", UVM_LOW);
+                        next_state = IDLE; // Move to IDLE state
+                    end else begin
+                        // If the transaction was successful, move to the next state
+                        next_state = READ_TRAINING_INTERVAL; // Read the training interval again
+                    end
+
                 end
 
 
@@ -1996,15 +2049,31 @@ endfunction
             begin
              CURRENT_LANE_COUNT = 2'b01;
              CURRENT_LINK_RATE = STARTING_LINK_RATE; // Reset to starting link rate
+            restart = 1 // restart CR process
+            RESTART_CR_BW = CURRENT_LINK_RATE;
+            RESTART_CR_LC = CURRENT_LANE_COUNT;
+            RESTART_CR_MAX_VTG = MAX_VTG_temp;
+            RESTART_CR_MAX_PRE = MAX_VTG_temp;  
+            next_state = IDLE; // Reset to IDLE for the next phase  
+            // restart clock recovery with updated lane count and bandwidth
+            break;
             end
-            else
+            else if (CURRENT_LANE_COUNT == 2'b01)
             begin
              CURRENT_LANE_COUNT = 2'b00;
              CURRENT_LINK_RATE = STARTING_LINK_RATE; // Reset to starting link rate
-            end
             restart = 1 // restart CR process  
+            RESTART_CR_BW = CURRENT_LINK_RATE;
+            RESTART_CR_LC = CURRENT_LANE_COUNT;
+            RESTART_CR_MAX_VTG = MAX_VTG_temp;
+            RESTART_CR_MAX_PRE = MAX_VTG_temp;  
             next_state = IDLE; // Reset to IDLE for the next phase  
             // restart clock recovery with updated lane count and bandwidth
+            break;
+            end
+            else begin
+              next_state = CHECK_IF_RBR; // Check if RBR is used 
+            end
             end
 
             // Reduce Link Count
@@ -2030,8 +2099,13 @@ endfunction
               CURRENT_LANE_COUNT = STARTING_LANE_COUNT; // Reset to starting lane count
            end 
             restart = 1 // restart CR process
+            RESTART_CR_BW = CURRENT_LINK_RATE;
+            RESTART_CR_LC = CURRENT_LANE_COUNT;
+            RESTART_CR_MAX_VTG = MAX_VTG_temp;
+            RESTART_CR_MAX_PRE = MAX_VTG_temp;  
             next_state = IDLE; // Reset to IDLE for the next phase
             // restart clock recovery with updated lane count and bandwidth 
+            break;
             end
 
             SUCCESS: begin
@@ -2070,7 +2144,7 @@ endfunction
                     20'h00102,                  // Override address (0x00102)
                     8'h00,                      // Override length (1 byte)
                     8'h00                       // Override data
-             );
+                    );
 
                     expected_transaction.EQ_Failed = 1'b1;
                     ref_model_out_port.write(expected_transaction); // Send the expected transaction to the scoreboard
@@ -2091,62 +2165,202 @@ endfunction
         end
     
         return EQ_DONE;
-    endfunction
-
+        endtask
 
     // Function to generate the expected transaction for Link Training Flow
-    function void generate_link_training_flow(
-    input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
-    input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
-    output dp_transaction expected_transaction // Generated expected transaction
+    task void generate_link_training_flow(
+        input dp_sink_sequence_item sink_item,  // Transaction from dp_sink_monitor
+        input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
+        output dp_transaction expected_transaction // Generated expected transaction
     );
-        bit [3:0] command;       // First 4 bits: Command
-
-        // Initialize internal flags
+        // FSM states
+        typedef enum logic [2:0] {
+            READ_EDID,
+            READ_DPCD_CAPABILITIES,
+            CLOCK_RECOVERY_PHASE,
+            CHANNEL_EQUALIZATION_PHASE,
+            RETRY_CLOCK_RECOVERY_PHASE,
+            FINALIZE_LINK_TRAINING,
+            LINK_TRAINING_SUCCESS
+        } link_training_fsm_state_e;
+    
+        link_training_fsm_state_e current_state, next_state;
+    
+        // Internal flags
         bit CR_DONE = 0;
         bit EQ_DONE = 0;
-
-        // Step 1: Read EDID (128 bytes)
-        `uvm_info(get_type_name(), "Reading EDID", UVM_LOW);
-
-        generate_i2c_over_aux_transaction(
-            sink_item,       // Input transaction from sink
-            tl_item,         // Input transaction from tl
-            expected_transaction,       // Output transaction
-        );
+        // Clock Recovery Signals
+        bit [7:0] last_link_rate;        // Output for CURRENT_LINK_RATE from Clock Recovery
+        bit [1:0] last_lane_count;       // Output for CURRENT_LANE_COUNT from Clock Recovery
+        bit [1:0] last_max_vtg_temp;     // Output for MAX_VTG_temp from Clock Recovery
+        bit [1:0] last_max_pre_temp;     // Output for MAX_PRE_temp from Clock Recovery
+        bit [7:0] last_vtg;              // Output for CURRENT_VTG from Clock Recovery
+        bit [7:0] last_pre;              // Output for CURRENT_PRE from Clock Recovery
+        bit [1:0] starting_lane_count_temp; // Output for STARTING_LANE_COUNT from Clock Recovery
+        bit [7:0] starting_link_rate_temp; // Output for STARTING_LINK_RATE from Clock Recovery
+        // Equalization Signals
+        bit restart = 1'b0; // Flag to indicate if the CR process should restart
+        bit [7:0] EQ_Final_ADJ_BW; // Final adjusted bandwidth 
+        bit [1:0] EQ_Final_ADJ_L; // Final adjusted lane count
+        bit [7:0] RESTART_CR_BW = 8'h00; // Restart bandwidth
+        bit [1:0] RESTART_CR_LC = 2'b00; // Restart lane count
+        bit [1:0] RESTART_CR_MAX_VTG = 2'b00; // Restart VTG
+        bit [1:0] RESTART_CR_MAX_PRE = 2'b00; // Restart PRE
     
-        // Step 2: Read DPCD capabilities (0x00000–0x000FF)
-        `uvm_info(get_type_name(), "Reading DPCD capabilities", UVM_LOW);
+        // Initialize the FSM
+        current_state = READ_EDID;
+    
+        forever begin
+            case (current_state)
+                READ_EDID: begin
+                    // Step 1: Read EDID (128 bytes)
+                    `uvm_info(get_type_name(), "Reading EDID", UVM_LOW);
+    
+                    generate_i2c_over_aux_transaction(
+                        sink_item,       // Input transaction from sink
+                        tl_item,         // Input transaction from tl
+                        expected_transaction      // Output transaction
+                    );
+    
+                    // Move to the next state
+                    next_state = READ_DPCD_CAPABILITIES;
+                end
+    
+                READ_DPCD_CAPABILITIES: begin
+                    // Step 2: Read DPCD capabilities (0x00000–0x000FF)
+                    `uvm_info(get_type_name(), "Reading DPCD capabilities", UVM_LOW);
+    
+                    for (int i = 0; i < 16; i++) begin
+                        generate_native_aux_read_transaction(
+                            sink_item,       // Input transaction from sink
+                            tl_item,         // Input transaction from tl
+                            expected_transaction, // Output transaction
+                            4'b0000,         // Override command (default value)
+                            20'h00000,       // Override address (default value)
+                            8'h00            // Override length (default value)
+                        );
+                    end
+    
+                    // Move to the next state
+                    next_state = CLOCK_RECOVERY_PHASE;
+                end
+    
+                CLOCK_RECOVERY_PHASE: begin
+                    // Step 3: Begin Clock Recovery Phase
+                    `uvm_info(get_type_name(), "Starting Clock Recovery Phase", UVM_LOW);
+    
+                    CR_DONE = generate_clock_recovery_phase(
+                        sink_item, 
+                        tl_item, 
+                        expected_transaction, 
+                        last_link_rate,        // Output for CURRENT_LINK_RATE from Clock Recovery
+                        last_lane_count,       // Output for CURRENT_LANE_COUNT from Clock Recovery
+                        last_max_vtg_temp,     // Output for MAX_VTG_temp from Clock Recovery
+                        last_max_pre_temp,     // Output for MAX_PRE_temp from Clock Recovery
+                        last_vtg,              // Output for CURRENT_VTG from Clock Recovery
+                        last_pre,              // Output for CURRENT_PRE from Clock Recovery
+                        starting_lane_count_temp, // Output for STARTING_LANE_COUNT from Clock Recovery
+                        starting_link_rate_temp, // Output for STARTING_LINK_RATE from Clock Recovery 
+                        1'b0, // Set UPDATE to 0
+                        1'b0, // Flag to indicate if the CR process should restart (initialized to 0)
+                        RESTART_CR_BW, // Restart bandwidth
+                        RESTART_CR_LC, // Restart lane count
+                        RESTART_CR_MAX_VTG, // Restart VTG
+                        RESTART_CR_MAX_PRE // Restart PRE
+                    );
+    
+                    if (CR_DONE) begin
+                        next_state = CHANNEL_EQUALIZATION_PHASE;
+                    end else begin
+                        next_state = CLOCK_RECOVERY_PHASE; // Retry Clock Recovery Phase
+                    end
+                end
+    
+                CHANNEL_EQUALIZATION_PHASE: begin
+                    // Step 4: Begin Channel Equalization Phase if CR is successful
+                    `uvm_info(get_type_name(), "Starting Channel Equalization Phase", UVM_LOW);
+    
+                    EQ_DONE = generate_channel_equalization_phase(
+                        sink_item, 
+                        tl_item, 
+                        expected_transaction, 
+                        last_lane_count,       // NEW_LANE_COUNT
+                        last_link_rate,        // NEW_LINK_RATE
+                        last_vtg,     // NEW_VTG
+                        last_pre,     // NEW_PRE
+                        last_max_vtg_temp,     // MAX_VTG_temp
+                        last_max_pre_temp,     // MAX_PRE_temp
+                        starting_lane_count_temp,                 // STARTING_LANE_COUNT
+                        starting_link_rate_temp,                 // STARTING_LINK_RATE
+                        restart,               // restart
+                        EQ_Final_ADJ_BW,       // EQ_Final_ADJ_BW
+                        EQ_Final_ADJ_LC,        // EQ_Final_ADJ_LC
+                        RESTART_CR_BW, // Restart bandwidth
+                        RESTART_CR_LC, // Restart lane count
+                        RESTART_CR_MAX_VTG, // Restart VTG
+                        RESTART_CR_MAX_PRE // Restart PRE
+                    );
+    
+                    if (EQ_DONE) begin
+                        next_state = FINALIZE_LINK_TRAINING;
+                    end else if (restart = 1'b1)
+                        next_state = RETRY_CLOCK_RECOVERY_PHASE; // Retry Clock Recovery Phase
+                        CR_DONE = 1'b0; // Reset CR_DONE for the next iteration
+                    else begin
+                        next_state = CHANNEL_EQUALIZATION_PHASE; // Retry Channel Equalization Phase
+                    end
+                end
 
-        for (int i = 0; i < 16; i++) begin
-        // Native AUX Transaction Scenario
-        generate_native_aux_read_transaction(
-            sink_item,       // Input transaction from sink
-            tl_item,         // Input transaction from tl
-            expected_transaction        // Output transaction
-        );
+                RETRY_CLOCK_RECOVERY_PHASE: begin
+                    `uvm_info(get_type_name(), "Retrying Clock Recovery Phase", UVM_LOW);
+    
+                    CR_DONE = generate_clock_recovery_phase(
+                        sink_item, 
+                        tl_item, 
+                        expected_transaction, 
+                        last_link_rate,        // Output for CURRENT_LINK_RATE from Clock Recovery
+                        last_lane_count,       // Output for CURRENT_LANE_COUNT from Clock Recovery
+                        last_max_vtg_temp,     // Output for MAX_VTG_temp from Clock Recovery
+                        last_max_pre_temp,     // Output for MAX_PRE_temp from Clock Recovery
+                        last_vtg,              // Output for CURRENT_VTG from Clock Recovery
+                        last_pre,              // Output for CURRENT_PRE from Clock Recovery
+                        starting_lane_count_temp, // Output for STARTING_LANE_COUNT from Clock Recovery
+                        starting_link_rate_temp, // Output for STARTING_LINK_RATE from Clock Recovery 
+                        1'b0, // Set UPDATE to 0
+                        1'b1, // Flag to indicate if the CR process should restart (initialized to 0)
+                        RESTART_CR_BW, // Restart bandwidth
+                        RESTART_CR_LC, // Restart lane count
+                        RESTART_CR_MAX_VTG, // Restart VTG
+                        RESTART_CR_MAX_PRE // Restart PRE
+                    );
+    
+                    if (CR_DONE) begin
+                        next_state = CHANNEL_EQUALIZATION_PHASE;
+                    end else begin
+                        next_state = RETRY_CLOCK_RECOVERY_PHASE; // Retry Clock Recovery Phase
+                    end
+                end
+    
+                FINALIZE_LINK_TRAINING: begin
+                    // Step 5: Finalize Link Training
+                    `uvm_info(get_type_name(), $sformatf("Link Training successful: BW=%0d, Lanes=%0d",
+                                                         EQ_Final_ADJ_BW,
+                                                         EQ_Final_ADJ_LC), UVM_LOW);
+    
+                    next_state = LINK_TRAINING_SUCCESS;
+                end
+    
+                LINK_TRAINING_SUCCESS: begin
+                    // Link Training was successful
+                    `uvm_info(get_type_name(), "Link Training completed successfully", UVM_LOW);
+                    break; // Exit the FSM
+                end
+    
+            endcase
+    
+            // Update the current state
+            current_state = next_state;
         end
-    
-        // Step 3: Begin Clock Recovery Phase
-        CR_DONE = generate_clock_recovery_phase(sink_item, tl_item, expected_transaction);
-    
-        // Step 4: Begin Channel Equalization Phase if CR is successful
-        if (CR_DONE) begin
-            EQ_DONE = generate_channel_equalization_phase(sink_item, tl_item, expected_transaction);
-        end
-
-        // Restart Clock Recovery Phase if restart = 1'b1
-    
-        // Step 5: Finalize Link Training
-        if (EQ_DONE) begin
-            expected_transaction.EQ_LT_Pass = 1'b1;
-            `uvm_info(get_type_name(), $sformatf("Link Training successful: BW=%0d, Lanes=%0d",
-                                                 expected_transaction.EQ_Final_ADJ_BW,
-                                                 expected_transaction.EQ_Final_ADJ_LC), UVM_LOW);
-        end else begin
-            expected_transaction.EQ_Failed = 1'b1;
-            `uvm_error(get_type_name(), "Link Training failed");
-        end
-    endfunction
+    endtask
 
 endclass
