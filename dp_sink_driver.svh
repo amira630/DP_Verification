@@ -14,10 +14,18 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
 
     task run_phase(uvm_phase phase);
         super.run_phase(phase);
+        `uvm_info("DP_SINK_DRIVER", "Before get_next_item", UVM_MEDIUM);
+
         forever begin
+            `uvm_info("DP_SINK_DRIVER", "Before get_next_item", UVM_MEDIUM);
+            `uvm_info(get_type_name(), $sformatf("Time=%0t: start not ready function", $time), UVM_MEDIUM)
+
             // Get sequence item from sequencer
             stim_seq_item = dp_sink_sequence_item::type_id::create("stim_seq_item");
             seq_item_port.get_next_item(stim_seq_item);
+
+            `uvm_info("DP_SINK_DRIVER", $sformatf("Start driver at time = %0t", $time), UVM_MEDIUM);
+
 
             // Check if the interface is available
             if (dp_sink_vif == null) begin
@@ -62,7 +70,7 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
                 end
                 default: 
                     begin
-                        dp_sink_vif = null; // Set the interface to null if the operation is not supported
+                        // dp_sink_vif = null; // Set the interface to null if the operation is not supported
                         `uvm_warning("DP_SINK_DRIVER", "Unknown sink_operation type.")
                         `uvm_error("DP_SINK_DRIVER", "Unsupported operation in sink transaction")
                     end

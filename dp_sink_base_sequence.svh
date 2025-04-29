@@ -24,15 +24,11 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
 
     function new(string name = "dp_sink_base_sequence");
         super.new(name);
-
-        // `uvm_info("SINK BASE SEQ", "Trying to get CFG now!", UVM_MEDIUM);
-        // if (!uvm_config_db #(dp_source_config)::get(uvm_root::get(), "uvm_test_top.*", "CFG",sink_seq_cfg))
-        //     `uvm_fatal("SEQ_build_phase","Unable to get configuration object in SINK base sequence");
     endfunction //new()
 
     task pre_body();
         super.pre_body();
-        `uvm_info("TL BASE SEQ", "Trying to get CFG now!", UVM_MEDIUM);
+        `uvm_info("Sink BASE SEQ", "Trying to get CFG now!", UVM_MEDIUM);
         
         // Try to get config with more specific paths
          if (!uvm_config_db #(dp_source_config)::get(uvm_root::get(), "uvm_test_top.*", "CFG",sink_seq_cfg))
@@ -55,51 +51,67 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
             `uvm_info(get_type_name(), "Successfully randomized all register sets", UVM_MEDIUM)
         end
 
-        // Initialize the state machine
         seq_item = dp_sink_sequence_item::type_id::create("seq_item");
-        seq_item.rst_n = sink_seq_cfg.rst_n; // Set the reset signal from the configuration database
+
+        if (seq_item == null) begin
+            `uvm_info(get_type_name(), "seq_item creation failed", UVM_MEDIUM)
+        end
+
         fork
-            begin
+            begin:  Sink_FSM_States
                 forever begin
                     case (current_state)
                             SINK_NOT_READY: begin
                                 `uvm_info(get_type_name(), "Sink is not ready", UVM_MEDIUM)
+                                `uvm_info(get_type_name(), $sformatf("Time=%0t: Sink is not ready", $time), UVM_MEDIUM)
                                 not_ready();                            // Wait for the sink to be ready
-                                next_state = SINK_LISTEN;
+                                `uvm_info(get_type_name(), "Sink pass the not ready task", UVM_MEDIUM)
+                                current_state = SINK_LISTEN;
 
                             end
                             SINK_LISTEN: begin
                                 `uvm_info(get_type_name(), "Sink is in Listen mode, Waiting for request command", UVM_MEDIUM)
                                 ready();                            
                                 if (seq_item.AUX_START_STOP) begin
-                                    next_state = SINK_TALK;                         // Move to the next state
+                                    current_state = SINK_TALK;                         // Move to the next state
                                 end else begin
-                                    next_state = SINK_LISTEN;                        // Stay in the same state
+                                    current_state = SINK_LISTEN;                        // Stay in the same state
                                 end
                             end
                             SINK_TALK: begin
                                 `uvm_info(get_type_name(), "Sink is in Talk mode, Sending reply", UVM_MEDIUM)
                                 reply_transaction();                     // Send the reply transaction
                                 if (seq_item.AUX_START_STOP) begin
-                                    next_state = SINK_TALK;                         // Stay in the same state
+                                    current_state = SINK_TALK;                         // Stay in the same state
                                 end else begin
-                                    next_state = SINK_LISTEN;                        // Move to the last state
+                                    current_state = SINK_LISTEN;                        // Move to the last state
                                 end
                             end
 
-                        default: begin
-                            next_state = SINK_NOT_READY;
-                        end
+                        // default: begin
+                        //     current_state = SINK_NOT_READY;
+                        // end
                     endcase
                 end
             end
 
-            begin
+            begin: Sink_FSM_Reset
                 forever begin
-                    if (!seq_item.rst_n)
-                        current_state = SINK_NOT_READY;
-                    else
-                        current_state = next_state;
+                    // if (!sink_seq_cfg.rst_n) begin
+                    //     current_state = SINK_NOT_READY;
+                    //     `uvm_info(get_type_name(), $sformatf("Time=%0t: sink at if condition", $time), UVM_MEDIUM)
+                    // end 
+                    // else
+                    //     current_state = next_state;
+
+
+                    wait(~sink_seq_cfg.rst_n);                  // Wait for the reset signal to go low
+                        current_state = SINK_NOT_READY;                  // Set the current state to Not Ready
+                        `uvm_info(get_type_name(), $sformatf("Time=%0t: sink at wait ~rst", $time), UVM_MEDIUM)
+                    wait(sink_seq_cfg.rst_n);                  // Wait for the reset signal to go high
+                        current_state = next_state;                  // Set the current state to next_state
+                        `uvm_info(get_type_name(), $sformatf("Time=%0t: sink at wait rst", $time), UVM_MEDIUM)
+                    
                 end
             end
         join
@@ -107,11 +119,16 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
 
     // Not Ready Sequence
     task not_ready();
+        // Initialize the state machine
+        seq_item = dp_sink_sequence_item::type_id::create("seq_item");
 
         if (seq_item == null) begin
             `uvm_info(get_type_name(), "seq_item creation failed", UVM_MEDIUM)
-            wait(seq_item != null);
         end
+
+        `uvm_info(get_type_name(), "start not ready function", UVM_MEDIUM)
+        `uvm_info(get_type_name(), $sformatf("Time=%0t: start not ready function", $time), UVM_MEDIUM)
+        
 
         // Set the sequence item signals
         start_item(seq_item);
@@ -119,10 +136,12 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         seq_item.sink_operation = Reset;  // Set the operation type to Not Ready
         finish_item(seq_item);                          // Send the sequence item to the driver
         `uvm_info(get_type_name(), "finish_item for not ready", UVM_MEDIUM)
+        get_response(seq_item);
     endtask
 
     // Ready Sequence
     task ready();
+        seq_item = dp_sink_sequence_item::type_id::create("seq_item");
 
         if (seq_item == null) begin
             `uvm_info(get_type_name(), "seq_item creation failed", UVM_MEDIUM)
@@ -135,11 +154,13 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         seq_item.sink_operation = Ready;                // Set the operation type to Not Ready
         finish_item(seq_item);                          // Send the sequence item to the driver
         `uvm_info(get_type_name(), "finish_item for ready state", UVM_MEDIUM)
+        get_response(seq_item);
     endtask
 
     // Reply Sequence
     task reply_transaction();
         int i = 0;
+        seq_item = dp_sink_sequence_item::type_id::create("seq_item");
         // seq_item.sink_operation = Reply_operation;
         get_response(seq_item);                             // Get the response from the driver
         while (seq_item.AUX_START_STOP) begin
@@ -170,6 +191,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
             reply_seq_item.PHY_IN_OUT = reply_seq_item.aux_in_out[i];
             finish_item(reply_seq_item);                                // Send the sequence item to the driver
             `uvm_info(get_type_name(), "finish_item for reply transaction", UVM_MEDIUM)
+            get_response(seq_item);
         end
     endtask
 
@@ -365,6 +387,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         seq_item.sink_operation = Interrupt_operation;  // Set the operation type to IRQ
         finish_item(seq_item);                          // Send the sequence item to the driver
         `uvm_info(get_type_name(), "finish_item for interrupt", UVM_MEDIUM)
+        get_response(seq_item);
     endtask
 
     // HPD Testing 
@@ -383,6 +406,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         seq_item.sink_operation = HPD_test_operation;  // Set the operation type to IRQ
         finish_item(seq_item);                          // Send the sequence item to the driver
         `uvm_info(get_type_name(), "finish_item for HPD test", UVM_MEDIUM)
+        get_response(seq_item);
     endtask
 
 endclass //dp_sink_base_sequence extends superClass

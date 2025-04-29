@@ -71,19 +71,27 @@ class dp_source_test extends uvm_test;
         super.run_phase(phase);
 
         phase.raise_objection(this);
-        fork
-            // Transport Layer Sequence
-            begin
-                `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
-                dp_tl_seq.start(env.tl_agt.sqr);
-                `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
-            end
 
+        repeat(3) begin
+            // TL Reset Sequence
+            `uvm_info("run_phase", "TL Reset seq stimulus generation started", UVM_LOW);
+            dp_tl_rst_seq.start(env.tl_agt.sqr);
+        `   uvm_info("run_phase", "TL Reset seq stimulus generation ended", UVM_LOW);
+        end
+
+        fork
             // DP Sink Sequences
             begin
                 `uvm_info("run_phase", "Sink Full Flow stimulus generation started", UVM_LOW);
                 dp_sink_seq.start(env.sink_agt.sqr);
                 `uvm_info("run_phase", "Sink Full Flow stimulus generation ended", UVM_LOW);
+            end
+            
+            // Transport Layer Sequence
+            begin
+                `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
+                dp_tl_seq.start(env.tl_agt.sqr);
+                `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
             end
         join
         phase.drop_objection(this);

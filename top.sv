@@ -1,6 +1,11 @@
 // Project: DP Verification
 // Description: Top module for the DisplayPort verification environment
 // Time Scale: 1ns / 1fs
+
+// add wave -r /top/tl_if/*
+// add wave -r /top/sink_if/*
+// add wave -r /top/*
+
 `timescale 1ns / 1fs
 
 // Standard UVM import & include:
@@ -27,6 +32,10 @@ module top();
         fork
             begin
                 forever
+                    #5000 clk_AUX = ~clk_AUX;
+            end
+            begin
+                forever
                     #3.086419753 clk_RBR = ~clk_RBR; // will round to 3.086420ns
             end
             begin
@@ -46,10 +55,6 @@ module top();
                     #3.086419753 MS_Stm_CLK = ~MS_Stm_CLK; // Pixel Stream Clock 
                     // #(tl_if.CLOCK_PERIOD/2)
             end
-            begin
-                forever
-                    #5000 clk_AUX = ~clk_AUX;
-            end
         join
     end
 
@@ -60,5 +65,7 @@ module top();
         
         // Run the test
         run_test("dp_source_test");
+        $dumpfile("test.vcd");
+        $dumpvars(0, top);
     end
 endmodule

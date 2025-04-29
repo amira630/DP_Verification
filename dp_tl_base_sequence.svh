@@ -11,10 +11,6 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
 
     function new(string name = "dp_tl_base_sequence");
         super.new(name);
-
-        // `uvm_info("TL BASE SEQ", "Trying to get CFG now!", UVM_MEDIUM);
-        // if (!uvm_config_db #(dp_source_config)::get(uvm_root::get(), "uvm_test_top.*", "CFG",seq_cfg))
-        //     `uvm_fatal("SEQ_build_phase","Unable to get configuration object in TL base sequence!");
     endfunction //new()
 
     task pre_body();
@@ -30,6 +26,138 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
 
 // uvm_config_db#(your_cfg_type)::get(uvm_root::get(), "uvm_test_top.*", "cfg", cfg_handle);
 
+/////////////////////////////// FSM ///////////////////////////////////////
+task FLOW_FSM();
+        tl_flow_stages_e cs, ns; // Declare current and next state variables
+        
+        seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        seq_item.rst_n = seq_cfg.rst_n; // Reset signal for the sequence item
+        seq_item.isflow= 1'b1; // Set the isflow flag to indicate that this is a flow sequence
+        fork
+            begin
+                forever begin
+                    case(cs)
+                        DETECTING:begin
+                            detect_wait(seq_item);
+                            if(seq_item.HPD_Detect) begin
+                                cs = CR_STAGE;
+                                `uvm_info("TL_BASE_SEQ", $sformatf("HPD detected, moving to CR stage"), UVM_MEDIUM)
+                            end
+                            else begin
+                                cs = DETECTING;
+                                `uvm_info("TL_BASE_SEQ", $sformatf("No HPD detected, staying in DETECTING state"), UVM_MEDIUM)
+                            end
+                        end
+                        CR_STAGE: begin
+                            CR_LT();
+                            if(seq_item.HPD_Detect) begin
+                                if(~seq_item.LT_Failed) begin
+                                    cs = EQ_STAGE;
+                                    `uvm_info("TL_BASE_SEQ", $sformatf("Link Training CR passed, moving to EQ stage"), UVM_MEDIUM)
+                                end
+                                else begin
+                                    cs = CR_STAGE;
+                                    `uvm_info("TL_BASE_SEQ", $sformatf("Link Training CR failed, moving back to DETECTING state"), UVM_MEDIUM)
+                                end
+                            end
+                            else begin
+                                cs = DETECTING;
+                                `uvm_info("TL_BASE_SEQ", $sformatf("No HPD detected, moving back to DETECTING state"), UVM_MEDIUM)
+                            end
+                        end
+                        EQ_STAGE: begin
+                            EQ_LT();
+                            if(seq_item.HPD_Detect) begin
+                                if(seq_item.LT_Pass) begin
+                                    cs = ISO_STAGE;
+                                    `uvm_info("TL_BASE_SEQ", $sformatf("Link Training (EQ) has been successful , moving to ISO stage"), UVM_MEDIUM)
+                                end
+                                else if(seq_item.LT_Failed) begin
+                                    cs = CR_STAGE;
+                                    `uvm_info("TL_BASE_SEQ", $sformatf("Link Training EQ failed, moving back to DETECTING state"), UVM_MEDIUM)
+                                end
+                            end
+                            else begin
+                                cs = DETECTING;
+                                `uvm_info("TL_BASE_SEQ", $sformatf("No HPD detected, moving back to DETECTING state"), UVM_MEDIUM)
+                            end
+                        end
+                        ISO_STAGE: begin
+                            fork
+                                begin
+                                    ISO_INIT();
+                                    Main_Stream(10);
+                                end
+                                begin 
+                                    forever begin
+                                        if(~seq_item.HPD_Detect) begin
+                                            cs = DETECTING;
+                                            seq_item.SPM_ISO_start = 1'b0; // Stop the ISO stream
+                                            `uvm_info("TL_BASE_SEQ", $sformatf("HPD not detected, moving back to DETECTING state"), UVM_MEDIUM)
+                                        end
+                                        else if(seq_item.HPD_IRQ) begin
+                                            // Call Interrput task
+                                            HPD_IRQ_sequence();
+                                            if(seq_item.error_flag) begin
+                                                cs = CR_STAGE;
+                                                seq_item.SPM_ISO_start = 1'b0; // Stop the ISO stream
+                                                `uvm_info("TL_BASE_SEQ", $sformatf("ISO stage completed, moving to IRQ state"), UVM_MEDIUM)
+                                            end
+                                            else begin
+                                                cs = ISO_STAGE;
+                                                `uvm_info("TL_BASE_SEQ", $sformatf("ISO stage not completed, staying in ISO stage"), UVM_MEDIUM)
+                                            end
+                                        end
+                                    end
+                                end
+                            join
+                        end
+                        default: begin
+                            cs = DETECTING;
+                            `uvm_fatal("TL_BASE_SEQ", "Invalid state in FLOW_FSM")
+                        end
+                    endcase
+                end
+            end
+
+            begin
+                forever begin
+                    // if (!seq_cfg.rst_n)
+                    //     cs = DETECTING;
+                    // else
+                    //     cs = ns;
+
+                    wait(~seq_cfg.rst_n);                  // Wait for the reset signal to go low
+                        cs = DETECTING;                  // Set the current state to Not Ready
+                        `uvm_info(get_type_name(), $sformatf("Time=%0t: TL at wait ~rst", $time), UVM_MEDIUM)
+                    wait(seq_cfg.rst_n);                  // Wait for the reset signal to go high
+                        cs = ns;                  // Set the current state to next_state
+                        `uvm_info(get_type_name(), $sformatf("Time=%0t: TL at wait rst", $time), UVM_MEDIUM)
+                end
+            end
+        join 
+        seq_item.isflow= 1'b0;
+    endtask
+
+
+////////////////////////////// Detecting //////////////////////////////
+task detect_wait(output dp_tl_sequence_item seq_item);
+    `uvm_info(get_type_name(), "Detect wait DUT", UVM_MEDIUM)
+    seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+    start_item(seq_item);
+        seq_item.operation = DETECT_op;
+    finish_item(seq_item);
+    `uvm_info(get_type_name(), "Detect wait complete", UVM_MEDIUM)
+    get_response(seq_item);
+    if(seq_item.HPD_Detect) begin
+        `uvm_info(get_type_name(), $sformatf("HPD detected"), UVM_MEDIUM)
+    end
+    else begin
+        `uvm_info(get_type_name(), $sformatf("No HPD detected"), UVM_MEDIUM)
+    end
+
+endtask
+
 /////////////////////////// Reset /////////////////////////////////////
 
 task reset_task();
@@ -43,6 +171,7 @@ task reset_task();
         seq_item.LT_Pass = 1'b0;
     finish_item(seq_item);
     `uvm_info(get_type_name(), "DUT Reset complete", UVM_MEDIUM)
+    get_response(seq_item);
 endtask
 
 ////////////////////////////////////// HPD //////////////////////////////////////
@@ -51,6 +180,7 @@ task HPD_IRQ_sequence();
     for(int i=0; i<16; i++)
         native_read_request(20'h200 + i*16, 8'h0F);   // Read Link/Sink Device Status Register
     start_item(seq_item);
+        `uvm_info(get_type_name(), "HPD IRQ sequence", UVM_MEDIUM)
         seq_item.error_flag.rand_mode(1);  
         assert(seq_item.randomize());                 // Randomize the data
         if (seq_item.error_flag) begin
@@ -58,6 +188,8 @@ task HPD_IRQ_sequence();
             seq_item.LT_Pass = 1'b0;
         end
     finish_item(seq_item);
+    `uvm_info(get_type_name(), "HPD IRQ sequence complete", UVM_MEDIUM)
+    get_response(seq_item);
 endtask
 
 //////////////////////////// I2C AUX REQUEST TRANSACTION //////////////////////////////////
@@ -209,6 +341,7 @@ endtask
                     seq_item.LPM_Data= seq_item.LPM_Data_queue[burst];
                 finish_item(seq_item);
                 burst++;
+                get_response(seq_item);
             end
             while (ack_count < 1) begin
                 // Wait for the response from the DUT
@@ -292,6 +425,7 @@ endtask
         seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
         assert(seq_item.randomize());
         finish_item(seq_item);
+        get_response(seq_item);
         ack_count = 0;
         while (~seq_item.CR_Completed) begin
             // Wait for 202 to 207 to be read
@@ -417,6 +551,7 @@ endtask
             seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
             assert(seq_item.randomize());
             finish_item(seq_item);
+            get_response(seq_item);
             ack_count = 0;
             // Waiting for DPCD reg 0000E to be read and value be returned
             while (~seq_item.CR_Completed) begin
@@ -514,6 +649,7 @@ endtask
 
             assert(seq_item.randomize()); // Randomize enabled fields
             finish_item(seq_item); // Finish transaction
+            get_response(seq_item);
             // Wait for acknowledgment from the DUT for 2 writes and 1 read transactions
             while(~done) begin
                 get_response(seq_item);
@@ -548,6 +684,7 @@ endtask
             seq_item.Driving_Param_VLD = 1'b0;
             assert(seq_item.randomize());
             finish_item(seq_item);
+            get_response(seq_item);
             ack_count = 0;
             // wait for dut to receive EQ_RD_Value
             
@@ -729,6 +866,7 @@ endtask
         else if(seq_item.MISC0[7:5] == 3'b100)
             seq_item.CLOCK_PERIOD = (48/seq_item.MS_Stm_BW);
         finish_item(seq_item);
+        get_response(seq_item);
         `uvm_info("TL_ISO_INIT_SEQ", $sformatf("ISO_INIT_SPM: ISO_start=%0b, SPM_Lane_BW=0x%0h, SPM_Lane_Count=0x%0h, Mvid=0x%0h, Nvid=0x%0h, HTotal=0x%0h, VTotal=0x%0h, HStart=0x%0h, VStart=0x%0h, HSP=0x%0h, VSP=0x%0h, HSW=0x%0h, VSW=0x%0h, HWidth=0x%0h, VHeight=0x%0h, MISC0=0x%0h, MISC1=0x%0h", seq_item.SPM_ISO_start, seq_item.SPM_Lane_BW, seq_item.SPM_Lane_Count, seq_item.Mvid, seq_item.Nvid, seq_item.HTotal, seq_item.VTotal, seq_item.HStart, seq_item.VStart, seq_item.HSP, seq_item.VSP, seq_item.HSW, seq_item.VSW, seq_item.HWidth, seq_item.VHeight, seq_item.MISC0, seq_item.MISC1), UVM_MEDIUM);
     endtask
 
@@ -797,6 +935,7 @@ endtask
                     end
                     counth++;
                     finish_item(seq_item);
+                    get_response(seq_item);
                 end
                 counth = 0; // reset the counter
                 countv++;
@@ -809,110 +948,7 @@ endtask
         seq_item.SPM_MSA_VLD = 1'b0;
         seq_item.SPM_ISO_start = 1'b0; // NEED TO ADD A CONDITION FOR ERROR THAT RELATES TO THE HPD_IRQ // I think I will need to add a flag in the IRQ task that I will check here
         finish_item(seq_item);
-    endtask
-
-    task FLOW_FSM();
-        tl_flow_stages_e cs, ns; // Declare current and next state variables
-        
-        seq_item = dp_tl_sequence_item::type_id::create("seq_item");
-        seq_item.rst_n = seq_cfg.rst_n; // Reset signal for the sequence item
-        seq_item.isflow= 1'b1; // Set the isflow flag to indicate that this is a flow sequence
-        fork
-            begin
-                forever begin
-                    case(cs)
-                        DETECTING:begin
-                            if(seq_item.HPD_Detect) begin
-                                ns = CR_STAGE;
-                                `uvm_info("TL_BASE_SEQ", $sformatf("HPD detected, moving to CR stage"), UVM_MEDIUM)
-                            end
-                            else begin
-                                ns = DETECTING;
-                                `uvm_info("TL_BASE_SEQ", $sformatf("No HPD detected, staying in DETECTING state"), UVM_MEDIUM)
-                            end
-                        end
-                        CR_STAGE: begin
-                            CR_LT();
-                            if(seq_item.HPD_Detect) begin
-                                if(~seq_item.LT_Failed) begin
-                                    ns = EQ_STAGE;
-                                    `uvm_info("TL_BASE_SEQ", $sformatf("Link Training CR passed, moving to EQ stage"), UVM_MEDIUM)
-                                end
-                                else begin
-                                    ns = CR_STAGE;
-                                    `uvm_info("TL_BASE_SEQ", $sformatf("Link Training CR failed, moving back to DETECTING state"), UVM_MEDIUM)
-                                end
-                            end
-                            else begin
-                                ns = DETECTING;
-                                `uvm_info("TL_BASE_SEQ", $sformatf("No HPD detected, moving back to DETECTING state"), UVM_MEDIUM)
-                            end
-                        end
-                        EQ_STAGE: begin
-                            EQ_LT();
-                            if(seq_item.HPD_Detect) begin
-                                if(seq_item.LT_Pass) begin
-                                    ns = ISO_STAGE;
-                                    `uvm_info("TL_BASE_SEQ", $sformatf("Link Training (EQ) has been successful , moving to ISO stage"), UVM_MEDIUM)
-                                end
-                                else if(seq_item.LT_Failed) begin
-                                    ns = CR_STAGE;
-                                    `uvm_info("TL_BASE_SEQ", $sformatf("Link Training EQ failed, moving back to DETECTING state"), UVM_MEDIUM)
-                                end
-                            end
-                            else begin
-                                ns = DETECTING;
-                                `uvm_info("TL_BASE_SEQ", $sformatf("No HPD detected, moving back to DETECTING state"), UVM_MEDIUM)
-                            end
-                        end
-                        ISO_STAGE: begin
-                            fork
-                                begin
-                                    ISO_INIT();
-                                    Main_Stream(10);
-                                end
-                                begin 
-                                    forever begin
-                                        if(~seq_item.HPD_Detect) begin
-                                            ns = DETECTING;
-                                            seq_item.SPM_ISO_start = 1'b0; // Stop the ISO stream
-                                            `uvm_info("TL_BASE_SEQ", $sformatf("HPD not detected, moving back to DETECTING state"), UVM_MEDIUM)
-                                        end
-                                        else if(seq_item.HPD_IRQ) begin
-                                            // Call Interrput task
-                                            HPD_IRQ_sequence();
-                                            if(seq_item.error_flag) begin
-                                                ns = CR_STAGE;
-                                                seq_item.SPM_ISO_start = 1'b0; // Stop the ISO stream
-                                                `uvm_info("TL_BASE_SEQ", $sformatf("ISO stage completed, moving to IRQ state"), UVM_MEDIUM)
-                                            end
-                                            else begin
-                                                ns = ISO_STAGE;
-                                                `uvm_info("TL_BASE_SEQ", $sformatf("ISO stage not completed, staying in ISO stage"), UVM_MEDIUM)
-                                            end
-                                        end
-                                    end
-                                end
-                            join
-                        end
-                        default: begin
-                            ns = DETECTING;
-                            `uvm_fatal("TL_BASE_SEQ", "Invalid state in FLOW_FSM")
-                        end
-                    endcase
-                end
-            end
-
-            begin
-                forever begin
-                    if (!seq_item.rst_n)
-                        cs = DETECTING;
-                    else
-                        cs = ns;
-                end
-            end
-        join 
-        seq_item.isflow= 1'b0;
+        get_response(seq_item);
     endtask
 
 endclass //dp_tl_base_sequence extends superClass

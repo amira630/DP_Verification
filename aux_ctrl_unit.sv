@@ -114,6 +114,7 @@ always @ (posedge clk or negedge rst_n)
 // next state logic
 always @ (*)
  begin
+  next_state = current_state;
   case(current_state)
   IDLE_MODE: 
         begin
