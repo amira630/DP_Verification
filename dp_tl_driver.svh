@@ -33,7 +33,7 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
                     reset_op: dp_tl_vif.Reset();                             // Reset the interface
                     I2C_READ: dp_tl_vif.I2C_READ(stimulus_seq_item.SPM_Address,stimulus_seq_item.SPM_LEN,stimulus_seq_item.SPM_CMD,stimulus_seq_item.SPM_Transaction_VLD);      // I2C READ
                     I2C_WRITE: dp_tl_vif.I2C_WRITE(stimulus_seq_item.SPM_Address,stimulus_seq_item.SPM_LEN,stimulus_seq_item.SPM_CMD, stimulus_seq_item.SPM_Data, stimulus_seq_item.SPM_Transaction_VLD);     // I2C WRITE
-                    ISO: dp_tl_vif.ISO(stimulus_seq_item.SPM_ISO_start, stimulus_seq_item.SPM_MSA_VLD, stimulus_seq_item.MS_DE, stimulus_seq_item.MS_VSYNC, stimulus_seq_item.MS_HSYNC, stimulus_seq_item.HPD_IRQ,stimulus_seq_item.SPM_Lane_BW, stimulus_seq_item.SPM_Lane_Count, stimulus_seq_item.SPM_BW_Sel, stimulus_seq_item.MS_Pixel_Data, stimulus_seq_item.MS_Stm_BW, stimulus_seq_item.SPM_MSA); // ISO
+                    ISO: dp_tl_vif.ISO(stimulus_seq_item.CLOCK_PERIOD, stimulus_seq_item.SPM_ISO_start, stimulus_seq_item.SPM_MSA_VLD, stimulus_seq_item.MS_DE, stimulus_seq_item.MS_VSYNC, stimulus_seq_item.MS_HSYNC, stimulus_seq_item.SPM_Lane_BW, stimulus_seq_item.SPM_Lane_Count, stimulus_seq_item.SPM_BW_Sel, stimulus_seq_item.MS_Pixel_Data, stimulus_seq_item.MS_Stm_BW, stimulus_seq_item.SPM_MSA); // ISO
                     DETECT: `uvm_info("DP_TL_DRIVER", "Source is still detecting the sink.", UVM_MEDIUM) // Detect
                     default: begin
                         dp_tl_vif = null; // Set the interface to null if the operation is not supported
@@ -49,7 +49,7 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
                     NATIVE_WRITE: dp_tl_vif.NATIVE_WRITE(stimulus_seq_item.LPM_Address,stimulus_seq_item.LPM_LEN,stimulus_seq_item.LPM_CMD, stimulus_seq_item.LPM_Data, stimulus_seq_item.LPM_Transaction_VLD);      // NATIVE WRITE
                     CR_LT: dp_tl_vif.LT_CT(stimulus_seq_item.Config_Param_VLD, stimulus_seq_item.Driving_Param_VLD, stimulus_seq_item.LPM_Start_CR, stimulus_seq_item.CR_DONE_VLD, stimulus_seq_item.PRE, stimulus_seq_item.VTG, stimulus_seq_item.Link_BW_CR, stimulus_seq_item.EQ_RD_Value, stimulus_seq_item.CR_DONE, stimulus_seq_item.Link_LC_CR, stimulus_seq_item.MAX_VTG, stimulus_seq_item.MAX_PRE); // CR_LT
                     EQ_LT: dp_tl_vif.LT_EQ(stimulus_seq_item.Driving_Param_VLD, stimulus_seq_item.CR_DONE_VLD, stimulus_seq_item.EQ_Data_VLD, stimulus_seq_item.MAX_TPS_SUPPORTED_VLD, stimulus_seq_item.PRE, stimulus_seq_item.VTG, stimulus_seq_item.Lane_Align, stimulus_seq_item.CR_DONE, stimulus_seq_item.EQ_CR_DN, stimulus_seq_item.Channel_EQ, stimulus_seq_item.Symbol_Lock, stimulus_seq_item.MAX_TPS_SUPPORTED);  // EQ_LT
-                    ISO: dp_tl_vif.ISO(stimulus_seq_item.SPM_ISO_start, stimulus_seq_item.SPM_MSA_VLD, stimulus_seq_item.MS_DE, stimulus_seq_item.MS_VSYNC, stimulus_seq_item.MS_HSYNC, stimulus_seq_item.HPD_IRQ,stimulus_seq_item.SPM_Lane_BW, stimulus_seq_item.SPM_Lane_Count, stimulus_seq_item.SPM_BW_Sel, stimulus_seq_item.MS_Pixel_Data, stimulus_seq_item.MS_Stm_BW, stimulus_seq_item.SPM_MSA); // ISO
+                    ISO: dp_tl_vif.ISO(stimulus_seq_item.CLOCK_PERIOD, stimulus_seq_item.SPM_ISO_start, stimulus_seq_item.SPM_MSA_VLD, stimulus_seq_item.MS_DE, stimulus_seq_item.MS_VSYNC, stimulus_seq_item.MS_HSYNC, stimulus_seq_item.SPM_Lane_BW, stimulus_seq_item.SPM_Lane_Count, stimulus_seq_item.SPM_BW_Sel, stimulus_seq_item.MS_Pixel_Data, stimulus_seq_item.MS_Stm_BW, stimulus_seq_item.SPM_MSA); // ISO
                     DETECT: `uvm_info("DP_TL_DRIVER", "Source is still detecting the sink.", UVM_MEDIUM) // Detect
                     default: begin
                         dp_tl_vif = null;    // Set the interface to null if the operation is not supported
@@ -60,7 +60,7 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
             else begin
                 case (stimulus_seq_item.operation)
                     reset_op: dp_tl_vif.Reset();    
-                    ISO: dp_tl_vif.ISO(stimulus_seq_item.SPM_ISO_start, stimulus_seq_item.SPM_MSA_VLD, stimulus_seq_item.MS_DE, stimulus_seq_item.MS_VSYNC, stimulus_seq_item.MS_HSYNC, stimulus_seq_item.HPD_IRQ,stimulus_seq_item.SPM_Lane_BW, stimulus_seq_item.SPM_Lane_Count, stimulus_seq_item.SPM_BW_Sel, stimulus_seq_item.MS_Pixel_Data, stimulus_seq_item.MS_Stm_BW, stimulus_seq_item.SPM_MSA); // ISO                         // Reset the interface
+                    ISO: dp_tl_vif.ISO(stimulus_seq_item.CLOCK_PERIOD, stimulus_seq_item.SPM_ISO_start, stimulus_seq_item.SPM_MSA_VLD, stimulus_seq_item.MS_DE, stimulus_seq_item.MS_VSYNC, stimulus_seq_item.MS_HSYNC, stimulus_seq_item.SPM_Lane_BW, stimulus_seq_item.SPM_Lane_Count, stimulus_seq_item.SPM_BW_Sel, stimulus_seq_item.MS_Pixel_Data, stimulus_seq_item.MS_Stm_BW, stimulus_seq_item.SPM_MSA); // ISO                         // Reset the interface
                     DETECT: `uvm_info("DP_TL_DRIVER", "Source is still detecting the sink.", UVM_MEDIUM) // Detect
                     default: begin
                         dp_tl_vif = null; // Set the interface to null if the operation is not supported

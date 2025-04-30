@@ -795,6 +795,7 @@ endtask
     task FLOW_FSM();
         seq_item = dp_tl_sequence_item::type_id::create("seq_item");
         seq_item.isflow= 1'b1; // Set the isflow flag to indicate that this is a flow sequence
+        flow_stages_e cs, ns;
         fork
             begin
                 forever begin

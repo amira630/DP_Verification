@@ -226,7 +226,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             MAX_TPS_SUPPORTED_VLD = logic'(max_tps_supported_vld);
       endtask
 
-      task ISO(input bit iso_start, msa_vld, de, vsync, hsync, logic irq, [AUX_DATA_WIDTH-1:0] adj_bw, [1:0] adj_lc, bw_sel, [47:0] pixels, [9:0] stm_bw, [7:0] msa [23:0]);
+      task ISO(input real clk_stream, bit iso_start, msa_vld, de, vsync, hsync, [AUX_DATA_WIDTH-1:0] adj_bw, [1:0] adj_lc, bw_sel, [47:0] pixels, [9:0] stm_bw, [7:0] msa [23:0]);
             // Set SPM-related signals for Isochronous Transport Layer
             SPM_Lane_BW = adj_bw;
             SPM_Lane_Count = adj_lc;
@@ -239,6 +239,6 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             MS_DE = de; // Set DE signal to indicate the active period of the stream
             MS_VSYNC = vsync; // Set Vsync signal to indicate the start of the vertical blanking period
             MS_HSYNC = hsync; // Set Hsync signal to indicate the start of the horizontal blanking period
-            HPD_IRQ = irq;
+            CLOCK_PERIOD = clk_stream;
       endtask
 endinterface

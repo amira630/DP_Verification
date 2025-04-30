@@ -170,6 +170,17 @@
         ISO_ACTIVE      = 2'b11   // Active video period
     } iso_op_code;
 
+    typedef enum logic [2:0] {
+        ISO_SR    = 3'b000,   
+        ISO_BS    = 3'b001,  
+        ISO_BF    = 3'b010,  
+        ISO_VB_ID = 3'b011,  
+        ISO_MVID  = 3'b100,   
+        ISO_MAUD  = 3'b101,   
+        ISO_DUMMY = 3'b110,
+        ISO_MSA   = 3'b111
+    } iso_idle_code;
+
 // Sink Driver Operation
     typedef enum logic [1:0] {
         HPD_operation   = 2'b00,  
