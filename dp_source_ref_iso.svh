@@ -515,11 +515,12 @@ class dp_source_ref_iso extends uvm_scoreboard;
 
 
 
-
+    // Note : Maybe make the while loop internal to each case statement and remove the while loop from Outside the case statement
     // This function creates the HBLANK pattern to be sent on each lane
     // This function is similar to the ISO_VBLANK_PATTERN function but Without sending MSA symbols and instead 
     // continuously sending the DUMMY pattern until the beginning of the Hactive period
     function void ISO_HBLANK_PATTERN(input dp_tl_sequence_item tl_item, output dp_transaction expected_transaction);
+    while (counter_0<hblank_period) begin
         case(tl_item.ISO_LC) // according to the actvie lane count, send HBLANK on all active lanes and remain with IDLE pattern on inactive lanes
             2'b00: begin // // Data transmission on 1 lane
                     if (!tl_item.rst_n) begin
@@ -528,7 +529,6 @@ class dp_source_ref_iso extends uvm_scoreboard;
                         counter_1 = 0; counter_SR_1 = 0; // Reset state and counters to initial values
                         counter_2 = 0; counter_SR_2 = 0; // Reset state and counters to initial values
                         counter_3 = 0; counter_SR_3 = 0; // Reset state and counters to initial values
-                        count_MSA_0 = 0; // Reset MSA counters to initial values
                         break; // Exit the loop if reset is active
                     end
                     else begin
@@ -537,7 +537,7 @@ class dp_source_ref_iso extends uvm_scoreboard;
                         cs_2 = ns_2; // Update current state to next state
                         cs_3 = ns_3; // Update current state to next state
                     end
-                    send_vblank_symbols(tl_item, counter_SR_0, counter_0, count_MSA_0, cs_0, ns_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN function to handle VBLANK state
+                    send_hblank_symbols(tl_item, counter_SR_0, counter_0, cs_0, ns_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN function to handle VBLANK state
                     IDLE_PATTERN(tl_item, counter_SR_1, counter_1, cs_1, ns_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN function to handle IDLE state
                     IDLE_PATTERN(tl_item, counter_SR_2, counter_2, cs_2, ns_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN function to handle IDLE state
                     IDLE_PATTERN(tl_item, counter_SR_3, counter_3, cs_3, ns_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN function to handle IDLE state
@@ -553,7 +553,6 @@ class dp_source_ref_iso extends uvm_scoreboard;
                         counter_1 = 0; counter_SR_1 = 0; // Reset state and counters to initial values
                         counter_2 = 0; counter_SR_2 = 0; // Reset state and counters to initial values
                         counter_3 = 0; counter_SR_3 = 0; // Reset state and counters to initial values
-                        count_MSA_0 = 0; count_MSA_1 = 0; // Reset MSA counters to initial values
                         break; // Exit the loop if reset is active
                     end
                     else begin
@@ -562,8 +561,8 @@ class dp_source_ref_iso extends uvm_scoreboard;
                         cs_2 = ns_2; // Update current state to next state
                         cs_3 = ns_3; // Update current state to next state
                     end
-                    send_vblank_symbols(tl_item, counter_SR_0, counter_0, cs_0, count_MSA_0, ns_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN function to handle VBLANK state
-                    send_vblank_symbols(tl_item, counter_SR_1, counter_1, cs_1, count_MSA_1, ns_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN function to handle VBLANK state
+                    send_hblank_symbols(tl_item, counter_SR_0, counter_0, cs_0, ns_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN function to handle VBLANK state
+                    send_hblank_symbols(tl_item, counter_SR_1, counter_1, cs_1, ns_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN function to handle VBLANK state
                     IDLE_PATTERN(tl_item, counter_SR_2, counter_2, cs_2, ns_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN function to handle IDLE state
                     IDLE_PATTERN(tl_item, counter_SR_3, counter_3, cs_3, ns_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN function to handle IDLE state
                     
@@ -579,7 +578,6 @@ class dp_source_ref_iso extends uvm_scoreboard;
                         counter_1 = 0; counter_SR_1 = 0; // Reset state and counters to initial values
                         counter_2 = 0; counter_SR_2 = 0; // Reset state and counters to initial values
                         counter_3 = 0; counter_SR_3 = 0; // Reset state and counters to initial values
-                        count_MSA_0 = 0; count_MSA_1 = 0; count_MSA_2 = 0; count_MSA_3 = 0; // Reset MSA counters to initial values
                         break; // Exit the loop if reset is active
                     end
                     else begin
@@ -588,10 +586,10 @@ class dp_source_ref_iso extends uvm_scoreboard;
                         cs_2 = ns_2; // Update current state to next state
                         cs_3 = ns_3; // Update current state to next state
                     end
-                    send_vblank_symbols(tl_item, counter_SR_0, counter_0, count_MSA_0, cs_0, ns_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN function to handle VBLANK state
-                    send_vblank_symbols(tl_item, counter_SR_1, counter_1, count_MSA_1, cs_1, ns_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN function to handle VBLANK state
-                    send_vblank_symbols(tl_item, counter_SR_2, counter_2, count_MSA_2, cs_2, ns_2, tl_item.ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call VBLANK_PATTERN function to handle VBLANK state
-                    send_vblank_symbols(tl_item, counter_SR_3, counter_3, count_MSA_3, cs_3, ns_3, tl_item.ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call VBLANK_PATTERN function to handle VBLANK state
+                    send_hblank_symbols(tl_item, counter_SR_0, counter_0, cs_0, ns_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN function to handle VBLANK state
+                    send_hblank_symbols(tl_item, counter_SR_1, counter_1, cs_1, ns_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN function to handle VBLANK state
+                    send_hblank_symbols(tl_item, counter_SR_2, counter_2, cs_2, ns_2, tl_item.ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call VBLANK_PATTERN function to handle VBLANK state
+                    send_hblank_symbols(tl_item, counter_SR_3, counter_3, cs_3, ns_3, tl_item.ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call VBLANK_PATTERN function to handle VBLANK state
                     
                     // Send the expected transaction to the scoreboard
                     ref_model_out_port.write(expected_transaction);
@@ -600,6 +598,18 @@ class dp_source_ref_iso extends uvm_scoreboard;
             default:    // Default case to handle unexpected states
                 `uvm_fatal("ISO_LANE_NUM_ERROR", "Invalid lane number in ISO operation! Lane Count cannot be 3!")
         endcase
+    end
+
+    // Clear Counters and flags for the next iteration
+    counter_0 = 0;
+    if(tl_item.ISO_LC == 2'b01) begin
+    counter_1 = 0;
+    end
+    else if (tl_item.ISO_LC == 2'b11) begin
+    counter_1 = 0;
+    counter_2 = 0;
+    counter_3 = 0;
+    end
     endfunction
 
     // This function creates the HBLANK pattern to be sent on each lane
@@ -615,7 +625,6 @@ class dp_source_ref_iso extends uvm_scoreboard;
         int count_lc; // to count which round of VB-ID, Mvid adn Maud is this 
         case (cs)
             ISO_SR: begin
-                if(counter_SR == 512) begin
                 Control_sym_flag_lanex = 1'b1;
                 ISO_symbols_lanex = SR;
                 counter_SR = 0; // Reset counter after sending SR symbols
@@ -627,10 +636,8 @@ class dp_source_ref_iso extends uvm_scoreboard;
                 else begin
                     ns = ISO_BF; // Transition to BF state
                 end
-                end else begin
-                    ns = ISO_BS; // Transition to BS state
-                end
             end
+
             ISO_BS: begin
                 Control_sym_flag_lanex = 1'b1;
                 ISO_symbols_lanex = BS;
@@ -661,7 +668,7 @@ class dp_source_ref_iso extends uvm_scoreboard;
             end
             ISO_VB_ID:begin
                 Control_sym_flag_lanex = 1'b0;
-                ISO_symbols_lanex = 8'bx000_1000;  //lessa hashof ha5aleha kaaaaaam
+                ISO_symbols_lanex = 8'bx000_0000;
                 counter++; // Increment the counter for the number of symbols sent
                 ns = ISO_MVID; // Transition to MVID state
                 BF_flag = 1'b0; // Reset BF_flag after sending VB_ID symbols
@@ -689,22 +696,23 @@ class dp_source_ref_iso extends uvm_scoreboard;
                 end  
             end
             ISO_DUMMY:begin
+                if(counter<hblank_period-1) begin
                 Control_sym_flag_lanex = 1'b0;
                 ISO_symbols_lanex = 'b0; // Dummy symbol for IDLE state
                 counter++; // Increment the counter for the number of symbols sent
-                if(counter<HACTIVE_PERIOD-1) begin
                     ns = ISO_DUMMY; // Stay in IDLE state
                 end
                 else begin
-                    // counter = 0;
-                    ns = ISO_BE; // Transition to BE state
-                end
-            end
-            ISO_BE:begin
                 Control_sym_flag_lanex = 1'b1;
                 ISO_symbols_lanex = BE; // Dummy symbol for IDLE state
                 counter++; // Increment the counter for the number of symbols sent
-                ns = ISO_SR; // Transition to SR state
+                if(counter_SR == 512) begin
+                        ns = ISO_SR; // Transition to SR state
+                    end
+                    else begin
+                        ns = ISO_BS; // Transition to BS state
+                    end
+                end  
             end
            
             default: `uvm_fatal("ISO_STATE_ERROR", "Invalid state in ISO operation in VBLANK_PATTERN function")
@@ -826,7 +834,7 @@ class dp_source_ref_iso extends uvm_scoreboard;
             // Vertical Blanking Period Calculation //
             //////////////////////////////////////////
 
-            vblank_period = vtotal - vheight;
+            vblank_period = vtotal - vheight; // In lines
               
             ///////////////////////////////////////////
             ///////////////////////////////////////////
