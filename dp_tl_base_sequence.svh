@@ -128,10 +128,10 @@ task FLOW_FSM();
                     //     cs = ns;
 
                     wait(~seq_cfg.rst_n);                  // Wait for the reset signal to go low
-                        cs = DETECTING;                  // Set the current state to Not Ready
+                        reset_task();                  // Set the current state to Not Ready
                         `uvm_info(get_type_name(), $sformatf("Time=%0t: TL at wait ~rst", $time), UVM_MEDIUM)
                     wait(seq_cfg.rst_n);                  // Wait for the reset signal to go high
-                        cs = ns;                  // Set the current state to next_state
+                        cs = DETECTING;                  // Set the current state to next_state
                         `uvm_info(get_type_name(), $sformatf("Time=%0t: TL at wait rst", $time), UVM_MEDIUM)
                 end
             end
@@ -200,17 +200,18 @@ endtask
         seq_item = dp_tl_sequence_item::type_id::create("seq_item");
 
         seq_item.CTRL_I2C_Failed = 1;
-        seq_item.operation = I2C_READ;
         while (seq_item.CTRL_I2C_Failed) begin
             seq_item.CTRL_I2C_Failed = 0;
             start_item(seq_item);
                 seq_item.SPM_Address.rand_mode(0);    // randomization off
                 seq_item.SPM_CMD.rand_mode(0);        // randomization off
-
+                seq_item.operation = I2C_READ;
                 seq_item.SPM_CMD = CMD;               // Read
                 seq_item.SPM_Transaction_VLD = 1'b1;  // SPM is going to request a Native transaction 
                 seq_item.SPM_Address = address;       // Address
                 seq_item.SPM_LEN = 0;               // Length
+                seq_item.SPM_Data = 0;               // Data
+                
                 // if (CMD == AUX_I2C_WRITE) begin
                 //     seq_item.SPM_Data.delete();  // Clear the queue
                 //     assert(seq_item.randomize() with { SPM_Data.size() == 1;});

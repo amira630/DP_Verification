@@ -37,7 +37,8 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
 
     // Flow FSM Task
     task Sink_FSM();
-        sink_flow_stages_e current_state, next_state;
+        sink_flow_stages_e current_state;
+
         // Randomize all registers once at the start
         if (!(randomize(EDID_registers) &&
               randomize(DPCD_cap_registers) &&
@@ -67,7 +68,6 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                                 not_ready();                            // Wait for the sink to be ready
                                 `uvm_info(get_type_name(), "Sink pass the not ready task", UVM_MEDIUM)
                                 current_state = SINK_LISTEN;
-
                             end
                             SINK_LISTEN: begin
                                 `uvm_info(get_type_name(), "Sink is in Listen mode, Waiting for request command", UVM_MEDIUM)
@@ -97,19 +97,12 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
 
             begin: Sink_FSM_Reset
                 forever begin
-                    // if (!sink_seq_cfg.rst_n) begin
-                    //     current_state = SINK_NOT_READY;
-                    //     `uvm_info(get_type_name(), $sformatf("Time=%0t: sink at if condition", $time), UVM_MEDIUM)
-                    // end 
-                    // else
-                    //     current_state = next_state;
-
-
+                    // Wait for the reset signal to go low
                     wait(~sink_seq_cfg.rst_n);                  // Wait for the reset signal to go low
                         current_state = SINK_NOT_READY;                  // Set the current state to Not Ready
                         `uvm_info(get_type_name(), $sformatf("Time=%0t: sink at wait ~rst", $time), UVM_MEDIUM)
                     wait(sink_seq_cfg.rst_n);                  // Wait for the reset signal to go high
-                        current_state = next_state;                  // Set the current state to next_state
+                        current_state = SINK_LISTEN;                  // Set the current state to SINK_LISTEN
                         `uvm_info(get_type_name(), $sformatf("Time=%0t: sink at wait rst", $time), UVM_MEDIUM)
                     
                 end
@@ -345,31 +338,6 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
             end
         end
     endfunction
-
-    // Process the sink data from the response
-    // function void process_sink_data(ref dp_sink_sequence_item seq_item, ref dp_sink_sequence_item reply_seq_item);
-    //     int i = 0;
-    //     // Check if the sink data is valid
-    //     if (seq_item.data.size() < 1) begin
-    //         `uvm_error(get_type_name(), "Data too short, cannot process Reply")
-    //         return;
-    //     end
-
-    //     // Clear previous values
-    //     reply_seq_item.command = 0;
-    //     reply_seq_item.address = 0;
-    //     reply_seq_item.length = 0;
-    //     reply_seq_item.data.delete();   
-
-    //     // Extract fields:
-    //     for (i = 0; i < seq_item.data.size(); i++) begin
-    //         reply_seq_item.data.push_back(seq_item.data[i]); 
-    //     end
-        
-    //     seq_item.data.delete();
-
-    // endfunction
-
 
     // Interrupt Sequence
     task Interrupt();

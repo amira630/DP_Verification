@@ -98,9 +98,12 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     // TASK: Interrupt
     task HPD_Interrupt();
         `uvm_info("DP_SINK_INTERFACE", $sformatf("Driving Interrupt _NOW "), UVM_MEDIUM)
-        HPD_Signal = 1'b0;              // Assert HPD_Signal
-        #1000000;                       // Wait for 1ms 
-        HPD_Signal = 1'b1;              // Deassert HPD_Signal
+        HPD_Signal = 1'b1;              // Assert HPD_Signal
+        #10000;                       // Wait for 10us 
+        HPD_Signal = 1'b0;              // Deassert HPD_Signal
+        #1000000;                       // Wait for 1ms
+        HPD_Signal = 1'b1;              // Assert HPD_Signal
+        //PHY_START_STOP = 1'b1;          // Deassert PHY_START_STOP
         `uvm_info("DP_SINK_INTERFACE", $sformatf("Driving Interrupt _DONE "), UVM_MEDIUM)
     endtask
 

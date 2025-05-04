@@ -139,7 +139,37 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
       // RESET task
       // This task is used to reset the DUT by asserting and deasserting the reset signal
       task Reset();
-            rst_n = 1'b0;           // Assert reset
+            rst_n = 1'b0;                       // Assert reset
+            SPM_Address = 20'b0;                // Reset SPM Address
+            SPM_Data = 8'b0;                    // Reset SPM Data
+            SPM_LEN = 8'b0;                     // Reset SPM Length
+            SPM_CMD = 2'b0;                     // Reset SPM Command
+            SPM_Transaction_VLD = 1'b0;         // Reset SPM Transaction Valid
+            LPM_Data = 8'b0;                    // Reset LPM Data
+            LPM_Address = 20'b0;                // Reset LPM Address
+            LPM_LEN = 8'b0;                     // Reset LPM Length
+            LPM_CMD = 2'b0;                     // Reset LPM Command
+            LPM_Transaction_VLD = 1'b0;         // Reset LPM Transaction Valid
+            LPM_Start_CR = 1'b0;                // Reset LPM Start Clock Recovery                
+            CR_DONE = 4'b0;                     // Reset CR_DONE
+            Link_LC_CR = 2'b0;                  // Reset Link Lane Count Clock Recovery
+            Link_BW_CR = 8'b0;                  // Reset Link Bandwidth Clock Recovery
+            PRE = 8'b0;                         // Reset PRE
+            VTG = 8'b0;                         // Reset VTG
+            Driving_Param_VLD = 1'b0;           // Reset Driving Parameter Valid
+            EQ_RD_Value = 8'b0;                 // Reset EQ_RD_Value
+            EQ_CR_DN = 4'b0;                    // Reset EQ_CR_DN
+            Channel_EQ = 4'b0;                  // Reset Channel_EQ
+            Symbol_Lock = 4'b0;                 // Reset Symbol_Lock
+            Lane_Align = 4'b0;                  // Reset Lane_Align
+            EQ_Data_VLD = 1'b0;                 // Reset EQ_Data Valid
+            MAX_VTG = 8'b0;                     // Reset MAX_VTG
+            MAX_PRE = 8'b0;                     // Reset MAX_PRE
+            MAX_TPS_SUPPORTED = 2'b0;           // Reset MAX_TPS_SUPPORTED
+            MAX_TPS_SUPPORTED_VLD = 1'b0;       // Reset MAX_TPS_SUPPORTED Valid
+            Config_Param_VLD = 1'b0;            // Reset Config Parameter Valid
+            CR_DONE_VLD = 1'b0;                 // Reset CR_DONE Valid        
+
             @(negedge clk_AUX);         // Wait for clock edge
             rst_n = 1'b1;           // Deassert reset
       endtask
