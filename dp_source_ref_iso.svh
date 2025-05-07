@@ -17,6 +17,16 @@ class dp_source_ref_iso extends uvm_scoreboard;
     iso_idle_code cs_0, cs_1, cs_2, cs_3, ns_0, ns_1, ns_2, ns_3; // Current and next state variables for the IDLE pattern
     int counter_0, counter_SR_0, counter_1, counter_SR_1, counter_2, counter_SR_2, counter_3, counter_SR_3, count_MSA_0, count_MSA_1, count_MSA_2, count_MSA_3; // Reset MSA counters to initial values; // Counters for the number of symbols sent
     int count_VBLANK; // Counter for the number of VBLANK symbols sent
+    ////////// Variables to store Timing Parameters //////////////////
+    logic [15:0] hactive_period;
+    logic [15:0] hblank_period;
+    logic [15:0] vblank_period;
+    logic [15:0] htotal_period;
+    logic [15:0] valid_symbols_integer;
+    logic [15:0] valid_symbols_fraction;
+    logic [3:0] tu_alternate_up;
+    logic [3:0] tu_alternate_down;
+    logic alternate_valid;
     
     // Constructor
     function new(string name, uvm_component parent);
@@ -72,7 +82,21 @@ class dp_source_ref_iso extends uvm_scoreboard;
             fork
                 begin
                     case (cs)
-                        ISO_IDLE: begin
+                        ISO_IDLE: begin                            
+                            // Call the Calculate timing parameters function and store the outputs
+                            calculate_timing_parameters(
+                                tl_item, 
+                                expected_transaction, 
+                                hactive_period, 
+                                hblank_period, 
+                                vblank_period, 
+                                htotal_period, 
+                                valid_symbols_integer, 
+                                valid_symbols_fraction, 
+                                tu_alternate_up, 
+                                tu_alternate_down, 
+                                alternate_valid
+                            );
                             ISO_IDLE_PATTERN(tl_item, expected_transaction); // Call ISO_IDLE function to handle IDLE state
                             counter_SR_0 = 0;
                             cs_0 = ISO_SR; 
@@ -519,7 +543,7 @@ class dp_source_ref_iso extends uvm_scoreboard;
     // This function creates the HBLANK pattern to be sent on each lane
     // This function is similar to the ISO_VBLANK_PATTERN function but Without sending MSA symbols and instead 
     // continuously sending the DUMMY pattern until the beginning of the Hactive period
-    function void ISO_HBLANK_PATTERN(input dp_tl_sequence_item tl_item, output dp_transaction expected_transaction);
+    function void ISO_HBLANK_PATTERN(input dp_tl_sequence_item tl_item, output dp_ref_transaction expected_transaction);
     while (counter_0<hblank_period) begin
         case(tl_item.ISO_LC) // according to the actvie lane count, send HBLANK on all active lanes and remain with IDLE pattern on inactive lanes
             2'b00: begin // // Data transmission on 1 lane
@@ -719,37 +743,97 @@ class dp_source_ref_iso extends uvm_scoreboard;
         endcase
     endfunction
 
+
+
+
+
+
+
+
+
+
     // This function calculates the timing parameters for the ISO operation
     function void calculate_timing_parameters(
-        input dp_tl_sequence_item tl_item,
-        input logic [15:0] hwidth,
-        input logic [15:0] htotal,
-        input logic [15:0] vtotal,
-        input logic [15:0] vheight,
-        input logic [15:0] spm_lane_count,
-        input logic [15:0] spm_lane_bw,
-        input logic [15:0] bpc,
-        input logic [15:0] symbols_per_pixel,
-        input logic [15:0] symbol_bit_size,
-        input logic [15:0] TU_SIZE,
-        input logic [15:0] x_value,
+        input dp_tl_sequence_item tl_item, 
+        output dp_ref_transaction expected_transaction,
         output logic [15:0] hactive_period,
         output logic [15:0] hblank_period,
         output logic [15:0] vblank_period,
+        output logic [15:0] htotal_period, // not sure if this is correct
         output logic [15:0] valid_symbols_integer,
         output logic [15:0] valid_symbols_fraction,
-        output logic [15:0] tu_alternate_up,
-        output logic [15:0] tu_alternate_down,
+        output logic [3:0] tu_alternate_up,
+        output logic [3:0] tu_alternate_down,
         output logic alternate_valid
-    );
+    );  
+        // seq_item.SPM_MSA[0]  = seq_item.Mvid[7:0];     seq_item.SPM_MSA[1]  = seq_item.Mvid[15:8];               seq_item.SPM_MSA[2] = seq_item.Mvid[23:16];
+        // seq_item.SPM_MSA[3]  = seq_item.Nvid[7:0];     seq_item.SPM_MSA[4]  = seq_item.Nvid[15:8];               seq_item.SPM_MSA[5] = seq_item.Nvid[23:16];
+        // seq_item.SPM_MSA[6]  = seq_item.HTotal[7:0];   seq_item.SPM_MSA[7]  = seq_item.HTotal[15:8];             seq_item.SPM_MSA[8] = seq_item.VTotal[7:0];
+        // seq_item.SPM_MSA[9]  = seq_item.VTotal[15:8];  seq_item.SPM_MSA[10] = seq_item.HStart[7:0];              seq_item.SPM_MSA[11] = seq_item.HStart[15:8];
+        // seq_item.SPM_MSA[12] = seq_item.VStart[7:0];   seq_item.SPM_MSA[13] = seq_item.VStart[15:8];             seq_item.SPM_MSA[14] = {seq_item.HSW[6:0], seq_item.HSP};
+        // seq_item.SPM_MSA[15] = seq_item.HSW[14:7];     seq_item.SPM_MSA[16] = {seq_item.VSW[6:0], seq_item.VSP}; seq_item.SPM_MSA[17] = seq_item.VSW[14:7];
+        // seq_item.SPM_MSA[18] = seq_item.HWidth[7:0];   seq_item.SPM_MSA[19] = seq_item.HWidth[15:8];             seq_item.SPM_MSA[20] = seq_item.VHeight[7:0];
+        // seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
+
+        // case (seq_item.ISO_BW)
+        //     8'h06: seq_item.SPM_BW_Sel = 2'b00;
+        //     8'h0A: seq_item.SPM_BW_Sel = 2'b01;
+        //     8'h14: seq_item.SPM_BW_Sel = 2'b10;
+        //     8'h1E: seq_item.SPM_BW_Sel = 2'b11;
+        // endcase  
+        
+        // Define the parameters for the calculations
+        logic [15:0] hwidth;
+        logic [15:0] htotal;
+        logic [15:0] vtotal;
+        logic [15:0] vheight;
+        logic [2:0]  spm_lane_count;
+        logic [15:0] spm_lane_bw;
+        logic [15:0] bpc;
+        logic [15:0] symbols_per_pixel;
+        logic [15:0] symbol_bit_size; // always 8 bits
+        int TU_SIZE = 64; // always 64 symbols
+        logic [15:0] x_value; // empirical correction factor either 3 or 6 depending on bpc (8 or 16)
+
+        // Wait for the next transaction
+        tl_in_port.get(tl_item); 
+
+        // Extract the parameters from the transaction item
+        htotal[7:0] = tl_item.SPM_MSA[6];
+        htotal[15:8] = tl_item.SPM_MSA[7];
+        vtotal[7:0] = tl_item.SPM_MSA[8];
+        vtotal[15:8] = tl_item.SPM_MSA[9];
+        hwidth[7:0] = tl_item.SPM_MSA[18];
+        hwidth[15:8] = tl_item.SPM_MSA[19];
+        vheight[7:0] = tl_item.SPM_MSA[20];
+        vheight[15:8] = tl_item.SPM_MSA[21];
+        spm_lane_count = tl_item.SPM_Lane_Count;
+        // not sure here
+        spm_lane_bw = tl_item.SPM_Lane_BW;
+        symbol_bit_size = 16'h0008; // 8 bits
+        if (tl_item.SPM_MSA[22][7:5] == 3'b001) begin
+            bpc = 16'h0008; // 8 bits per component
+        end 
+        if (tl_item.SPM_MSA[22][7:5] == 3'b100) begin
+            bpc = 16'h0010; // 16 bits per component
+        end 
+        if (bpc == 16'h0008) begin // 8 bits per component
+            symbols_per_pixel = 16'h0003; // 3 symbols per pixel for 8 bpc
+            x_value = 16'h0003; // x = 3 for 8 bpc
+        end
+        if (bpc == 16'h0010) begin // 16 bits per component
+            symbols_per_pixel = 16'h0006; // 6 symbols per pixel for 16 bpc
+            x_value = 16'h0006; // x = 6 for 16 bpc
+        end
     
         // Internal registers for intermediate calculations
         logic [15:0] HACTIVE_EQUIVALENT_WIDTH, HACTIVE_TOTAL_BITS;
         logic [15:0] HACTIVE_TOTAL_SYMBOLS, HACTIVE_TOTAL_SYMBOLS_BITS, HACTIVE_FINAL_PERIOD;
         logic [15:0] HBLANK_EQUIVALENT_WIDTH, HBLANK_TOTAL_BITS;
         logic [15:0] HBLANK_TOTAL_SYMBOLS, HBLANK_TOTAL_SYMBOLS_BITS, HBLANK_FINAL_PERIOD;
-        logic [15:0] TOTAL_BITS_PER_SECOND, TOTAL_SYMBOLS_PER_SECOND;
-        logic [15:0] SYMBOLS_PER_LANE, SYMBOLS_PER_TU, SCALED_VALID_SYMBOLS;
+        logic [63:0] TOTAL_BITS_PER_SECOND;
+        logic [31:0] TOTAL_SYMBOLS_PER_SECOND, SYMBOLS_PER_LANE, SYMBOLS_PER_TU;
+        logic [63:0] SCALED_VALID_SYMBOLS;
         logic [15:0] FRACTIONAL_PART_SCALED, FIRST_DECIMAL, SECOND_DECIMAL, ROUNDED_FIRST_DECIMAL;
     
         // Reset logic
@@ -820,15 +904,16 @@ class dp_source_ref_iso extends uvm_scoreboard;
             HBLANK_TOTAL_SYMBOLS = HBLANK_TOTAL_SYMBOLS / symbol_bit_size;
             
             // Step 5: Divide the result by the lane count and add the offset (x_value)
-            HBLANK_FINAL_PERIOD = (HBLANK_SYMBOLS_PER_LANE / spm_lane_count) + x_value;
+            HBLANK_FINAL_PERIOD = (HBLANK_TOTAL_SYMBOLS / spm_lane_count) + x_value;
             
             // Step 6: Assign the final result to the horizontal blanking period
             hblank_period = HBLANK_FINAL_PERIOD;
             
             ///////////////////////////////////////////
+            /// Horizontal Total Period Calculation ///
             ///////////////////////////////////////////
-            ///////////////////////////////////////////
-    
+            
+            htotal_period = hblank_period + hactive_period; // In symbols
 
             //////////////////////////////////////////
             // Vertical Blanking Period Calculation //
@@ -858,14 +943,14 @@ class dp_source_ref_iso extends uvm_scoreboard;
             SYMBOLS_PER_TU = SYMBOLS_PER_LANE * TU_SIZE;
     
             // Step 5: Calculate Scaled Valid Symbols (Fixed-point precision)
-            SCALED_VALID_SYMBOLS = (SYMBOLS_PER_TU << 16) / spm_lane_bw;
+            SCALED_VALID_SYMBOLS = (SYMBOLS_PER_TU << 10) / spm_lane_bw;
     
             // Step 6: Extract Integer and Fractional Parts
-            valid_symbols_integer = SCALED_VALID_SYMBOLS >> 16;
-            valid_symbols_fraction = SCALED_VALID_SYMBOLS[15:0];
+            valid_symbols_integer = SCALED_VALID_SYMBOLS >> 10;
+            valid_symbols_fraction = SCALED_VALID_SYMBOLS[9:0];
     
             // Step 7: Scale Fractional Part for Rounding
-            FRACTIONAL_PART_SCALED = (valid_symbols_fraction * 100) >> 16;
+            FRACTIONAL_PART_SCALED = (valid_symbols_fraction * 100) >> 10;
     
             // Step 8: Extract First and Second Decimal Digits
             FIRST_DECIMAL = FRACTIONAL_PART_SCALED / 10;
@@ -880,17 +965,17 @@ class dp_source_ref_iso extends uvm_scoreboard;
     
             // Step 10: Determine Alternate Up and Down Transition
             case (ROUNDED_FIRST_DECIMAL)
-                16'd0: begin tu_alternate_up = 0; tu_alternate_down = 1; alternate_valid = 1; end
-                16'd1: begin tu_alternate_up = 1; tu_alternate_down = 9; alternate_valid = 1; end
-                16'd2: begin tu_alternate_up = 1; tu_alternate_down = 4; alternate_valid = 1; end
-                16'd3: begin tu_alternate_up = 3; tu_alternate_down = 7; alternate_valid = 1; end
-                16'd4: begin tu_alternate_up = 2; tu_alternate_down = 3; alternate_valid = 1; end
-                16'd5: begin tu_alternate_up = 1; tu_alternate_down = 1; alternate_valid = 1; end
-                16'd6: begin tu_alternate_up = 3; tu_alternate_down = 2; alternate_valid = 1; end
-                16'd7: begin tu_alternate_up = 7; tu_alternate_down = 3; alternate_valid = 1; end
-                16'd8: begin tu_alternate_up = 4; tu_alternate_down = 1; alternate_valid = 1; end
-                16'd9: begin tu_alternate_up = 9; tu_alternate_down = 1; alternate_valid = 1; end
-                default: begin tu_alternate_up = 0; tu_alternate_down = 0; alternate_valid = 0; end
+                16'd0: begin tu_alternate_up = 4'h0; tu_alternate_down = 4'h1; alternate_valid = 1'b1; end
+                16'd1: begin tu_alternate_up = 4'h1; tu_alternate_down = 4'h9; alternate_valid = 1'b1; end
+                16'd2: begin tu_alternate_up = 4'h1; tu_alternate_down = 4'h4; alternate_valid = 1'b1; end
+                16'd3: begin tu_alternate_up = 4'h3; tu_alternate_down = 4'h7; alternate_valid = 1'b1; end
+                16'd4: begin tu_alternate_up = 4'h2; tu_alternate_down = 4'h3; alternate_valid = 1'b1; end
+                16'd5: begin tu_alternate_up = 4'h1; tu_alternate_down = 4'h1; alternate_valid = 1'b1; end
+                16'd6: begin tu_alternate_up = 4'h3; tu_alternate_down = 4'h2; alternate_valid = 1'b1; end
+                16'd7: begin tu_alternate_up = 4'h7; tu_alternate_down = 4'h3; alternate_valid = 1'b1; end
+                16'd8: begin tu_alternate_up = 4'h4; tu_alternate_down = 4'h1; alternate_valid = 1'b1; end
+                16'd9: begin tu_alternate_up = 4'h9; tu_alternate_down = 4'h1; alternate_valid = 1'b1; end
+                default: begin tu_alternate_up = 4'h0; tu_alternate_down = 4'h0; alternate_valid = 1'b0; end
             endcase
                
             ///////////////////////////////////////////
