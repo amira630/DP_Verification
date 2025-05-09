@@ -44,6 +44,29 @@ class dp_ref_transaction extends uvm_sequence_item;
     bit                       AUX_START_STOP, PHY_Instruct_VLD;
     bit [AUX_DATA_WIDTH-1:0]  AUX_IN_OUT; // The AUX_IN_OUT signal is a bidirectional signal used for the DisplayPort auxiliary channel communication. It carries the data between the source and sink devices.
 
+    ///////////////////////////////////////////////////////////////
+    ////////////////// ISOCHRONOUS TRANSPORT //////////////////////
+    ///////////////////////////////////////////////////////////////
+
+    ///////////////////// PHYSICAL LAYER //////////////////////////
+
+    logic [AUX_DATA_WIDTH-1:0] ISO_symbols_lane0, ISO_symbols_lane1, ISO_symbols_lane2, ISO_symbols_lane3;
+    logic                      Control_sym_flag_lane0, Control_sym_flag_lane1, Control_sym_flag_lane2, Control_sym_flag_lane3;
+
+    /////////////////// STREAM POLICY MAKER ///////////////////////
+
+    logic [AUX_DATA_WIDTH-1:0] SPM_Lane_BW;
+    logic [7:0]                SPM_MSA [23:0]; // 24 bytes of MSA data
+    logic [1:0]                SPM_Lane_Count, SPM_BW_Sel;
+    logic                      SPM_ISO_start, SPM_MSA_VLD;
+
+    /////////////////// MAIN STREAM SOURCE ///////////////////////
+
+    logic [47:0] MS_Pixel_Data;
+    logic [9:0]  MS_Stm_BW;
+    logic        MS_DE, MS_VSYNC, MS_HSYNC;
+
+
     // Constructor
     function new(string name = "dp_ref_transaction");
         super.new(name);
