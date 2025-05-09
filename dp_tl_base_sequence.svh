@@ -858,7 +858,7 @@ endtask
             finish_item(seq_item);
             
             // Wait for acknowledgment from the DUT for write transaction
-            while(ack_count<1) begin'
+            while(ack_count<1) begin
                 get_response(seq_item);
                 while(~seq_item.LPM_NATIVE_I2C) begin
                     start_item(seq_item);
