@@ -163,6 +163,7 @@
         DETECT          = 4'b1000
     } op_code;
 
+// Isochronous Services Operation
     typedef enum logic [1:0] {
         ISO_IDLE        = 2'b00,  // Sending IDLE pattern
         ISO_VBLANK      = 2'b01,  // Vblank period
@@ -170,6 +171,7 @@
         ISO_ACTIVE      = 2'b11   // Active video period
     } iso_op_code;
 
+// IDLE (or no data transmissions) in ISO Operation
     typedef enum logic [2:0] {
         ISO_SR    = 3'b000,   
         ISO_BS    = 3'b001,  
@@ -180,6 +182,14 @@
         ISO_DUMMY = 3'b110,
         ISO_MSA   = 3'b111
     } iso_idle_code;
+
+// Transfer Unit in ISO Operation
+    typedef enum logic [1:0] {
+        ISO_TU_PIXELS = 2'b00,   
+        ISO_TU_FS     = 2'b01,  
+        ISO_TU_FE     = 2'b10,  
+        ISO_TU_DUMMY  = 2'b11
+    } iso_TU_code;
 
 // Sink Driver Operation
     typedef enum logic [1:0] {

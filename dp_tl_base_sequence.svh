@@ -717,9 +717,10 @@ endtask
         int countv = 1;
         int counth = 1;
         bit new_frame;
+        int frame_num;
         // New Video Stream
         repeat(frames) begin // Start new frame
-            new_frame = 1;
+            frame_num++;
             repeat(seq_item.VTotal) begin // Start new line
                 repeat(seq_item.HTotal) begin // start new pixel
                     start_item(seq_item);
@@ -736,6 +737,7 @@ endtask
                     if(countv >= seq_item.VStart && counth >= seq_item.HStart) begin // inside active video
                         seq_item.MS_DE = 1;
                         seq_item.MS_Pixel_Data.rand_mode(1);
+                        pixel_frame_num.push_back(frame_num);
                     end
                     else begin // outside active video
                         seq_item.MS_DE = 0;

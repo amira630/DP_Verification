@@ -102,6 +102,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
     bit      LT_Failed, LT_Pass, isflow;
     rand bit error_flag;
+    int pixel_frame_num [$]; 
 
     real CLOCK_PERIOD; // Clock period in ns
 
