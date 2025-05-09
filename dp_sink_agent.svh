@@ -29,6 +29,8 @@ class dp_sink_agent extends uvm_agent;
     function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
 
+        `uvm_info("SINK agent", $sformatf("time= %0t,Connecting driver %s to sequencer %s",$time, drv.get_full_name(), sqr.get_full_name()), UVM_LOW);
+
         //connecting the virtual interface to the monitor and driver
         drv.dp_sink_vif = dp_source_cfg.dp_sink_vif;
         mon.dp_sink_vif = dp_source_cfg.dp_sink_vif;
@@ -36,10 +38,13 @@ class dp_sink_agent extends uvm_agent;
         //connecting the drive TLM port to the sequencer TLM export
         drv.seq_item_port.connect(sqr.seq_item_export);
 
+        `uvm_info("SINK agent", $sformatf("time= %0t, Connecting driver %s to sequencer %s",$time, drv.get_full_name(), sqr.get_full_name()), UVM_LOW);
         // Response port connection
         drv.rsp_port.connect(sqr.rsp_export);
         
         //connecting the monitor analysis port to the agent analysis port
         mon.mon_ap.connect(agt_ap);
+
+        `uvm_info("SINK agent", $sformatf("time= %0t,Connecting driver %s to sequencer %s",$time, drv.get_full_name(), sqr.get_full_name()), UVM_LOW);
     endfunction
 endclass

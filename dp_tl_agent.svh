@@ -30,8 +30,10 @@ class dp_tl_agent extends uvm_agent;
         super.connect_phase(phase);
 
         //connecting the virtual interface to the monitor and driver
-        drv.dp_tl_vif = dp_source_cfg.dp_tl_vif;
+        drv.dp_tl_vif = dp_source_cfg.dp_tl_vif;            // added
         mon.dp_tl_vif = dp_source_cfg.dp_tl_vif;
+
+        dp_source_cfg.rst_n = drv.drv_rst;                  // added
 
         //connecting the driver TLM port to the sequencer TLM export
         drv.seq_item_port.connect(sqr.seq_item_export);

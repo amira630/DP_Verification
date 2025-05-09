@@ -1,7 +1,12 @@
 // Project: DP Verification
 // Description: Top module for the DisplayPort verification environment
 // Time Scale: 1ns / 1fs
-`timescale 1ns / 1fs
+
+// add wave -r /top/tl_if/*
+// add wave -r /top/sink_if/*
+// add wave -r /top/*
+
+`timescale 1ns / 1ns
 
 // Standard UVM import & include:
 import uvm_pkg::*;
@@ -19,6 +24,7 @@ module top();
 
     dp_source DUT (tl_if, sink_if);
 
+    // bind dp_source dp_sva SVA (tl_if, sink_if);
 
     // start the clocks
     initial begin
@@ -27,27 +33,33 @@ module top();
         fork
             begin
                 forever
-                    #3.086419753 clk_RBR = ~clk_RBR; // will round to 3.086420ns
-            end
-            begin
-                forever
-                    #1.851851852 clk_HBR = ~clk_HBR; // will round to 1.851852ns
-            end
-            begin
-                forever
-                    #0.925925926 clk_HBR2 = ~clk_HBR2; // will round to 0.925926ns
-            end
-            begin
-                forever
-                    #0.06172839505 clk_HBR3 = ~clk_HBR3; // will round to 0.061728ns
-            end
-            begin
-                forever
-                    #(tl_if.CLOCK_PERIOD/2) MS_Stm_CLK = ~MS_Stm_CLK; // Pixel Stream Clock 
-            end
-            begin
-                forever
                     #5000 clk_AUX = ~clk_AUX;
+            end
+            begin
+                forever
+                    #3 clk_RBR = ~clk_RBR; // will round to 3.086420ns
+                    // #3.086419753
+            end
+            begin
+                forever
+                    #2 clk_HBR = ~clk_HBR; // will round to 1.851852ns
+                    // #1.851851852
+            end
+            begin
+                forever
+                    #1 clk_HBR2 = ~clk_HBR2; // will round to 0.925926ns
+                    // #0.925925926
+            end
+            begin
+                forever
+                    #1 clk_HBR3 = ~clk_HBR3; // will round to 0.061728ns
+                    // #0.06172839505
+            end
+            begin
+                forever
+                    #3 MS_Stm_CLK = ~MS_Stm_CLK; // Pixel Stream Clock 
+                    // #3.086419753
+                    // #(tl_if.CLOCK_PERIOD/2)
             end
         join
     end
@@ -59,5 +71,7 @@ module top();
         
         // Run the test
         run_test("dp_source_test");
+        $dumpfile("test.vcd");
+        $dumpvars(0, top);
     end
 endmodule

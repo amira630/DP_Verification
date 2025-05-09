@@ -377,27 +377,35 @@ always @ (posedge clk or negedge rst_n)
  // **************** Update driving_counter **************** //
 always @ (posedge clk or negedge rst_n)
  begin
-  if((!rst_n) || (cr_completed) || (fsm_cr_failed))
-   begin
+  if(!rst_n)
+  begin
     driving_counter <= 'b0;    
-   end
+  end
+  else if (cr_completed || fsm_cr_failed)
+  begin
+    driving_counter <= 'b0;    
+  end
   else if (current_state == CHK_VTG)
-   begin
+  begin
     driving_counter <= driving_counter + 1;
-   end
+  end
  end
 
  // **************** Update same_parameters_counter **************** //
 always @ (posedge clk or negedge rst_n)
  begin
-  if((!rst_n) || (cr_completed) || (fsm_cr_failed))
-   begin
-    same_parameters_counter <= 1'b0;    
-   end
+  if(!rst_n)
+  begin
+    same_parameters_counter <= 'b0;    
+  end
+  else if (cr_completed || fsm_cr_failed)
+  begin
+    same_parameters_counter <= 'b0;    
+  end
   else if ((current_state == CHK_VTG) && (current_vtg_reg == previous_vtg_reg) && (current_pre_reg == previous_pre_reg))
-   begin
+  begin
     same_parameters_counter <= same_parameters_counter + 1;  
-   end
+  end
  end
 
  // **************** Make the output signals sequential **************** //
@@ -405,22 +413,22 @@ always @ (posedge clk or negedge rst_n)
   begin
   if(!rst_n)
    begin 
-    new_bw_cr          <=  'b0;
-    new_lc_cr          <=  'b0;
-    err_cr_failed      <= 1'b0;
-    drive_setting_flag <= 1'b0;
-    bw_flag            <= 1'b0; 
-    lc_flag            <= 1'b0;
+    new_bw_cr          <= 'b0;
+    new_lc_cr          <= 'b0;
+    err_cr_failed      <= 'b0;
+    drive_setting_flag <= 'b0;
+    bw_flag            <= 'b0; 
+    lc_flag            <= 'b0;
    end
   else
-	 begin	
+   begin	
     new_bw_cr          <= new_bw_cr_comb;
     new_lc_cr          <= new_lc_cr_comb;
     err_cr_failed      <= err_cr_failed_comb;
     drive_setting_flag <= drive_setting_flag_comb;
     bw_flag            <= bw_flag_comb; 
     lc_flag            <= lc_flag_comb;
-	 end 
+   end 
   end 
 
 endmodule

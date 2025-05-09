@@ -9,6 +9,5 @@ class dp_sink_interrupt_seq extends dp_sink_base_sequence;
         `uvm_info(get_type_name(), "Starting Interrupt sequence", UVM_MEDIUM)
 
         Interrupt();
-        // Set the sink operation to Interrupt
     endtask    
 endclass

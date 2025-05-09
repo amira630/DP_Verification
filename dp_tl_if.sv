@@ -1,5 +1,10 @@
+import uvm_pkg::*;
+    `include "uvm_macros.svh"
+      import test_parameters_pkg::*;
+
 interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk_AUX, clk_RBR, clk_HBR, clk_HBR2, clk_HBR3, MS_Stm_CLK);
 
+    
     logic rst_n;   // Reset is asynchronous active low
     
     ///////////////////////////////////////////////////////////////
@@ -47,7 +52,6 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
     logic [47:0] MS_Pixel_Data;
     logic [9:0]  MS_Stm_BW;
     logic        MS_DE, MS_VSYNC, MS_HSYNC;
-
 
     real CLOCK_PERIOD;
 
@@ -135,46 +139,73 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
       // RESET task
       // This task is used to reset the DUT by asserting and deasserting the reset signal
       task Reset();
-            rst_n = 1'b0;           // Assert reset
+            rst_n = 1'b0;                       // Assert reset
+            SPM_Address = 20'b0;                // Reset SPM Address
+            SPM_Data = 8'b0;                    // Reset SPM Data
+            SPM_LEN = 8'b0;                     // Reset SPM Length
+            SPM_CMD = 2'b0;                     // Reset SPM Command
+            SPM_Transaction_VLD = 1'b0;         // Reset SPM Transaction Valid
+            LPM_Data = 8'b0;                    // Reset LPM Data
+            LPM_Address = 20'b0;                // Reset LPM Address
+            LPM_LEN = 8'b0;                     // Reset LPM Length
+            LPM_CMD = 2'b0;                     // Reset LPM Command
+            LPM_Transaction_VLD = 1'b0;         // Reset LPM Transaction Valid
+            LPM_Start_CR = 1'b0;                // Reset LPM Start Clock Recovery                
+            CR_DONE = 4'b0;                     // Reset CR_DONE
+            Link_LC_CR = 2'b0;                  // Reset Link Lane Count Clock Recovery
+            Link_BW_CR = 8'b0;                  // Reset Link Bandwidth Clock Recovery
+            PRE = 8'b0;                         // Reset PRE
+            VTG = 8'b0;                         // Reset VTG
+            Driving_Param_VLD = 1'b0;           // Reset Driving Parameter Valid
+            EQ_RD_Value = 8'b0;                 // Reset EQ_RD_Value
+            EQ_CR_DN = 4'b0;                    // Reset EQ_CR_DN
+            Channel_EQ = 4'b0;                  // Reset Channel_EQ
+            Symbol_Lock = 4'b0;                 // Reset Symbol_Lock
+            Lane_Align = 4'b0;                  // Reset Lane_Align
+            EQ_Data_VLD = 1'b0;                 // Reset EQ_Data Valid
+            MAX_VTG = 8'b0;                     // Reset MAX_VTG
+            MAX_PRE = 8'b0;                     // Reset MAX_PRE
+            MAX_TPS_SUPPORTED = 2'b0;           // Reset MAX_TPS_SUPPORTED
+            MAX_TPS_SUPPORTED_VLD = 1'b0;       // Reset MAX_TPS_SUPPORTED Valid
+            Config_Param_VLD = 1'b0;            // Reset Config Parameter Valid
+            CR_DONE_VLD = 1'b0;                 // Reset CR_DONE Valid        
+
             @(negedge clk_AUX);         // Wait for clock edge
             rst_n = 1'b1;           // Deassert reset
       endtask
 
       // I2C_READ task
-      task I2C_READ(input logic[19:0] address, [7:0] length, [1:0] command, bit transaction_vld);
+      task I2C_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
             // Set SPM-related signals to perform a read operation
             SPM_Address = address;
             SPM_CMD     = command;
             SPM_LEN     = length;
             SPM_Transaction_VLD = transaction_vld;
             // SPM_Data = SPM.SPM_Data;                                 // Data is not used in read operation
-
       endtask
     
       // I2C_WRITE task
-      task I2C_WRITE(input logic[19:0] address, [7:0] length, [1:0] command, [7:0] data, bit transaction_vld);
+      task I2C_WRITE(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld, input logic[7:0] data);
             // Set SPM-related signals to perform a write operation
             SPM_Address = address;
             SPM_CMD     = command;
             SPM_LEN     = length;
             SPM_Transaction_VLD = transaction_vld;
             SPM_Data = data;
-
       endtask
 
       // // NATIVE_READ task
-      task NATIVE_READ(input logic [19:0] address, [7:0] length, [1:0] command, bit transaction_vld);
+      task NATIVE_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
             // Set LPM-related signals to perform a read operation
             LPM_Address = address;
             LPM_CMD     = command;
             LPM_LEN     = length;
             LPM_Transaction_VLD = transaction_vld;
             // LPM_Data = LPM.LPM_Data; // Data is not used in read operation
-
       endtask
 
       // NATIVE_WRITE task
-      task NATIVE_WRITE(input logic [19:0] address, [7:0] length, [1:0] command, [7:0] data, bit transaction_vld);
+      task NATIVE_WRITE(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld, input logic[7:0] data);
             // Set LPM-related signals to perform a write operation
             LPM_Address = address;
             LPM_CMD     = command;
@@ -241,4 +272,5 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             MS_HSYNC = hsync; // Set Hsync signal to indicate the start of the horizontal blanking period
             CLOCK_PERIOD = clk_stream;
       endtask
+      
 endinterface

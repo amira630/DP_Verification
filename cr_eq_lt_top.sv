@@ -189,7 +189,8 @@ eq_top channell_eq_top
     .eq_final_adj_lc    (eq_final_adj_lc),
     .eq_phy_instruct    (eq_phy_instruct),
     .eq_transaction_vld (eq_transaction_vld),
-    .eq_phy_instruct_vld(eq_phy_instruct_vld)
+    .eq_phy_instruct_vld(eq_phy_instruct_vld),
+    .eq_fsm_cr_failed   (eq_fsm_cr_failed)
 );
 
 

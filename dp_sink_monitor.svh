@@ -32,7 +32,7 @@ class dp_sink_monitor extends uvm_monitor;
       rsp_sink_seq_item.PHY_Instruct_VLD = dp_sink_vif.PHY_Instruct_VLD;
 
      mon_ap.write(rsp_sink_seq_item);
-        // `uvm_info("run_phase", rsp_sink_seq_item.convert2string_stimulus(), UVM_LOW) 
+      `uvm_info("run_phase", rsp_sink_seq_item.convert2string(), UVM_LOW) 
    end
   endtask
  

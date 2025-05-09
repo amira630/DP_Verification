@@ -52,7 +52,13 @@
         CR_STAGE = 2'b01,
         EQ_STAGE = 2'b10,
         ISO_STAGE = 2'b11
-    } flow_stages_e;
+    } tl_flow_stages_e;
+
+    typedef enum bit [1:0] {
+        SINK_NOT_READY = 2'b00,
+        SINK_LISTEN = 2'b01,
+        SINK_TALK = 2'b10
+    } sink_flow_stages_e;
 
 // Training Patterns
     typedef enum bit [1:0] {
@@ -91,12 +97,6 @@
         TALK_MODE, 
         LISTEN_MODE
     } source_mode_e;
-
-// LTTPR MODES
-    typedef enum bit {
-        LTTPR_NON_TRANSPARENT_MODE, 
-        LTTPR_TRANSPARENT_MODE
-    } lttpr_mode_e;
 
 // DPTX AUX_CH FSM
     typedef enum logic [3:0] {
@@ -150,18 +150,28 @@
         LINK_READY = 2'b10              // Link Training has been successful
     } link_training_phase_t;
 
-// AUX Channel Operation
+// AUX Channel Operation (TL)
     typedef enum logic [3:0] {
         reset_op        = 4'b0000,  
         I2C_READ        = 4'b0001,
         I2C_WRITE       = 4'b0010,
         NATIVE_READ     = 4'b0011,
         NATIVE_WRITE    = 4'b0100,
-        CR_LT           = 4'b0101,
-        EQ_LT           = 4'b0110,
+        CR_LT_op        = 4'b0101,
+        EQ_LT_op        = 4'b0110,
         ISO             = 4'b0111,
-        DETECT          = 4'b1000
+        DETECT_op          = 4'b1000
     } op_code;
+
+// Sink Driver Operation
+    typedef enum logic [3:0] {
+        Reset                   = 4'b0000,
+        Ready                   = 4'b0001,
+        Receive_op              = 4'b0010,
+        Reply_operation         = 4'b0011,
+        HPD_test_operation      = 4'b0100,
+        Interrupt_operation     = 4'b0101
+    } sink_op_code;
 
 // Isochronous Services Operation
     typedef enum logic [1:0] {
@@ -190,14 +200,5 @@
         ISO_TU_FE     = 2'b10,  
         ISO_TU_DUMMY  = 2'b11
     } iso_TU_code;
-
-// Sink Driver Operation
-    typedef enum logic [1:0] {
-        HPD_operation   = 2'b00,  
-        Interrupt_operation       = 2'b01,
-        Reply_operation = 2'b10
-    } sink_op_code;
-
-    // 
 
 `endif // DP_UVM_PARAMS_SVH
