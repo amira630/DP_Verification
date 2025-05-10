@@ -261,10 +261,14 @@ endtask
                 seq_item.LPM_LEN = LEN;               // Length
                 assert(seq_item.randomize());                 // Randomize the data
             finish_item(seq_item);
+            // Wait for the response from the DUT
             while(ack_count<1) begin
-                // Wait for the response from the DUT
                 get_response(seq_item);
                 while(~seq_item.LPM_NATIVE_I2C) begin
+                    start_item(seq_item);
+                    seq_item.LPM_Transaction_VLD = 1'b0; 
+                    seq_item.operation = NATIVE_READ;
+                    finish_item(seq_item);
                     get_response(seq_item);
                 end
                 //seq_item.LPM_Transaction_VLD = 1'b0;    
@@ -275,12 +279,26 @@ endtask
                 else if(seq_item.LPM_Reply_ACK_VLD) begin
                     if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
                         ack_count++;
+                    end else begin
+                        start_item(seq_item);
+                        seq_item.LPM_Transaction_VLD = 1'b0; 
+                        seq_item.operation = NATIVE_READ;
+                        finish_item(seq_item);
                     end
+                end
+                else begin
+                    start_item(seq_item);
+                    seq_item.LPM_Transaction_VLD = 1'b0; 
+                    seq_item.operation = NATIVE_READ;
+                    finish_item(seq_item);
                 end
                 
             end
             ack_count = 0;
             while (ack_count < LEN) begin
+                start_item(seq_item);
+                seq_item.LPM_Transaction_VLD = 1'b0; 
+                finish_item(seq_item);
                 get_response(seq_item);
                 if(seq_item.LPM_NATIVE_I2C && seq_item.LPM_Reply_Data_VLD)
                     ack_count++;

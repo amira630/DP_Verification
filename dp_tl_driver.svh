@@ -34,7 +34,7 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
 
 
             // Check if the sequence item is SPM or LPM then drive the values to the interface according to the operation
-            @(posedge dp_tl_vif.clk_AUX);
+            @(negedge dp_tl_vif.clk_AUX);
             if(stimulus_seq_item.SPM_Transaction_VLD == 1 && stimulus_seq_item.LPM_Transaction_VLD == 0) begin
                 // SPM transaction
                 case (stimulus_seq_item.operation)
@@ -95,8 +95,9 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
                         dp_tl_vif.rst_n = 1'b1;       // Set the reset signal to high
                     end
                     default: begin
-                        dp_tl_vif = null; // Set the interface to null if the operation is not supported
-                        `uvm_error("DP_TL_DRIVER", "Unsupported operation in SPM transaction")
+                        dp_tl_vif.Transaction_wait(stimulus_seq_item.LPM_Transaction_VLD, stimulus_seq_item.SPM_Transaction_VLD); // Wait for the transaction to complete
+                        //dp_tl_vif = null; // Set the interface to null if the operation is not supported
+                        `uvm_info("DP_TL_DRIVER", "no operation in SPM && LPM transaction",UVM_MEDIUM)
                     end
                 endcase
             end

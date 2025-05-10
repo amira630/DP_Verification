@@ -26,7 +26,6 @@ class dp_source_test extends uvm_test;
     ////////////////////////////////////////////// Sink Sequences //////////////////////////////////////////
 
     dp_sink_full_flow_seq dp_sink_seq;
-    dp_sink_reply_transaction dp_sink_reply_seq;
     dp_sink_interrupt_seq dp_sink_intr_seq;
     dp_sink_hpd_test_seq dp_sink_hpd_seq;
 
@@ -52,7 +51,6 @@ class dp_source_test extends uvm_test;
 
         // Sink Sequences creation
         dp_sink_seq = dp_sink_full_flow_seq::type_id::create("dp_sink_seq", this);
-        dp_sink_reply_seq   = dp_sink_reply_transaction::type_id::create("dp_sink_reply_seq", this);
         dp_sink_intr_seq = dp_sink_interrupt_seq::type_id::create("dp_sink_intr_seq", this);            // DONE
         dp_sink_hpd_seq = dp_sink_hpd_test_seq::type_id::create("dp_sink_hpd_seq", this);
         
@@ -116,12 +114,6 @@ class dp_source_test extends uvm_test;
             //     `uvm_info("run_phase", "TL I2C stimulus generation started", UVM_LOW);
             //     dp_tl_i2c_seq.start(env.tl_agt.sqr);
             //     `uvm_info("run_phase", "TL I2C stimulus generation ended", UVM_LOW);
-            // end
-
-            // begin
-            //     `uvm_info("run_phase", "Sink Reply stimulus generation started", UVM_LOW);
-            //     dp_sink_reply_seq.start(env.sink_agt.sqr);
-            //     `uvm_info("run_phase", "Sink Reply stimulus generation ended", UVM_LOW);
             // end
 
             // begin

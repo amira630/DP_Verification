@@ -197,11 +197,15 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
       // // NATIVE_READ task
       task NATIVE_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
             // Set LPM-related signals to perform a read operation
+            wait(HPD_Detect == 1'b1); // Wait for HPD detection
             LPM_Address = address;
             LPM_CMD     = command;
             LPM_LEN     = length;
             LPM_Transaction_VLD = transaction_vld;
             // LPM_Data = LPM.LPM_Data; // Data is not used in read operation
+            //@(negedge clk_AUX); // Wait for clock edge
+            //LPM_Transaction_VLD = 1'b0; // Set the reply data valid signal to indicate that the data is ready
+
       endtask
 
       // NATIVE_WRITE task
@@ -212,6 +216,11 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             LPM_LEN     = length;
             LPM_Transaction_VLD = transaction_vld;
             LPM_Data = data;
+      endtask
+
+      task Transaction_wait(input bit lpm_transaction_vld, input bit spm_transaction_vld);
+            LPM_Transaction_VLD = lpm_transaction_vld;
+            SPM_Transaction_VLD = spm_transaction_vld;
       endtask
 
       // //////////////////////////// LINK TRAINING ////////////////////////////

@@ -56,8 +56,7 @@
 
     typedef enum bit [1:0] {
         SINK_NOT_READY = 2'b00,
-        SINK_LISTEN = 2'b01,
-        SINK_TALK = 2'b10
+        SINK_READY = 2'b01
     } sink_flow_stages_e;
 
 // Training Patterns
@@ -167,10 +166,9 @@
     typedef enum logic [3:0] {
         Reset                   = 4'b0000,
         Ready                   = 4'b0001,
-        Receive_op              = 4'b0010,
-        Reply_operation         = 4'b0011,
-        HPD_test_operation      = 4'b0100,
-        Interrupt_operation     = 4'b0101
+        Reply_operation         = 4'b0010,
+        HPD_test_operation      = 4'b0011,
+        Interrupt_operation     = 4'b0100
     } sink_op_code;
 
 // Isochronous Services Operation

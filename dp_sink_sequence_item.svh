@@ -1,7 +1,7 @@
 class dp_sink_sequence_item extends uvm_sequence_item;
     `uvm_object_utils(dp_sink_sequence_item);
 
-    rand bit HPD_Signal;
+    bit HPD_Signal;
 
     bit rst_n;           // Reset signal for the PHY Layer
     
@@ -39,31 +39,31 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     /////////////////////// CONSTRAINTS ///////////////////////////
     ///////////////////////////////////////////////////////////////
 
-    constraint valid_i2c_aux_reply_cmd_c {
-        i2c_reply_cmd == I2C_ACK;  // Always set to ACK
-    }
-
-    constraint valid_native_aux_reply_cmd_c {
-        native_reply_cmd == AUX_ACK;  // Always set to ACK
-    }
-
     // constraint valid_i2c_aux_reply_cmd_c {
-    //     i2c_reply_cmd dist {
-    //         // Strongly prefer ACK, but occasionally allow NACK or DEFER
-    //         I2C_ACK      := 96,  // 90% of the time
-    //         I2C_NACK     := 2,   // 5% of the time
-    //         I2C_DEFER    := 2    // 5% of the time
-    //     };
+    //     i2c_reply_cmd == I2C_ACK;  // Always set to ACK
     // }
 
     // constraint valid_native_aux_reply_cmd_c {
-    //     // Strongly prefer ACK, but occasionally allow NACK or DEFER
-    //     native_reply_cmd dist {
-    //         AUX_ACK      := 90,
-    //         AUX_NACK     := 5,
-    //         AUX_DEFER    := 5
-    //     };
+    //     native_reply_cmd == AUX_ACK;  // Always set to ACK
     // }
+
+    constraint valid_i2c_aux_reply_cmd_c {
+        i2c_reply_cmd dist {
+            // Strongly prefer ACK, but occasionally allow NACK or DEFER
+            I2C_ACK      := 96,  // 90% of the time
+            I2C_NACK     := 2,   // 5% of the time
+            I2C_DEFER    := 2    // 5% of the time
+        };
+    }
+
+    constraint valid_native_aux_reply_cmd_c {
+        // Strongly prefer ACK, but occasionally allow NACK or DEFER
+        native_reply_cmd dist {
+            AUX_ACK      := 100,
+            AUX_NACK     := 0,
+            AUX_DEFER    := 0
+        };
+    }
 
     ///////////////////////////////////////////////////////////////
     /////////////////////// CONSTRUCTOR ///////////////////////////
