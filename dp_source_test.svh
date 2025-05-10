@@ -107,8 +107,6 @@ class dp_source_test extends uvm_test;
                 `uvm_info("run_phase", "TL DPCD stimulus generation ended", UVM_LOW);
             end
 
-
-
             // EDID Read Sequence
             // begin
             //     `uvm_info("run_phase", "TL I2C stimulus generation started", UVM_LOW);

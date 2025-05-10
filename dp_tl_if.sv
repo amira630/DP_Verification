@@ -177,16 +177,18 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
       // I2C_READ task
       task I2C_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
             // Set SPM-related signals to perform a read operation
+            wait(HPD_Detect == 1'b1); // Wait for HPD detection
+            @(negedge clk_AUX);
             SPM_Address = address;
             SPM_CMD     = command;
             SPM_LEN     = length;
             SPM_Transaction_VLD = transaction_vld;
-            // SPM_Data = SPM.SPM_Data;                                 // Data is not used in read operation
       endtask
     
       // I2C_WRITE task
       task I2C_WRITE(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld, input logic[7:0] data);
             // Set SPM-related signals to perform a write operation
+            wait(HPD_Detect == 1'b1); // Wait for HPD detection
             SPM_Address = address;
             SPM_CMD     = command;
             SPM_LEN     = length;
@@ -198,19 +200,17 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
       task NATIVE_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
             // Set LPM-related signals to perform a read operation
             wait(HPD_Detect == 1'b1); // Wait for HPD detection
+            @(negedge clk_AUX);
             LPM_Address = address;
             LPM_CMD     = command;
             LPM_LEN     = length;
             LPM_Transaction_VLD = transaction_vld;
-            // LPM_Data = LPM.LPM_Data; // Data is not used in read operation
-            //@(negedge clk_AUX); // Wait for clock edge
-            //LPM_Transaction_VLD = 1'b0; // Set the reply data valid signal to indicate that the data is ready
-
       endtask
 
       // NATIVE_WRITE task
       task NATIVE_WRITE(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld, input logic[7:0] data);
             // Set LPM-related signals to perform a write operation
+            wait(HPD_Detect == 1'b1); // Wait for HPD detection
             LPM_Address = address;
             LPM_CMD     = command;
             LPM_LEN     = length;

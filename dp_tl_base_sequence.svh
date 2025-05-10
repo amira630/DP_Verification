@@ -202,6 +202,7 @@ endtask
         seq_item.CTRL_I2C_Failed = 1;
         while (seq_item.CTRL_I2C_Failed) begin
             seq_item.CTRL_I2C_Failed = 0;
+
             start_item(seq_item);
                 seq_item.SPM_Address.rand_mode(0);    // randomization off
                 seq_item.SPM_CMD.rand_mode(0);        // randomization off
@@ -221,6 +222,10 @@ endtask
                 // Wait for the response from the DUT
                 get_response(seq_item);
                 while(~seq_item.SPM_NATIVE_I2C) begin
+                    start_item(seq_item);
+                    seq_item.SPM_Transaction_VLD = 1'b0;
+                    seq_item.operation = I2C_READ;
+                    finish_item(seq_item);
                     get_response(seq_item);
                 end           
                 if (seq_item.CTRL_I2C_Failed) begin
@@ -230,10 +235,29 @@ endtask
                 else if(seq_item.SPM_Reply_ACK_VLD) begin
                     if(seq_item.SPM_Reply_ACK == I2C_ACK[3:2]) begin
                         ack_count++;
+                    end else begin
+                        start_item(seq_item);
+                        seq_item.SPM_Transaction_VLD = 1'b0; 
+                        seq_item.operation = I2C_READ;
+                        finish_item(seq_item);
                     end
+                end
+                else begin
+                    start_item(seq_item);
+                    seq_item.SPM_Transaction_VLD = 1'b0; 
+                    seq_item.operation = I2C_READ;
+                    finish_item(seq_item);
                 end
             end
             ack_count = 0;
+            while (ack_count < seq_item.SPM_LEN) begin
+                start_item(seq_item);
+                seq_item.SPM_Transaction_VLD = 1'b1; 
+                finish_item(seq_item);
+                get_response(seq_item);
+                if(seq_item.SPM_NATIVE_I2C && seq_item.SPM_Reply_Data_VLD)
+                    ack_count++;
+            end
         end
         // 
         `uvm_info("TL_I2C_REQ_SEQ", $sformatf("I2C AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.SPM_CMD, seq_item.SPM_Address, seq_item.SPM_LEN +1, seq_item.SPM_Transaction_VLD), UVM_MEDIUM)
@@ -270,6 +294,9 @@ endtask
                     seq_item.operation = NATIVE_READ;
                     finish_item(seq_item);
                     get_response(seq_item);
+                    if (seq_item.LPM_Reply_ACK_VLD == 1) begin
+                        break; // Exit the loop if LPM_Reply_ACK_VLD is set
+                    end
                 end
                 //seq_item.LPM_Transaction_VLD = 1'b0;    
                 if (seq_item.CTRL_Native_Failed) begin
@@ -281,23 +308,25 @@ endtask
                         ack_count++;
                     end else begin
                         start_item(seq_item);
-                        seq_item.LPM_Transaction_VLD = 1'b0; 
+                        seq_item.LPM_Transaction_VLD = 1'b1; 
                         seq_item.operation = NATIVE_READ;
                         finish_item(seq_item);
+                        get_response(seq_item);
                     end
                 end
                 else begin
                     start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; 
                     seq_item.operation = NATIVE_READ;
-                    finish_item(seq_item);
+                    finish_item(seq_item);  
+                    get_response(seq_item);
                 end
                 
             end
             ack_count = 0;
             while (ack_count < LEN) begin
                 start_item(seq_item);
-                seq_item.LPM_Transaction_VLD = 1'b0; 
+                seq_item.LPM_Transaction_VLD = 1'b1; 
                 finish_item(seq_item);
                 get_response(seq_item);
                 if(seq_item.LPM_NATIVE_I2C && seq_item.LPM_Reply_Data_VLD)

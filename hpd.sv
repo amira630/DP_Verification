@@ -1,15 +1,15 @@
 /*==================================================================                        
-* File Name:   hpd.sv                                         
+* File Name:   HPD.sv                                         
 * Module Name: hpd                                          
 * Purpose:     Detect HPD signal and generate interrupt request                                          
 * Date:        6th May 2025 
-* Nmae:        *Mohammed Hisham Tersawy*                                       
+* Name:        *Mohammed Hisham Tersawy*                                       
 ====================================================================*/
 
 `default_nettype none  // Disable implicit net declarations
 module hpd 
 (
-    input wire clk,           // 100 kHz clock input
+    input wire clk,           // 100 MHz clock input
     input wire rst_n,         // Reset signal
     input wire hpd_signal,    // HPD signal
     output reg hpd_detect,    // HPD detect signal
@@ -19,9 +19,9 @@ module hpd
     /*********************************************
      * PARAMETERS AND CONSTANTS
      *********************************************/
-    localparam  int CLK_FREQ            = 100_000;            // Clock frequency in Hz
+    localparam  int CLK_FREQ            = 100_000;        // Clock frequency in Hz
     localparam  int MS_TICKS            = CLK_FREQ / 1_000;   // Number of clock ticks per millisecond
-    localparam  int HPD_THRESHOLD       = 100 * MS_TICKS;     // HPD signal threshold in milliseconds (100 ms)
+    localparam  int HPD_THRESHOLD       = MS_TICKS;     // HPD signal threshold in milliseconds (100 ms) -> (updated to be 1ms)
     localparam  int HPD_IRQ_MIN         = 0.5 * MS_TICKS;     // Minimum ticks for HPD IRQ (0.5 ms)
     localparam  int HPD_IRQ_MAX         = 1 * MS_TICKS;       // Maximum ticks for HPD IRQ (1 ms)
     localparam  int HPD_IRQ_MIN_SPACING = 2 * MS_TICKS;       // Minimum spacing between two successive HPD IRQ requests (2 ms)
@@ -37,6 +37,8 @@ module hpd
     reg        toggle_down_up;          // HPD signal toggle detection from low to high
     reg        flag;                    // flag asserted to indicate that there is a toggle up down happens in HPD signal 
                                         //to count on low counter 
+    reg  [31:0]      min_spacing_reg;       // flag to indicate that the minimum spacing between two successive HPD IRQ requests is reached
+    reg              first_time_flag;      // flag to indicate that the minimum spacing between two successive HPD IRQ requests is reached
            
 
 
@@ -52,11 +54,14 @@ module hpd
             hpd_irq                 <= 0;
             flag                    <= 0;
             irq_min_spacing_counter <= HPD_IRQ_MIN_SPACING;
+            min_spacing_reg         <= 0;
+            first_time_flag         <= 0; // Initialize the minimum spacing flag
         end 
         else 
         begin
             if (toggle_down_up && !flag) 
             begin
+                first_time_flag <= 0; // Reset the flag to indicate that the minimum spacing is reached
                 hpd_irq         <= 0;
                 hpd_low_counter <= 0;
                 if (irq_min_spacing_counter < HPD_IRQ_MIN_SPACING)
@@ -82,13 +87,23 @@ module hpd
                 begin
                     hpd_detect  <= 0;
                 end
+                if(first_time_flag == 0) // Check if the minimum spacing flag is not set
+                begin
+                    min_spacing_reg  <= irq_min_spacing_counter; // Store the current IRQ spacing counter value
+                    first_time_flag  <= 1; // Set the flag to indicate that the minimum spacing is reached
+                end
+                if(irq_min_spacing_counter < HPD_IRQ_MIN_SPACING)
+                begin
+                    irq_min_spacing_counter <= irq_min_spacing_counter + 1;       // Increment spacing counter after each IRQ request
+                end
             end
             else
             if(toggle_down_up && flag)
             begin
+                first_time_flag <= 0; // Reset the flag to indicate that the minimum spacing is reached
                 if ((hpd_low_counter >= HPD_IRQ_MIN) && (hpd_low_counter <= HPD_IRQ_MAX))
                 begin
-                    if(irq_min_spacing_counter >= HPD_IRQ_MIN_SPACING - 1 ) 
+                    if(min_spacing_reg >= HPD_IRQ_MIN_SPACING - 1 ) 
                     begin
                         hpd_irq                 <= 1;
                         irq_min_spacing_counter <= 0;  
@@ -101,8 +116,6 @@ module hpd
                 hpd_low_counter <= 0;
                 flag            <= 0;
             end
-
-
         end
     end
 

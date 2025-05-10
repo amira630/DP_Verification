@@ -17,6 +17,7 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
 
     task run_phase(uvm_phase phase);
         super.run_phase(phase);
+        @(negedge dp_tl_vif.clk_AUX);
         forever begin
             // Get sequence item from sequencer
             stimulus_seq_item = dp_tl_sequence_item::type_id::create("stimulus_seq_item");
@@ -34,7 +35,7 @@ class dp_tl_driver extends uvm_driver #(dp_tl_sequence_item);
 
 
             // Check if the sequence item is SPM or LPM then drive the values to the interface according to the operation
-            @(negedge dp_tl_vif.clk_AUX);
+            // @(negedge dp_tl_vif.clk_AUX);
             if(stimulus_seq_item.SPM_Transaction_VLD == 1 && stimulus_seq_item.LPM_Transaction_VLD == 0) begin
                 // SPM transaction
                 case (stimulus_seq_item.operation)

@@ -6,7 +6,7 @@
 // add wave -r /top/sink_if/*
 // add wave -r /top/*
 
-`timescale 1ns / 1ns
+`timescale 1us / 1ns
 
 // Standard UVM import & include:
 import uvm_pkg::*;
@@ -33,31 +33,31 @@ module top();
         fork
             begin
                 forever
-                    #5000 clk_AUX = ~clk_AUX;
+                    #5 clk_AUX = ~clk_AUX;
             end
             begin
                 forever
-                    #3 clk_RBR = ~clk_RBR; // will round to 3.086420ns
+                    #0.003 clk_RBR = ~clk_RBR; // will round to 3.086420ns
                     // #3.086419753
             end
             begin
                 forever
-                    #2 clk_HBR = ~clk_HBR; // will round to 1.851852ns
+                    #0.002 clk_HBR = ~clk_HBR; // will round to 1.851852ns
                     // #1.851851852
             end
             begin
                 forever
-                    #1 clk_HBR2 = ~clk_HBR2; // will round to 0.925926ns
+                    #0.001 clk_HBR2 = ~clk_HBR2; // will round to 0.925926ns
                     // #0.925925926
             end
             begin
                 forever
-                    #1 clk_HBR3 = ~clk_HBR3; // will round to 0.061728ns
+                    #0.001 clk_HBR3 = ~clk_HBR3; // will round to 0.061728ns
                     // #0.06172839505
             end
             begin
                 forever
-                    #3 MS_Stm_CLK = ~MS_Stm_CLK; // Pixel Stream Clock 
+                    #0.003 MS_Stm_CLK = ~MS_Stm_CLK; // Pixel Stream Clock 
                     // #3.086419753
                     // #(tl_if.CLOCK_PERIOD/2)
             end

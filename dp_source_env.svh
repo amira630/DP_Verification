@@ -3,7 +3,7 @@ class dp_source_env extends uvm_env;
 
     dp_tl_agent tl_agt;
     dp_sink_agent sink_agt;
-    // dp_scoreboard sb;
+    //dp_scoreboard sb;
     //dp_source_ref ref_model;
     dp_tl_coverage tl_cov;
     dp_sink_coverage sink_cov;
@@ -31,6 +31,9 @@ class dp_source_env extends uvm_env;
         // Sink Agent → Scoreboard
         //sink_agt.agt_ap.connect(sb.sb_sink_export);
 
+        // Reference Model → Scoreboard
+        //ref_model.ref_model_out_port.connect(sb.sb_ref_export);
+
         // Transport Layer Agent → Transport Layer Coverage Collector
         tl_agt.agt_ap.connect(tl_cov.cov_export);
         
@@ -38,9 +41,10 @@ class dp_source_env extends uvm_env;
         sink_agt.agt_ap.connect(sink_cov.cov_export);
 
         // Transport Layer Agent → Reference Model
-        //tl_agt.agt_ap.connect(ref_model.ref_model_export);
+        //tl_agt.agt_ap.connect(ref_model.tl_in_port);
 
-        // Reference Model → Scoreboard
-        //ref_model.ref_ap.connect(sb.sb_ref_export);
+        // Sink Agent → Reference Model
+        //sink_agt.agt_ap.connect(ref_model.sink_in_port);
+
     endfunction
 endclass //className extends superClass
