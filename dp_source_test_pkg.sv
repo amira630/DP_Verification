@@ -17,12 +17,12 @@ package dp_source_test_pkg;
     `include "dp_tl_native_ext_receiver_cap_sequence.svh"
     `include "dp_tl_native_link_config_sequence.svh"
     `include "dp_tl_native_receiver_cap_sequence.svh"
+    `include "dp_tl_link_training_sequence.svh"
 
     `include "dp_sink_base_sequence.svh"
     `include "dp_sink_full_flow_seq.svh"
     `include "dp_sink_hpd_test_seq.svh"
     `include "dp_sink_interrupt_seq.svh"
-    `include "dp_sink_reply_transaction.svh"
     `include "dp_source_test.svh"
     
 endpackage

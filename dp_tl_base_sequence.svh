@@ -261,10 +261,14 @@ endtask
                 seq_item.LPM_LEN = LEN;               // Length
                 assert(seq_item.randomize());                 // Randomize the data
             finish_item(seq_item);
+            // Wait for the response from the DUT
             while(ack_count<1) begin
-                // Wait for the response from the DUT
                 get_response(seq_item);
                 while(~seq_item.LPM_NATIVE_I2C) begin
+                    start_item(seq_item);
+                    seq_item.LPM_Transaction_VLD = 1'b0; 
+                    seq_item.operation = NATIVE_READ;
+                    finish_item(seq_item);
                     get_response(seq_item);
                 end
                 //seq_item.LPM_Transaction_VLD = 1'b0;    
@@ -275,12 +279,26 @@ endtask
                 else if(seq_item.LPM_Reply_ACK_VLD) begin
                     if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
                         ack_count++;
+                    end else begin
+                        start_item(seq_item);
+                        seq_item.LPM_Transaction_VLD = 1'b0; 
+                        seq_item.operation = NATIVE_READ;
+                        finish_item(seq_item);
                     end
+                end
+                else begin
+                    start_item(seq_item);
+                    seq_item.LPM_Transaction_VLD = 1'b0; 
+                    seq_item.operation = NATIVE_READ;
+                    finish_item(seq_item);
                 end
                 
             end
             ack_count = 0;
             while (ack_count < LEN) begin
+                start_item(seq_item);
+                seq_item.LPM_Transaction_VLD = 1'b0; 
+                finish_item(seq_item);
                 get_response(seq_item);
                 if(seq_item.LPM_NATIVE_I2C && seq_item.LPM_Reply_Data_VLD)
                     ack_count++;
@@ -328,6 +346,7 @@ endtask
                             ack_count++;
                         end 
                     end
+                   
                 end
                 if (seq_item.CTRL_Native_Failed)
                     break; // Exit the loop if CTRL_Native_Failed is set
@@ -370,8 +389,8 @@ endtask
         int ack_count = 0;
         bit done = 0;
         
-        if(!seq_item.isflow)
-            seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        // if(!seq_item.isflow)
+        seq_item = dp_tl_sequence_item::type_id::create("seq_item");
         
         seq_item.LT_Failed = 1'b0; 
         seq_item.LT_Pass = 1'b0;
@@ -422,8 +441,14 @@ endtask
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                 finish_item(seq_item);
             end
-            else if(ack_count==4 && !seq_item.LPM_Reply_Data_VLD)
+            else if(ack_count==4 && !seq_item.LPM_Reply_Data_VLD) begin
                 done = 1; 
+            end
+            else begin
+                start_item(seq_item);
+                    seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                finish_item(seq_item);  
+            end
         end
         done = 0;
         if(!seq_item.FSM_CR_Failed && !seq_item.CTRL_Native_Failed) begin
@@ -461,11 +486,10 @@ endtask
                             ack_count++;
                         end
                     end
-                    else if(ack_count==1 && seq_item.LPM_Reply_Data_VLD) begin
+                    else if(ack_count==1 && seq_item.LPM_Reply_Data_VLD) 
                         done = 0;
-                    end
                     else if(ack_count==1 && !seq_item.LPM_Reply_Data_VLD)
-                        done = 1; 
+                        done = 1;        
                 end
                 ack_count = 0;
                 done = 0;
@@ -512,6 +536,11 @@ endtask
                         start_item(seq_item);
                             seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                         finish_item(seq_item);
+                    end
+                    else begin
+                        start_item(seq_item);
+                            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                        finish_item(seq_item);  
                     end
                 end
                 ack_count = 0;
@@ -571,8 +600,14 @@ endtask
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                 finish_item(seq_item);
             end
-            else if(ack_count==4 && !seq_item.LPM_Reply_Data_VLD)
+            else if(ack_count==4 && !seq_item.LPM_Reply_Data_VLD) begin
                 done = 1; 
+            end
+            else begin
+                start_item(seq_item);
+                    seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                finish_item(seq_item);  
+            end
         end
         done = 0;
         if(~seq_item.FSM_CR_Failed) begin
@@ -609,7 +644,7 @@ endtask
                     end
                     else if(ack_count==1 && seq_item.LPM_Reply_Data_VLD)
                         done = 0; 
-                    else if(ack_count==1 && !seq_item.LPM_Reply_Data_VLD)
+                    else if(ack_count==1 && !seq_item.LPM_Reply_Data_VLD) 
                         done = 1; 
                 end
                 ack_count = 0;
@@ -656,6 +691,11 @@ endtask
                                 seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                             finish_item(seq_item);
                         end
+                    end
+                    else begin
+                        start_item(seq_item);
+                            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                        finish_item(seq_item);  
                     end
                 end
                 ack_count = 0;
@@ -721,13 +761,19 @@ endtask
                         seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                     finish_item(seq_item);
                 end
-                else if(ack_count==2 && !seq_item.LPM_Reply_Data_VLD)
+                else if(ack_count==2 && !seq_item.LPM_Reply_Data_VLD) begin
                     done = 1; 
+                end
+                else begin
+                    start_item(seq_item);
+                        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                    finish_item(seq_item);  
+                end
             end
             done = 0;
             if (seq_item.EQ_Failed) begin
-                    seq_item.LT_Failed = 1'b1; 
-                    break;
+                seq_item.LT_Failed = 1'b1; 
+                break;
             end 
             start_item(seq_item);
             seq_item.rand_mode(0);
@@ -858,7 +904,7 @@ endtask
             finish_item(seq_item);
             
             // Wait for acknowledgment from the DUT for write transaction
-            while(ack_count<1) begin'
+            while(ack_count<1) begin
                 get_response(seq_item);
                 while(~seq_item.LPM_NATIVE_I2C) begin
                     start_item(seq_item);
@@ -879,6 +925,11 @@ endtask
                             seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                         finish_item(seq_item);
                     end
+                end
+                else begin
+                    start_item(seq_item);
+                        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                    finish_item(seq_item);  
                 end
             end
         end

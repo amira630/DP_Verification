@@ -22,11 +22,11 @@ class dp_source_test extends uvm_test;
     dp_tl_native_ext_receiver_cap_sequence dp_tl_native_ext_receiver_cap_seq;
     dp_tl_native_link_config_sequence dp_tl_native_link_config_seq;
     dp_tl_native_receiver_cap_sequence dp_tl_native_receiver_cap_seq;
+    dp_tl_link_training_sequence dp_tl_link_training_seq;
 
     ////////////////////////////////////////////// Sink Sequences //////////////////////////////////////////
 
     dp_sink_full_flow_seq dp_sink_seq;
-    dp_sink_reply_transaction dp_sink_reply_seq;
     dp_sink_interrupt_seq dp_sink_intr_seq;
     dp_sink_hpd_test_seq dp_sink_hpd_seq;
 
@@ -49,10 +49,10 @@ class dp_source_test extends uvm_test;
         dp_tl_native_ext_receiver_cap_seq = dp_tl_native_ext_receiver_cap_sequence::type_id::create("dp_tl_native_ext_receiver_cap_seq", this);
         dp_tl_native_link_config_seq = dp_tl_native_link_config_sequence::type_id::create("dp_tl_native_link_config_seq", this);
         dp_tl_native_receiver_cap_seq = dp_tl_native_receiver_cap_sequence::type_id::create("dp_tl_native_receiver_cap_seq", this);
+        dp_tl_link_training_seq = dp_tl_link_training_sequence::type_id::create("dp_tl_link_training_seq", this);
 
         // Sink Sequences creation
         dp_sink_seq = dp_sink_full_flow_seq::type_id::create("dp_sink_seq", this);
-        dp_sink_reply_seq   = dp_sink_reply_transaction::type_id::create("dp_sink_reply_seq", this);
         dp_sink_intr_seq = dp_sink_interrupt_seq::type_id::create("dp_sink_intr_seq", this);            // DONE
         dp_sink_hpd_seq = dp_sink_hpd_test_seq::type_id::create("dp_sink_hpd_seq", this);
         
@@ -103,25 +103,24 @@ class dp_source_test extends uvm_test;
             // end
 
             // DPCD (RX Cap) Read Sequence
+            // begin
+            //     `uvm_info("run_phase", "TL DPCD stimulus generation started", UVM_LOW);
+            //     dp_tl_native_receiver_cap_seq.start(env.tl_agt.sqr);
+            //     `uvm_info("run_phase", "TL DPCD stimulus generation ended", UVM_LOW);
+            // end
+
+            // TL Link Training Sequence
             begin
-                `uvm_info("run_phase", "TL DPCD stimulus generation started", UVM_LOW);
-                dp_tl_native_receiver_cap_seq.start(env.tl_agt.sqr);
-                `uvm_info("run_phase", "TL DPCD stimulus generation ended", UVM_LOW);
+                `uvm_info("run_phase", "TL Link Training seq stimulus generation started", UVM_LOW);
+                dp_tl_link_training_seq.start(env.tl_agt.sqr);
+                `uvm_info("run_phase", "TL Link Training seq stimulus generation ended", UVM_LOW);
             end
-
-
 
             // EDID Read Sequence
             // begin
             //     `uvm_info("run_phase", "TL I2C stimulus generation started", UVM_LOW);
             //     dp_tl_i2c_seq.start(env.tl_agt.sqr);
             //     `uvm_info("run_phase", "TL I2C stimulus generation ended", UVM_LOW);
-            // end
-
-            // begin
-            //     `uvm_info("run_phase", "Sink Reply stimulus generation started", UVM_LOW);
-            //     dp_sink_reply_seq.start(env.sink_agt.sqr);
-            //     `uvm_info("run_phase", "Sink Reply stimulus generation ended", UVM_LOW);
             // end
 
             // begin

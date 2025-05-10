@@ -67,30 +67,13 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                                 `uvm_info(get_type_name(), $sformatf("Time=%0t: Sink is not ready", $time), UVM_MEDIUM)
                                 not_ready();                            // Wait for the sink to be ready
                                 `uvm_info(get_type_name(), "Sink pass the not ready task", UVM_MEDIUM)
-                                current_state = SINK_LISTEN;
+                                current_state = SINK_READY;
                             end
-                            SINK_LISTEN: begin
+                            SINK_READY: begin
                                 `uvm_info(get_type_name(), "Sink is in Listen mode, Waiting for request command", UVM_MEDIUM)
-                                ready();                            
-                                if (seq_item.AUX_START_STOP) begin
-                                    current_state = SINK_TALK;                         // Move to the next state
-                                end else begin
-                                    current_state = SINK_LISTEN;                        // Stay in the same state
-                                end
+                                ready();      
+                                current_state = SINK_READY;                   // Set the current state to SINK_READY
                             end
-                            SINK_TALK: begin
-                                `uvm_info(get_type_name(), "Sink is in Talk mode, Sending reply", UVM_MEDIUM)
-                                reply_transaction();                     // Send the reply transaction
-                                if (seq_item.AUX_START_STOP) begin
-                                    current_state = SINK_TALK;                         // Stay in the same state
-                                end else begin
-                                    current_state = SINK_LISTEN;                        // Move to the last state
-                                end
-                            end
-
-                        // default: begin
-                        //     current_state = SINK_NOT_READY;
-                        // end
                     endcase
                 end
             end
@@ -102,9 +85,8 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                         current_state = SINK_NOT_READY;                  // Set the current state to Not Ready
                         `uvm_info(get_type_name(), $sformatf("Time=%0t: sink at wait ~rst", $time), UVM_MEDIUM)
                     wait(sink_seq_cfg.rst_n);                  // Wait for the reset signal to go high
-                        current_state = SINK_LISTEN;                  // Set the current state to SINK_LISTEN
+                        current_state = SINK_READY;                  // Set the current state to SINK_LISTEN
                         `uvm_info(get_type_name(), $sformatf("Time=%0t: sink at wait rst", $time), UVM_MEDIUM)
-                    
                 end
             end
         join
@@ -134,6 +116,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
 
     // Ready Sequence
     task ready();
+        int i = 0;
         seq_item = dp_sink_sequence_item::type_id::create("seq_item");
 
         if (seq_item == null) begin
@@ -148,43 +131,46 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         finish_item(seq_item);                          // Send the sequence item to the driver
         `uvm_info(get_type_name(), "finish_item for ready state", UVM_MEDIUM)
         get_response(seq_item);
-    endtask
 
-    // Reply Sequence
-    task reply_transaction();
-        int i = 0;
-        seq_item = dp_sink_sequence_item::type_id::create("seq_item");
-        // seq_item.sink_operation = Reply_operation;
-        get_response(seq_item);                             // Get the response from the driver
-        while (seq_item.AUX_START_STOP) begin
+        if (seq_item.AUX_START_STOP) begin
+             `uvm_info(get_type_name(), "AUX_START_STOP is high, capturing first byte", UVM_MEDIUM)
 
-            if (seq_item == null) begin
-                `uvm_info(get_type_name(), "Received empty response, cannot process request", UVM_MEDIUM)
-                wait(seq_item != null);
+            while (seq_item.AUX_START_STOP) begin
+                start_item(seq_item);
+                `uvm_info(get_type_name(), "start_item for ready state", UVM_MEDIUM)
+                seq_item.sink_operation = Ready;                // Set the operation type to Not Ready
+                finish_item(seq_item);                          // Send the sequence item to the driver
+                `uvm_info(get_type_name(), "finish_item for ready state", UVM_MEDIUM)
+                get_response(seq_item);
             end
 
-            seq_item.aux_in_out.push_back(seq_item.AUX_IN_OUT);
+            foreach (seq_item.aux_in_out[i]) begin
+                `uvm_info(get_type_name(), $sformatf("Received AUX data: 0x%h", seq_item.aux_in_out[i]), UVM_MEDIUM)
+            end
 
-            start_item(seq_item);                          // Start the sequence item
-            `uvm_info(get_type_name(), "start_item for reply transaction", UVM_MEDIUM)
-            seq_item.sink_operation = Receive_op;     // Set the operation type to Reply
-            finish_item(seq_item);                         // Send the sequence item to the driver
+            `uvm_info(get_type_name(), $sformatf("Received AUX data size: %0d", seq_item.aux_in_out.size()), UVM_MEDIUM)
 
-            get_response(seq_item);                         // Get the response from the driver
-        end
+            `uvm_info(get_type_name(), "Before calling the process_aux_data task", UVM_MEDIUM)
 
-        process_aux_data(seq_item, reply_seq_item);                // Process the AUX data from the response
+            reply_seq_item = dp_sink_sequence_item::type_id::create("reply_seq_item");
+            if (reply_seq_item == null) begin
+                `uvm_fatal(get_type_name(), "Failed to create reply_seq_item before process_aux_data()")
+            end
 
-        // process_sink_data(seq_item, reply_seq_item);                    // Process the sink data from the response
+            process_aux_data(seq_item, reply_seq_item);                // Process the AUX data from the response
 
-        for (i = 0;i < reply_seq_item.aux_in_out.size(); i++) begin
-            start_item(reply_seq_item);                                 // Start the sequence item
-            `uvm_info(get_type_name(), "start_item for reply transaction", UVM_MEDIUM)
-            reply_seq_item.sink_operation = Reply_operation;            // Set the operation type to Reply
-            reply_seq_item.PHY_IN_OUT = reply_seq_item.aux_in_out[i];
-            finish_item(reply_seq_item);                                // Send the sequence item to the driver
-            `uvm_info(get_type_name(), "finish_item for reply transaction", UVM_MEDIUM)
-            get_response(seq_item);
+            for (i = 0;i < reply_seq_item.aux_in_out.size(); i++) begin
+                start_item(reply_seq_item);                                 // Start the sequence item
+                `uvm_info(get_type_name(), "start_item for reply transaction", UVM_MEDIUM)
+                reply_seq_item.sink_operation = Reply_operation;            // Set the operation type to Reply
+                reply_seq_item.PHY_IN_OUT = reply_seq_item.aux_in_out[i];
+                finish_item(reply_seq_item);                                // Send the sequence item to the driver
+                `uvm_info(get_type_name(), "finish_item for reply transaction", UVM_MEDIUM)
+                get_response(seq_item);
+            end
+        end 
+        else begin
+            `uvm_info(get_type_name(), "AUX_START_STOP is low, not storing the aux_in_out", UVM_MEDIUM)
         end
     endtask
 
@@ -194,6 +180,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         int addr_idx;
         bit [7:0] aux_data = 0; 
         bit [19:0] full_address; 
+
         // Check if the AUX data is valid
         if (rsp_item.aux_in_out.size() < 3) begin
             `uvm_error(get_type_name(), "AUX data too short, cannot process request")
@@ -235,13 +222,6 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                   rsp_item.command, rsp_item.address, rsp_item.length, rsp_item.data.size()), UVM_MEDIUM)
 
         `uvm_info(get_type_name(), "Now, will begin to create the reply data", UVM_MEDIUM);
-
-        // Create the reply sequence item
-        reply_item = dp_sink_sequence_item::type_id::create("reply_seq_item");
-        if (reply_item == null) begin
-            `uvm_info(get_type_name(), "reply_seq_item creation failed", UVM_MEDIUM)
-            return;
-        end
         
         if (rsp_item.command[3]) begin                      // Native 
             full_address = rsp_item.address;
@@ -250,8 +230,8 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                 // According to Address and (value(Length[7:0])+1), we can write the rsp_item.data to the registers
 
                 // Randomize the native_reply_cmd before using it
-                if (!reply_item.randomize(native_reply_cmd)) begin
-                    `uvm_error(get_type_name(), "Failed to randomize native_reply_cmd")
+                if (!reply_item.randomize()) begin
+                    `uvm_error(get_type_name(), "Failed to randomize reply_item")
                 end
                 reply_item.aux_in_out[0] = {reply_item.native_reply_cmd, 4'b0000};      // ACK for Native Write
 
@@ -358,7 +338,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         get_response(seq_item);
     endtask
 
-    // HPD Testing 
+    // HPD Testing (Complex)
     task Random_HPD ();
         // Create and configure sequence item
         seq_item = dp_sink_sequence_item::type_id::create("seq_item");

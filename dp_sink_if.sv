@@ -27,7 +27,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     wire [AUX_DATA_WIDTH-1:0] AUX_IN_OUT; // The AUX_IN_OUT signal is a bidirectional signal used for the DisplayPort auxiliary channel communication. It carries the data between the source and sink devices.
 
 
-    assign AUX_IN_OUT = aux_data;
+    // assign AUX_IN_OUT = aux_data;
 
     ///////////////////////////////////////////////////////////////
     //////////////////////// MODPORTS /////////////////////////////
@@ -64,26 +64,24 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     // This task is used to reset the DUT by asserting and deasserting the reset signal
     task SINK_Reset();
         HPD_Signal = 1'b0;          // Deassert reset
-        aux_data = 8'b0;
         PHY_START_STOP = 1'b0;      // Deassert PHY_START_STOP
     endtask
 
     // TASK: Active
     // This task is used to assert the HPD_Signal
-    task Active(output logic aux_start_stop);
+    task Active(output logic aux_start_stop, output logic [7:0] value);
         HPD_Signal = 1'b1;                      // Drive the HPD_Signal with the specified value
         PHY_START_STOP = 1'b0;                  // Deassert PHY_START_STOP
-        aux_data = 8'b0;                        // Set the AUX_IN_OUT signal to zero
         aux_start_stop = AUX_START_STOP;        // Return the value of AUX_START_STOP
-        `uvm_info("DP_SINK_INTERFACE", $sformatf("Active Sink: HPD_Signal"), UVM_MEDIUM);
-    endtask
 
-    // TASK: read_aux_in_out
-    // Reads the current value on the AUX_IN_OUT bus
-    task automatic read_aux_in_out(output logic [7:0] value);
-        value = AUX_IN_OUT;
-        HPD_Signal = 1'b1;              // Assert HPD_Signal
-        `uvm_info("DP_SINK_INTERFACE", $sformatf("Read AUX_IN_OUT = 0x%0h", value), UVM_LOW);
+        if (AUX_START_STOP) begin
+            value = AUX_IN_OUT;
+            `uvm_info("DP_SINK_INTERFACE", $sformatf("Read AUX_IN_OUT = 0x%0h", value), UVM_LOW);
+
+        end else begin
+            value = 8'b0;                      // If AUX_START_STOP is not asserted, set value to 0
+        end
+        `uvm_info("DP_SINK_INTERFACE", $sformatf("Active Sink: HPD_Signal"), UVM_MEDIUM);
     endtask
 
     // TASK: drive_aux_in_out

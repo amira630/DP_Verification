@@ -47,12 +47,10 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
                 Ready: begin
                     // HPD operation
                     `uvm_info("DP_SINK_DRIVER", $sformatf("ACTIVE SINK"), UVM_MEDIUM);
-                    dp_sink_vif.Active(stim_seq_item.AUX_START_STOP);
-                end
-                Receive_op: begin
-                    // Receive operation
-                    `uvm_info("DP_SINK_DRIVER", $sformatf("Receive operation"), UVM_MEDIUM);
-                    dp_sink_vif.read_aux_in_out(stim_seq_item.AUX_IN_OUT);
+                    dp_sink_vif.Active(stim_seq_item.AUX_START_STOP, stim_seq_item.AUX_IN_OUT);
+                    if (stim_seq_item.AUX_START_STOP) begin
+                        stim_seq_item.aux_in_out.push_back(stim_seq_item.AUX_IN_OUT); // Store the AUX_IN_OUT values while the AUX_START_STOP is high
+                    end
                 end
                 Reply_operation: begin
                     // Reply operation

@@ -160,7 +160,7 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     assign hpd_signal = sink_if.HPD_Signal;
 
     // Bidirectional Data Bus
-    // assign aux_in_out = ;
+    assign sink_if.AUX_IN_OUT = aux_in_out;
 
     //===========================================================                   
     // Outputs       
@@ -282,6 +282,17 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     assign lpm_reply_ack = reply_ack;
     assign lpm_reply_ack_vld = reply_ack_vld;
     assign lpm_native_i2c = reply_i2c_native;
+
+    // Bidirectional Data Bus
+    // always_comb begin
+    //     if (sink_if.AUX_START_STOP == 1'b1) begin
+    //         sink_if.AUX_IN_OUT = aux_in_out;
+    //     end else if (sink_if.PHY_START_STOP == 1'b1) begin
+    //         aux_in_out = sink_if.AUX_IN_OUT;
+    //     end else begin
+    //         sink_if.AUX_IN_OUT = 1'b0; // Default value when neither condition is true
+    //     end
+    // end
 
 
     // Instantiate the AUX_CTRL_UNIT module
