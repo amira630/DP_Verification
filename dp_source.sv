@@ -160,7 +160,21 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     assign hpd_signal = sink_if.HPD_Signal;
 
     // Bidirectional Data Bus
-    assign sink_if.AUX_IN_OUT = aux_in_out;
+    assign sink_if.AUX_IN_OUT = sink_if.AUX_START_STOP ? aux_in_out : 8'bz; // The AUX_IN_OUT signal is a bidirectional signal used for the DisplayPort auxiliary channel communication. It carries the data between the source and sink devices.
+
+    assign aux_in_out = sink_if.PHY_START_STOP ? sink_if.AUX_IN_OUT : 8'bz; // The AUX_IN_OUT signal is driven by the PHY_START_STOP signal. When PHY_START_STOP is high, the aux_data is driven onto the AUX_IN_OUT line. Otherwise, it is in high impedance state (8'bz).
+
+    assign spm_reply_data = reply_data;
+    assign spm_reply_data_vld = reply_data_vld;
+    assign spm_reply_ack = reply_ack;
+    assign spm_reply_ack_vld = reply_ack_vld;
+    assign spm_native_i2c = reply_i2c_native;
+
+    assign lpm_reply_data = reply_data;
+    assign lpm_reply_data_vld = reply_data_vld;
+    assign lpm_reply_ack = reply_ack;
+    assign lpm_reply_ack_vld = reply_ack_vld;
+    assign lpm_native_i2c = reply_i2c_native;
 
     //===========================================================                   
     // Outputs       
@@ -270,18 +284,6 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     wire        mux_eq_phy_instruct_vld;
 
     
-
-    assign spm_reply_data = reply_data;
-    assign spm_reply_data_vld = reply_data_vld;
-    assign spm_reply_ack = reply_ack;
-    assign spm_reply_ack_vld = reply_ack_vld;
-    assign spm_native_i2c = reply_i2c_native;
-
-    assign lpm_reply_data = reply_data;
-    assign lpm_reply_data_vld = reply_data_vld;
-    assign lpm_reply_ack = reply_ack;
-    assign lpm_reply_ack_vld = reply_ack_vld;
-    assign lpm_native_i2c = reply_i2c_native;
 
     // Bidirectional Data Bus
     // always_comb begin

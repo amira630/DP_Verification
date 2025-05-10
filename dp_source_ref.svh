@@ -1,6 +1,6 @@
 import test_parameters_pkg::*;
-class dp_reference_model extends uvm_component;
-    `uvm_component_utils(dp_reference_model)
+class dp_source_ref extends uvm_component;
+    `uvm_component_utils(dp_source_ref)
 
     // Input and output analysis ports for connecting to the scoreboard
     uvm_analysis_export #(dp_sink_sequence_item) sink_in_port;  // Receives transactions from dp_sink_monitor
@@ -18,14 +18,14 @@ class dp_reference_model extends uvm_component;
     // Constructor
     function new(string name, uvm_component parent);
         super.new(name, parent);
-        sink_in_port = new("sink_in_port", this);
-        tl_in_port = new("tl_in_port", this);
-        ref_model_out_port = new("ref_model_out_port", this);
     endfunction
 
     // Build phase
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
+        sink_in_port = new("sink_in_port", this);
+        tl_in_port = new("tl_in_port", this);
+        ref_model_out_port = new("ref_model_out_port", this);
         `uvm_info(get_type_name(), "Reference model build_phase completed", UVM_LOW)
     endfunction
 

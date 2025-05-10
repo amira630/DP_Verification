@@ -38,7 +38,7 @@ task FLOW_FSM();
                 forever begin
                     case(cs)
                         DETECTING:begin
-                            detect_wait(seq_item);
+                            detect_wait(seq_item.HPD_Detect);
                             if(seq_item.HPD_Detect) begin
                                 cs = CR_STAGE;
                                 `uvm_info("TL_BASE_SEQ", $sformatf("HPD detected, moving to CR stage"), UVM_MEDIUM)
@@ -141,7 +141,7 @@ task FLOW_FSM();
 
 
 ////////////////////////////// Detecting //////////////////////////////
-task detect_wait(output dp_tl_sequence_item seq_item);
+task detect_wait(output logic HPD_Detect);
     `uvm_info(get_type_name(), "Detect wait DUT", UVM_MEDIUM)
     seq_item = dp_tl_sequence_item::type_id::create("seq_item");
     start_item(seq_item);
@@ -149,6 +149,7 @@ task detect_wait(output dp_tl_sequence_item seq_item);
     finish_item(seq_item);
     `uvm_info(get_type_name(), "Detect wait complete", UVM_MEDIUM)
     get_response(seq_item);
+    HPD_Detect = seq_item.HPD_Detect;
     if(seq_item.HPD_Detect) begin
         `uvm_info(get_type_name(), $sformatf("HPD detected"), UVM_MEDIUM)
     end
@@ -166,7 +167,7 @@ task reset_task();
     seq_item = dp_tl_sequence_item::type_id::create("seq_item");
     start_item(seq_item);
         seq_item.operation = reset_op;
-        seq_item.LPM_Transaction_VLD = 1'b1; // LPM is on
+        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
         seq_item.LT_Failed = 1'b0; 
         seq_item.LT_Pass = 1'b0;
     finish_item(seq_item);
@@ -202,6 +203,7 @@ endtask
         seq_item.CTRL_I2C_Failed = 1;
         while (seq_item.CTRL_I2C_Failed) begin
             seq_item.CTRL_I2C_Failed = 0;
+
             start_item(seq_item);
                 seq_item.SPM_Address.rand_mode(0);    // randomization off
                 seq_item.SPM_CMD.rand_mode(0);        // randomization off
@@ -221,6 +223,10 @@ endtask
                 // Wait for the response from the DUT
                 get_response(seq_item);
                 while(~seq_item.SPM_NATIVE_I2C) begin
+                    start_item(seq_item);
+                    seq_item.SPM_Transaction_VLD = 1'b0;
+                    seq_item.operation = I2C_READ;
+                    finish_item(seq_item);
                     get_response(seq_item);
                 end           
                 if (seq_item.CTRL_I2C_Failed) begin
@@ -230,10 +236,29 @@ endtask
                 else if(seq_item.SPM_Reply_ACK_VLD) begin
                     if(seq_item.SPM_Reply_ACK == I2C_ACK[3:2]) begin
                         ack_count++;
+                    end else begin
+                        start_item(seq_item);
+                        seq_item.SPM_Transaction_VLD = 1'b0; 
+                        seq_item.operation = I2C_READ;
+                        finish_item(seq_item);
                     end
+                end
+                else begin
+                    start_item(seq_item);
+                    seq_item.SPM_Transaction_VLD = 1'b0; 
+                    seq_item.operation = I2C_READ;
+                    finish_item(seq_item);
                 end
             end
             ack_count = 0;
+            while (ack_count < seq_item.SPM_LEN) begin
+                start_item(seq_item);
+                seq_item.SPM_Transaction_VLD = 1'b1; 
+                finish_item(seq_item);
+                get_response(seq_item);
+                if(seq_item.SPM_NATIVE_I2C && seq_item.SPM_Reply_Data_VLD)
+                    ack_count++;
+            end
         end
         // 
         `uvm_info("TL_I2C_REQ_SEQ", $sformatf("I2C AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.SPM_CMD, seq_item.SPM_Address, seq_item.SPM_LEN +1, seq_item.SPM_Transaction_VLD), UVM_MEDIUM)
@@ -270,6 +295,9 @@ endtask
                     seq_item.operation = NATIVE_READ;
                     finish_item(seq_item);
                     get_response(seq_item);
+                    if (seq_item.LPM_Reply_ACK_VLD == 1) begin
+                        break; // Exit the loop if LPM_Reply_ACK_VLD is set
+                    end
                 end
                 //seq_item.LPM_Transaction_VLD = 1'b0;    
                 if (seq_item.CTRL_Native_Failed) begin
@@ -281,23 +309,25 @@ endtask
                         ack_count++;
                     end else begin
                         start_item(seq_item);
-                        seq_item.LPM_Transaction_VLD = 1'b0; 
+                        seq_item.LPM_Transaction_VLD = 1'b1; 
                         seq_item.operation = NATIVE_READ;
                         finish_item(seq_item);
+                        get_response(seq_item);
                     end
                 end
                 else begin
                     start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; 
                     seq_item.operation = NATIVE_READ;
-                    finish_item(seq_item);
+                    finish_item(seq_item);  
+                    get_response(seq_item);
                 end
                 
             end
             ack_count = 0;
             while (ack_count < LEN) begin
                 start_item(seq_item);
-                seq_item.LPM_Transaction_VLD = 1'b0; 
+                seq_item.LPM_Transaction_VLD = 1'b1; 
                 finish_item(seq_item);
                 get_response(seq_item);
                 if(seq_item.LPM_NATIVE_I2C && seq_item.LPM_Reply_Data_VLD)
@@ -390,19 +420,19 @@ endtask
         bit done = 0;
         
         // if(!seq_item.isflow)
-        seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        // seq_item = dp_tl_sequence_item::type_id::create("seq_item");
         
         seq_item.LT_Failed = 1'b0; 
         seq_item.LT_Pass = 1'b0;
         seq_item.operation = CR_LT_op;
         // We go in the first cycle, give the LL all the max allowed values and minimum VTG and PRE
         start_item(seq_item);
-        seq_item.rand_mode(0);
-        seq_item.Link_BW_CR.rand_mode(1);  // Randomize max Link rate
-        seq_item.Link_LC_CR.rand_mode(1);  // Randomize max Lane count
-        seq_item.MAX_VTG.rand_mode(1);     // Randomize max voltage swing level
-        seq_item.MAX_PRE.rand_mode(1);     // Randomize max pre-emphasis swing level
-        seq_item.LPM_Transaction_VLD = 1'b1; // LPM is on
+        seq_item.rand_mode(1);
+        // seq_item.Link_BW_CR.rand_mode(1);  // Randomize max Link rate
+        // seq_item.Link_LC_CR.rand_mode(1);  // Randomize max Lane count
+        // seq_item.MAX_VTG.rand_mode(1);     // Randomize max voltage swing level
+        // seq_item.MAX_PRE.rand_mode(1);     // Randomize max pre-emphasis swing level
+        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is on
         seq_item.SPM_Transaction_VLD = 1'b0; // SPM is off
         seq_item.LPM_Start_CR = 1;           // Start the link training (Clock recovery Stage)
         seq_item.VTG = 0;                    // Set the voltage swing to 0 initially
@@ -420,6 +450,9 @@ endtask
             while(~seq_item.LPM_NATIVE_I2C) begin
                 start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                    seq_item.LPM_Start_CR = 0;          
+                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+                    seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
                 finish_item(seq_item);
                 get_response(seq_item);
             end
@@ -433,12 +466,18 @@ endtask
                 end
                 start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                    seq_item.LPM_Start_CR = 0; 
+                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+                    seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid     
                 finish_item(seq_item);
             end
             else if(ack_count==4 && seq_item.LPM_Reply_Data_VLD) begin
                 done = 0; 
                 start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                    seq_item.LPM_Start_CR = 0;      
+                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+                    seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
                 finish_item(seq_item);
             end
             else if(ack_count==4 && !seq_item.LPM_Reply_Data_VLD) begin
@@ -447,6 +486,9 @@ endtask
             else begin
                 start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                    seq_item.LPM_Start_CR = 0; 
+                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+                    seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
                 finish_item(seq_item);  
             end
         end
@@ -455,7 +497,7 @@ endtask
             start_item(seq_item);
             seq_item.rand_mode(0);
             seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
-            seq_item.LPM_Transaction_VLD = 1'b1; // LPM is on
+            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
             seq_item.Driving_Param_VLD = 1'b0;  // Driving parameters are not valid
             seq_item.LPM_Start_CR = 0; 
             seq_item.CR_DONE_VLD = 0; 
@@ -506,7 +548,7 @@ endtask
                 seq_item.PRE.rand_mode(1);
                 seq_item.CR_DONE.rand_mode(1);
                 seq_item.CR_DONE_VLD = 1'b1; // CR_DONE is valid
-                seq_item.LPM_Transaction_VLD = 1'b1;
+                seq_item.LPM_Transaction_VLD = 1'b0;
                 seq_item.Driving_Param_VLD = 1'b1;
                 seq_item.LPM_Start_CR = 0;
                 seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
@@ -518,6 +560,7 @@ endtask
                     while(~seq_item.LPM_NATIVE_I2C) begin
                         start_item(seq_item);
                             seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                            seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                         finish_item(seq_item);
                         get_response(seq_item);
                     end
@@ -535,11 +578,13 @@ endtask
                         end
                         start_item(seq_item);
                             seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                            seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                         finish_item(seq_item);
                     end
                     else begin
                         start_item(seq_item);
                             seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                            seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                         finish_item(seq_item);  
                     end
                 end
@@ -552,6 +597,7 @@ endtask
         end
         else begin
             seq_item.LT_Failed = 1'b1; 
+            seq_item.LPM_Start_CR = 0;      
         end
     endtask
 
@@ -563,7 +609,7 @@ endtask
         // We go in the first cycle, give the LL all the max allowed values and minimum VTG and PRE
         start_item(seq_item);
         seq_item.rand_mode(0);
-        seq_item.LPM_Transaction_VLD = 1'b1; // LPM is on
+        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is on
         seq_item.LPM_Start_CR = 1;           // Start the link training (Clock recovery Stage)
         seq_item.VTG = 0;                    // Set the voltage swing to 0 initially
         seq_item.PRE = 0;                    // Set the pre-emphasis to 0 initially
@@ -579,6 +625,7 @@ endtask
             while(~seq_item.LPM_NATIVE_I2C) begin
                 start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                 finish_item(seq_item);
                 get_response(seq_item);
             end
@@ -592,12 +639,14 @@ endtask
                 end
                 start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                 finish_item(seq_item);
             end
             else if(ack_count==4 && seq_item.LPM_Reply_Data_VLD) begin
                 done = 0; 
                 start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                 finish_item(seq_item);
             end
             else if(ack_count==4 && !seq_item.LPM_Reply_Data_VLD) begin
@@ -606,6 +655,7 @@ endtask
             else begin
                 start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                 finish_item(seq_item);  
             end
         end
@@ -614,7 +664,7 @@ endtask
             start_item(seq_item);
             seq_item.rand_mode(0);
             seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
-            seq_item.LPM_Transaction_VLD = 1'b1; // LPM is on
+            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
             seq_item.Driving_Param_VLD = 1'b0;  // Driving parameters are not valid
             seq_item.LPM_Start_CR = 1'b0; 
             seq_item.CR_DONE_VLD = 1'b0; 
@@ -659,7 +709,7 @@ endtask
                 seq_item.PRE.rand_mode(1);
                 seq_item.CR_DONE.rand_mode(1);
                 seq_item.CR_DONE_VLD = 1'b1; // CR_DONE is valid
-                seq_item.LPM_Transaction_VLD = 1'b1;
+                seq_item.LPM_Transaction_VLD = 1'b0;
                 seq_item.Driving_Param_VLD = 1'b1;
                 seq_item.LPM_Start_CR = 0;
                 seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
@@ -671,6 +721,7 @@ endtask
                     while(~seq_item.LPM_NATIVE_I2C) begin
                         start_item(seq_item);
                             seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                            seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                         finish_item(seq_item);
                         get_response(seq_item);
                     end
@@ -689,12 +740,14 @@ endtask
                         else begin
                             start_item(seq_item);
                                 seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                                seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                             finish_item(seq_item);
                         end
                     end
                     else begin
                         start_item(seq_item);
                             seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                            seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                         finish_item(seq_item);  
                     end
                 end
@@ -724,7 +777,7 @@ endtask
             restart = 0;
             start_item(seq_item);
             seq_item.rand_mode(0);                      // Disable randomization for all fields
-            seq_item.LPM_Transaction_VLD = 1'b1;        // Mark transaction as valid
+            seq_item.LPM_Transaction_VLD = 1'b0;        
             seq_item.EQ_Data_VLD = 0;                   // Indicate that EQ data is not valid
             seq_item.MAX_TPS_SUPPORTED_VLD = 1;         // Indicate change of max TPS
             seq_item.MAX_TPS_SUPPORTED.rand_mode(1);    // Randomize the max TPS value
@@ -740,6 +793,7 @@ endtask
                 while(~seq_item.LPM_NATIVE_I2C) begin
                     start_item(seq_item);
                         seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                        seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                     finish_item(seq_item);
                     get_response(seq_item);
                 end
@@ -753,12 +807,14 @@ endtask
                     end
                     start_item(seq_item);
                         seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                        seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                     finish_item(seq_item);
                 end
                 else if(ack_count==2 && seq_item.LPM_Reply_Data_VLD) begin
                     done = 0; 
                     start_item(seq_item);
                         seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                        seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                     finish_item(seq_item);
                 end
                 else if(ack_count==2 && !seq_item.LPM_Reply_Data_VLD) begin
@@ -767,6 +823,7 @@ endtask
                 else begin
                     start_item(seq_item);
                         seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                        seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                     finish_item(seq_item);  
                 end
             end
@@ -779,7 +836,7 @@ endtask
             seq_item.rand_mode(0);
             seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
             seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate change of max TPS
-            seq_item.LPM_Transaction_VLD = 1'b1; // LPM is on
+            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
             seq_item.EQ_Data_VLD = 0; // Indicate that EQ data is not valid
             seq_item.Driving_Param_VLD = 1'b0;
             assert(seq_item.randomize());
@@ -828,7 +885,7 @@ endtask
                 seq_item.CR_DONE.rand_mode(1);
                 seq_item.CR_DONE_VLD = 1'b1; // CR_DONE is valid
                 seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate change of max TPS
-                seq_item.LPM_Transaction_VLD = 1'b1;
+                seq_item.LPM_Transaction_VLD = 1'b0;
                 seq_item.EQ_Data_VLD = 1;
                 seq_item.Driving_Param_VLD = 1'b1;
                 seq_item.VTG.rand_mode(1);
@@ -840,6 +897,7 @@ endtask
                 while(~seq_item.LPM_NATIVE_I2C) begin
                     start_item(seq_item);
                         seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                        seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                     finish_item(seq_item);
                     get_response(seq_item);
                 end
@@ -862,6 +920,7 @@ endtask
                     do begin
                         start_item(seq_item);
                             seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                            seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                         finish_item(seq_item);
                         get_response(seq_item);
                     end while(~seq_item.LPM_NATIVE_I2C);

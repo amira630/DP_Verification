@@ -27,7 +27,9 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     wire [AUX_DATA_WIDTH-1:0] AUX_IN_OUT; // The AUX_IN_OUT signal is a bidirectional signal used for the DisplayPort auxiliary channel communication. It carries the data between the source and sink devices.
 
 
-    // assign AUX_IN_OUT = aux_data;
+    assign AUX_IN_OUT = PHY_START_STOP ? aux_data : 8'bz; // The AUX_IN_OUT signal is driven by the PHY_START_STOP signal. When PHY_START_STOP is high, the aux_data is driven onto the AUX_IN_OUT line. Otherwise, it is in high impedance state (8'bz).
+
+    // aux_in_out_tb = phy_start_stop_tb ? aux_in_value : 8'bz;
 
     ///////////////////////////////////////////////////////////////
     //////////////////////// MODPORTS /////////////////////////////
@@ -90,6 +92,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     task drive_aux_in_out(input logic [7:0] value);
         HPD_Signal = 1'b1;              // Assert HPD_Signal
         aux_data = value;               // Drive the AUX_IN_OUT signal with the specified value
+        `uvm_info("DP_SINK_INTERFACE", $sformatf("Driving AUX_IN_OUT = 0x%0h", value), UVM_LOW);
         PHY_START_STOP = 1'b1;          // Start the PHY operation
     endtask
 

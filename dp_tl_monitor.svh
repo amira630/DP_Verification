@@ -85,7 +85,8 @@ class dp_tl_monitor extends uvm_monitor;
     rsp_seq_item.EQ_FSM_CR_Failed = dp_tl_vif.EQ_FSM_CR_Failed;
 
     mon_ap.write(rsp_seq_item);
-    `uvm_info("run_phase", rsp_seq_item.convert2string(), UVM_LOW) 
+    `uvm_info("run_phase", rsp_seq_item.convert2string_RQST(), UVM_LOW) 
+    
    end
   endtask
  

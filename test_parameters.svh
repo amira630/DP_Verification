@@ -119,7 +119,7 @@
     } native_aux_request_cmd_e;
 
 // AUX Request Command Definitions (bits 0-1 when bit 3 = 0, I2C-over-AUX) based on Table 2-176
-    typedef enum logic [1:0] {
+    typedef enum bit [1:0] {
         AUX_I2C_WRITE               = 2'b00,  // Bit 3=0, Bit 2= MOT, Bits[1:0]=00
         AUX_I2C_READ                = 2'b01,  // Bit 3=0, Bit 2= MOT, Bits[1:0]=01
         AUX_I2C_WRITE_STATUS_UPDATE = 2'b10,  // Bit 3=0, Bit 2= MOT, Bits[1:0]=10
@@ -159,7 +159,8 @@
         CR_LT_op        = 4'b0101,
         EQ_LT_op        = 4'b0110,
         ISO             = 4'b0111,
-        DETECT_op          = 4'b1000
+        DETECT_op       = 4'b1000,
+        FLOW_FSM_op     = 4'b1001
     } op_code;
 
 // Sink Driver Operation
