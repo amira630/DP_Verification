@@ -103,11 +103,11 @@ class dp_source_test extends uvm_test;
             end
 
             // DPCD (RX Cap) Read Sequence
-            begin
-                `uvm_info("run_phase", "TL DPCD stimulus generation started", UVM_LOW);
-                dp_tl_native_receiver_cap_seq.start(env.tl_agt.sqr);
-                `uvm_info("run_phase", "TL DPCD stimulus generation ended", UVM_LOW);
-            end
+            // begin
+            //     `uvm_info("run_phase", "TL DPCD stimulus generation started", UVM_LOW);
+            //     dp_tl_native_receiver_cap_seq.start(env.tl_agt.sqr);
+            //     `uvm_info("run_phase", "TL DPCD stimulus generation ended", UVM_LOW);
+            // end
 
             // // TL Link Training Sequence
             // begin

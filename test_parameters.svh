@@ -159,8 +159,7 @@
         CR_LT_op        = 4'b0101,
         EQ_LT_op        = 4'b0110,
         ISO             = 4'b0111,
-        DETECT_op       = 4'b1000,
-        FLOW_FSM_op     = 4'b1001
+        DETECT_op       = 4'b1000
     } op_code;
 
 // Sink Driver Operation

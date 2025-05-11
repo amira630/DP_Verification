@@ -236,7 +236,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
 
       // Clock Recovery Link Training task
       // This task is used to set the parameters for the Clock Recovery Link Training phase
-      task LT_CT (input bit config_vld, driving_vld, start_cr, done_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, link_bw_cr, eq_rd_value, [3:0] cr_done, [1:0] link_lc_cr, max_vtg, max_pre);
+      task LT_CT (input bit config_vld, driving_vld, start_cr, done_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, link_bw_cr, eq_rd_value, [3:0] cr_done, [1:0] link_lc_cr, max_vtg, max_pre, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, timer_timeout, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
             // Set LPM-related signals for Clock Recovery Link Training
             // wait(HPD_Detect == 1'b1); // Wait for HPD detection
             // @(negedge clk_AUX)
@@ -254,11 +254,29 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             Driving_Param_VLD = driving_vld;
             Config_Param_VLD = config_vld;
             EQ_RD_Value  = eq_rd_value;
+
+            hpd_detect = HPD_Detect;
+            hpd_irq = HPD_IRQ;
+            reply_data = LPM_Reply_Data;
+            reply_data_vld = LPM_Reply_Data_VLD;
+            reply_ack = LPM_Reply_ACK;
+            reply_ack_vld = LPM_Reply_ACK_VLD;
+            lpm_vld = LPM_NATIVE_I2C;
+            native_failed = CTRL_Native_Failed; 
+
+            fsm_cr_failed = FSM_CR_Failed;
+            eq_failed = EQ_Failed;
+            eq_lt_pass = EQ_LT_Pass;
+            eq_final_adj_bw = EQ_Final_ADJ_BW;
+            eq_final_adj_lc = EQ_Final_ADJ_LC;
+            cr_completed = CR_Completed;
+            eq_fsm_cr_failed = EQ_FSM_CR_Failed;
+            timer_timeout = Timer_Timeout;
       endtask
 
       // Channel Equalization Link Training task
       // This task is used to set the parameters for the Channel Equalization Link Training phase
-      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, training_pattern_t max_tps_supported);
+      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, training_pattern_t max_tps_supported, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, timer_timeout, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
             // @(negedge clk_AUX)
             LPM_Transaction_VLD = 1'b0;
             SPM_Transaction_VLD = 1'b0;
@@ -277,9 +295,27 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
 
             MAX_TPS_SUPPORTED = max_tps_supported;
             MAX_TPS_SUPPORTED_VLD = logic'(max_tps_supported_vld);
+
+            hpd_detect = HPD_Detect;
+            hpd_irq = HPD_IRQ;
+            reply_data = LPM_Reply_Data;
+            reply_data_vld = LPM_Reply_Data_VLD;
+            reply_ack = LPM_Reply_ACK;
+            reply_ack_vld = LPM_Reply_ACK_VLD;
+            lpm_vld = LPM_NATIVE_I2C;
+            native_failed = CTRL_Native_Failed; 
+
+            fsm_cr_failed = FSM_CR_Failed;
+            eq_failed = EQ_Failed;
+            eq_lt_pass = EQ_LT_Pass;
+            eq_final_adj_bw = EQ_Final_ADJ_BW;
+            eq_final_adj_lc = EQ_Final_ADJ_LC;
+            cr_completed = CR_Completed;
+            eq_fsm_cr_failed = EQ_FSM_CR_Failed;
+            timer_timeout = Timer_Timeout;
       endtask
 
-      task ISO(input real clk_stream, bit iso_start, msa_vld, de, vsync, hsync, [AUX_DATA_WIDTH-1:0] adj_bw, [1:0] adj_lc, bw_sel, [47:0] pixels, [9:0] stm_bw, [7:0] msa [23:0]);
+      task ISO(input real clk_stream, bit iso_start, msa_vld, de, vsync, hsync, [AUX_DATA_WIDTH-1:0] adj_bw, [1:0] adj_lc, bw_sel, [47:0] pixels, [9:0] stm_bw, [7:0] msa [23:0], output logic hpd_detect, hpd_irq);
             // Set SPM-related signals for Isochronous Transport Layer
             SPM_Lane_BW = adj_bw;
             SPM_Lane_Count = adj_lc;
@@ -293,39 +329,13 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             MS_VSYNC = vsync; // Set Vsync signal to indicate the start of the vertical blanking period
             MS_HSYNC = hsync; // Set Hsync signal to indicate the start of the horizontal blanking period
             CLOCK_PERIOD = clk_stream;
+
+            hpd_detect = HPD_Detect;
+            hpd_irq = HPD_IRQ;
       endtask
 
       task DETECT(output logic hpd_detect);
             hpd_detect = HPD_Detect;
-      endtask
-
-      task FULL_FLOW(input bit config_vld, driving_vld, start_cr, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, link_bw_cr, eq_rd_value, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, [1:0] link_lc_cr, max_vtg, max_pre, training_pattern_t max_tps_supported, output logic hpd_detect);
-            hpd_detect = HPD_Detect;
-            LPM_Transaction_VLD = 1'b0;
-            SPM_Transaction_VLD = 1'b0;
-            LPM_Start_CR = start_cr;
-            CR_DONE_VLD  = done_vld;
-            CR_DONE      = cr_done;
-            Link_LC_CR   = link_lc_cr;
-            Link_BW_CR   = link_bw_cr;
-            PRE          = pre;
-            VTG          = vtg;
-            MAX_VTG      = max_vtg;
-            MAX_PRE      = max_pre;
-            Driving_Param_VLD = driving_vld;
-            Config_Param_VLD = config_vld;
-            EQ_RD_Value  = eq_rd_value;
-
-            EQ_CR_DN     = eq_cr_dn;
-            Channel_EQ   = channel_eq;
-            Symbol_Lock  = symbol_lock;
-            Lane_Align   = lane_align;
-            EQ_Data_VLD  = eq_data_vld;
-
-            MAX_TPS_SUPPORTED = max_tps_supported;
-            MAX_TPS_SUPPORTED_VLD = logic'(max_tps_supported_vld);
-
-            // ISO
       endtask
       
 endinterface
