@@ -13,10 +13,6 @@ class dp_scoreboard extends uvm_scoreboard;
     dp_sink_sequence_item sink_item;
     dp_ref_transaction expected_transaction;
     
-    // dp_source_config dp_source_config_scoreboard;
-    // virtual DP_TL_if DP_TL_scoreboard_vif;
-    // virtual DP_SINK_if DP_SINK_scoreboard_vif;
-    
     int error_count = 0;
     int correct_count = 0;
 
@@ -37,9 +33,6 @@ class dp_scoreboard extends uvm_scoreboard;
 
         `uvm_info(get_type_name(), "Scoreboard build_phase completed", UVM_LOW)
 
-        // if (!uvm_config_db #(dp_source_config)::get(this, "", "CFG_tl", dp_source_config_scoreboard)) begin
-        //     `uvm_fatal("build_phase", "Scoreboard - Unable to get configuration object")
-        // end
     endfunction
 
     function void connect_phase(uvm_phase phase);
@@ -49,9 +42,6 @@ class dp_scoreboard extends uvm_scoreboard;
         sb_ref_export.connect(sb_ref_fifo.analysis_export);
 
         `uvm_info(get_type_name(), "Scoreboard connect_phase completed", UVM_LOW)
-
-        // DP_TL_scoreboard_vif = dp_source_config_scoreboard.DP_TL_vif;
-        // DP_SINK_scoreboard_vif = dp_source_config_scoreboard.DP_SINK_vif;
     endfunction
 
     task run_phase(uvm_phase phase);

@@ -31,6 +31,16 @@ class dp_sink_monitor extends uvm_monitor;
       rsp_sink_seq_item.PHY_Instruct = dp_sink_vif.PHY_Instruct;
       rsp_sink_seq_item.PHY_Instruct_VLD = dp_sink_vif.PHY_Instruct_VLD;
 
+      // ISO signals
+      rsp_sink_seq_item.ISO_symbols_lane0 = dp_sink_vif.ISO_symbols_lane0;
+      rsp_sink_seq_item.ISO_symbols_lane1 = dp_sink_vif.ISO_symbols_lane1;
+      rsp_sink_seq_item.ISO_symbols_lane2 = dp_sink_vif.ISO_symbols_lane2;
+      rsp_sink_seq_item.ISO_symbols_lane3 = dp_sink_vif.ISO_symbols_lane3;
+      rsp_sink_seq_item.Control_sym_flag_lane0 = dp_sink_vif.Control_sym_flag_lane0;
+      rsp_sink_seq_item.Control_sym_flag_lane1 = dp_sink_vif.Control_sym_flag_lane1;
+      rsp_sink_seq_item.Control_sym_flag_lane2 = dp_sink_vif.Control_sym_flag_lane2;
+      rsp_sink_seq_item.Control_sym_flag_lane3 = dp_sink_vif.Control_sym_flag_lane3;
+
      mon_ap.write(rsp_sink_seq_item);
       `uvm_info("run_phase", rsp_sink_seq_item.convert2string(), UVM_LOW) 
    end

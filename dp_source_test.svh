@@ -100,6 +100,13 @@ class dp_source_test extends uvm_test;
             //     `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
             // end
 
+            // EDID Read Sequence
+            // begin
+            //     `uvm_info("run_phase", "TL I2C stimulus generation started", UVM_LOW);
+            //     dp_tl_i2c_seq.start(env.tl_agt.sqr);
+            //     `uvm_info("run_phase", "TL I2C stimulus generation ended", UVM_LOW);
+            // end
+
             // DPCD (RX Cap) Read Sequence
             begin
                 `uvm_info("run_phase", "TL DPCD stimulus generation started", UVM_LOW);
@@ -107,18 +114,25 @@ class dp_source_test extends uvm_test;
                 `uvm_info("run_phase", "TL DPCD stimulus generation ended", UVM_LOW);
             end
 
+            // DPCD (RX Cap extended) Read Sequence
+            // begin
+            //     `uvm_info("run_phase", "TL DPCD extended stimulus generation started", UVM_LOW);
+            //     dp_tl_native_ext_receiver_cap_sequence.start(env.tl_agt.sqr);
+            //     `uvm_info("run_phase", "TL DPCD extended stimulus generation ended", UVM_LOW);
+            // end
+
+            // DPCD (Link Config) Read Sequence
+            // begin
+            //     `uvm_info("run_phase", "TL Link Config stimulus generation started", UVM_LOW);
+            //     dp_tl_native_link_config_sequence.start(env.tl_agt.sqr);
+            //     `uvm_info("run_phase", "TL Link Config stimulus generation ended", UVM_LOW);
+            // end
+
             // // TL Link Training Sequence
             // begin
             //     `uvm_info("run_phase", "TL Link Training seq stimulus generation started", UVM_LOW);
             //     dp_tl_link_training_seq.start(env.tl_agt.sqr);
             //     `uvm_info("run_phase", "TL Link Training seq stimulus generation ended", UVM_LOW);
-            // end
-
-            // EDID Read Sequence
-            // begin
-            //     `uvm_info("run_phase", "TL I2C stimulus generation started", UVM_LOW);
-            //     dp_tl_i2c_seq.start(env.tl_agt.sqr);
-            //     `uvm_info("run_phase", "TL I2C stimulus generation ended", UVM_LOW);
             // end
 
             // begin

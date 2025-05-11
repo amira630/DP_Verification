@@ -510,7 +510,7 @@ hpd hpd_inst
 );
 
 
-cr_eq_mux cr_eq_mux_inst
+cr_eq_mux c_eq_mux_inst
 (
 .cr_phy_instruct     (mux_cr_phy_instruct),
 .cr_phy_instruct_vld (mux_cr_phy_instruct_vld),
