@@ -59,9 +59,11 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
     /////////////////// STREAM POLICY MAKER ///////////////////////
 
-    logic [AUX_DATA_WIDTH-1:0] SPM_Lane_BW;
+    logic [15:0]               SPM_Lane_BW; // Modified to 16 bits instead of 8 bits
+    logic [191:0]              SPM_Full_MSA; // added to contain the full MSA data
     logic [7:0]                SPM_MSA [23:0];
-    logic [1:0]                SPM_Lane_Count, SPM_BW_Sel;
+    logic [2:0]                SPM_Lane_Count; // Modified to 3 bits instead of 2 bits
+    logic [1:0]                SPM_BW_Sel;
     bit                        SPM_ISO_start, SPM_MSA_VLD;
 
     rand logic [23:0] Mvid;         //
@@ -85,6 +87,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     rand logic [47:0] MS_Pixel_Data;
     rand logic [9:0]  MS_Stm_BW;        // takes values on MHz max 1Ghz
     rand logic        MS_DE, MS_VSYNC, MS_HSYNC;
+    bit MS_Stm_BW_VLD;   // added to indicate if MS_Stm_BW is valid
+    bit WFULL;  // Indicates if the FIFO is full
     //rand bit          MS_Stm_CLK;
 
 

@@ -1004,21 +1004,42 @@ endtask
         seq_item.SPM_Transaction_VLD = 1'b0;
         seq_item.LPM_Transaction_VLD = 1'b0;
         seq_item.SPM_MSA_VLD = 1'b1;
-        seq_item.SPM_Lane_BW = seq_item.ISO_BW; 
-        seq_item.SPM_Lane_Count = seq_item.ISO_LC;
         seq_item.SPM_ISO_start = 1'b1;
         seq_item.operation = ISO;
-        case (seq_item.ISO_BW)
-            8'h06: seq_item.SPM_BW_Sel = 2'b00;
-            8'h0A: seq_item.SPM_BW_Sel = 2'b01;
-            8'h14: seq_item.SPM_BW_Sel = 2'b10;
-            8'h1E: seq_item.SPM_BW_Sel = 2'b11;
+        case (seq_item.ISO_BW) // Made Case statement for SPM_Lane_BW
+            8'h06: begin
+                    seq_item.SPM_BW_Sel = 2'b00;
+                    seq_item.SPM_Lane_BW = 16'd162; // 1.62 Gbps/lane
+                   end
+            8'h0A: begin
+                    seq_item.SPM_BW_Sel = 2'b01;
+                    seq_item.SPM_Lane_BW = 16'd270; // 2.7 Gbps/lane
+                   end
+            8'h14: begin
+                    seq_item.SPM_BW_Sel = 2'b10;
+                    seq_item.SPM_Lane_BW = 16'd540; // 5.4 Gbps/lane
+                   end
+            8'h1E: begin
+                    seq_item.SPM_BW_Sel = 2'b11;
+                    seq_item.SPM_Lane_BW = 16'd810; // 8.1 Gbps/lane
+                   end
             default: begin
                 seq_item.SPM_BW_Sel = 2'b00;
+                seq_item.SPM_Lane_BW = 16'd162; // 1.62 Gbps/lane
                 `uvm_info("TL_ISO_INIT_SEQ", $sformatf("The stored lane BW is incorrect!"), UVM_MEDIUM)
             end
-        endcase     
+        endcase
+        case (seq_item.ISO_LC) // Made Case statement for SPM_Lane_Count
+            2'b00: seq_item.SPM_Lane_Count = 3'b001; // 1 lane
+            2'b01: seq_item.SPM_Lane_Count = 3'b010; // 2 lanes
+            2'b11: seq_item.SPM_Lane_Count = 3'b100; // 4 lanes
+            default: begin
+                seq_item.SPM_Lane_Count = 3'b001; // 1 lane
+                `uvm_info("TL_ISO_INIT_SEQ", $sformatf("The stored lane count is incorrect!"), UVM_MEDIUM)
+            end
+        endcase
         seq_item.MS_Stm_BW.rand_mode(1); // Randomize the stream bandwidth
+        seq_item.MS_Stm_BW_VLD = 1'b1; // Stream bandwidth is valid
         //seq_item.MS_Stm_BW = 10'd80; // 80MHz for now, should be randomized
         seq_item.MS_DE = 0;
         assert(seq_item.randomize());   
@@ -1030,6 +1051,13 @@ endtask
         seq_item.SPM_MSA[15] = seq_item.HSW[14:7];     seq_item.SPM_MSA[16] = {seq_item.VSW[6:0], seq_item.VSP}; seq_item.SPM_MSA[17] = seq_item.VSW[14:7];
         seq_item.SPM_MSA[18] = seq_item.HWidth[7:0];   seq_item.SPM_MSA[19] = seq_item.HWidth[15:8];             seq_item.SPM_MSA[20] = seq_item.VHeight[7:0];
         seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
+        // Concatenate all 24 bytes of MSA data into SPM_Full_MSA
+        SPM_Full_MSA = {seq_item.SPM_MSA[23], seq_item.SPM_MSA[22], seq_item.SPM_MSA[21], seq_item.SPM_MSA[20],
+                        seq_item.SPM_MSA[19], seq_item.SPM_MSA[18], seq_item.SPM_MSA[17], seq_item.SPM_MSA[16],
+                        seq_item.SPM_MSA[15], seq_item.SPM_MSA[14], seq_item.SPM_MSA[13], seq_item.SPM_MSA[12],
+                        seq_item.SPM_MSA[11], seq_item.SPM_MSA[10], seq_item.SPM_MSA[9],  seq_item.SPM_MSA[8],
+                        seq_item.SPM_MSA[7],  seq_item.SPM_MSA[6],  seq_item.SPM_MSA[5],  seq_item.SPM_MSA[4],
+                        seq_item.SPM_MSA[3],  seq_item.SPM_MSA[2],  seq_item.SPM_MSA[1],  seq_item.SPM_MSA[0]};
         if(seq_item.HSP) // HSP is active high, so set MS_HSYNC to 0 
             seq_item.MS_HSYNC = 1'b0; // HSP is active high, so set MS_HSYNC to 0
         else
@@ -1044,7 +1072,7 @@ endtask
             seq_item.CLOCK_PERIOD = (48/seq_item.MS_Stm_BW);
         finish_item(seq_item);
         get_response(seq_item);
-        `uvm_info("TL_ISO_INIT_SEQ", $sformatf("ISO_INIT_SPM: ISO_start=%0b, SPM_Lane_BW=0x%0h, SPM_Lane_Count=0x%0h, Mvid=0x%0h, Nvid=0x%0h, HTotal=0x%0h, VTotal=0x%0h, HStart=0x%0h, VStart=0x%0h, HSP=0x%0h, VSP=0x%0h, HSW=0x%0h, VSW=0x%0h, HWidth=0x%0h, VHeight=0x%0h, MISC0=0x%0h, MISC1=0x%0h", seq_item.SPM_ISO_start, seq_item.SPM_Lane_BW, seq_item.SPM_Lane_Count, seq_item.Mvid, seq_item.Nvid, seq_item.HTotal, seq_item.VTotal, seq_item.HStart, seq_item.VStart, seq_item.HSP, seq_item.VSP, seq_item.HSW, seq_item.VSW, seq_item.HWidth, seq_item.VHeight, seq_item.MISC0, seq_item.MISC1), UVM_MEDIUM);
+        `uvm_info("TL_ISO_INIT_SEQ", $sformatf("ISO_INIT_SPM: ISO_start=%0b, SPM_Lane_BW=0x%0h, SPM_Lane_Count=0x%0h, Mvid=0x%0h, Nvid=0x%0h, HTotal=0x%0h, VTotal=0x%0h, HStart=0x%0h, VStart=0x%0h, HSP=0x%0h, VSP=0x%0h, HSW=0x%0h, VSW=0x%0h, HWidth=0x%0h, VHeight=0x%0h, MISC0=0x%0h, MISC1=0x%0h", seq_item.SPM_ISO_start, seq_item.SPM_Lane_BW, seq_item.SPM_Lane_Count, seq_item.Mvid, seq_item.Nvid, seq_item.HTotal, seq_item.VTotal, seq_item.HStart, seq_item.VStart, seq_item.HSP, seq_item.VSP, seq_item.HSW, seq_item.VSW, seq_item.HWidth, seq_item.VHeight, seq_item.MISC0, seq_item.MISC1), UVM_MEDIUM); 
     endtask
 
 
@@ -1059,6 +1087,7 @@ endtask
                 repeat(seq_item.HTotal) begin // start new pixel
                     start_item(seq_item);
                     seq_item.rand_mode(0);
+                    seq_item.MS_Stm_BW_VLD = 1'b0; // Stream bandwidth is not valid
                     seq_item.SPM_Transaction_VLD = 1'b0;
                     if(new_frame) begin
                         seq_item.SPM_MSA_VLD = 1'b1;
@@ -1084,7 +1113,13 @@ endtask
                     seq_item.SPM_MSA[15] = seq_item.HSW[14:7];     seq_item.SPM_MSA[16] = {seq_item.VSW[6:0], seq_item.VSP}; seq_item.SPM_MSA[17] = seq_item.VSW[14:7];
                     seq_item.SPM_MSA[18] = seq_item.HWidth[7:0];   seq_item.SPM_MSA[19] = seq_item.HWidth[15:8];             seq_item.SPM_MSA[20] = seq_item.VHeight[7:0];
                     seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
-
+                    // Concatenate all 24 bytes of MSA data into SPM_Full_MSA
+                    SPM_Full_MSA = {seq_item.SPM_MSA[23], seq_item.SPM_MSA[22], seq_item.SPM_MSA[21], seq_item.SPM_MSA[20],
+                                    seq_item.SPM_MSA[19], seq_item.SPM_MSA[18], seq_item.SPM_MSA[17], seq_item.SPM_MSA[16],
+                                    seq_item.SPM_MSA[15], seq_item.SPM_MSA[14], seq_item.SPM_MSA[13], seq_item.SPM_MSA[12],
+                                    seq_item.SPM_MSA[11], seq_item.SPM_MSA[10], seq_item.SPM_MSA[9],  seq_item.SPM_MSA[8],
+                                    seq_item.SPM_MSA[7],  seq_item.SPM_MSA[6],  seq_item.SPM_MSA[5],  seq_item.SPM_MSA[4],
+                                    seq_item.SPM_MSA[3],  seq_item.SPM_MSA[2],  seq_item.SPM_MSA[1],  seq_item.SPM_MSA[0]};
                     if(countv >= seq_item.VFront && countv < seq_item.VFront + seq_item.VSW) begin // turn on VSYNC
                         if(seq_item.VSP) // VSP is active high, so set MS_VSYNC to  turning on VSYNC
                             seq_item.MS_VSYNC = 1'b1; // VSP is active high, so set MS_VSYNC to 1

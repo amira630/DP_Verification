@@ -42,9 +42,11 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
 
     /////////////////// STREAM POLICY MAKER ///////////////////////
 
-    logic [AUX_DATA_WIDTH-1:0] SPM_Lane_BW;
+    logic [15:0]               SPM_Lane_BW; // Modified to be 16 bits instead of 8 bits
+    logic [191:0]              SPM_Full_MSA; // added to store the full MSA data
     logic [7:0]                SPM_MSA [23:0]; // 24 bytes of MSA data
-    logic [1:0]                SPM_Lane_Count, SPM_BW_Sel;
+    logic [2:0]                SPM_Lane_Count: // Modified to be 3 bits instead of 2 bits
+    logic [1:0]                SPM_BW_Sel;
     logic                      SPM_ISO_start, SPM_MSA_VLD;
 
     /////////////////// MAIN STREAM SOURCE ///////////////////////
@@ -52,6 +54,8 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
     logic [47:0] MS_Pixel_Data;
     logic [9:0]  MS_Stm_BW;
     logic        MS_DE, MS_VSYNC, MS_HSYNC;
+    logic        MS_Stm_BW_VLD;
+    logic        WFULL;  //Don't know what to do with it
 
     real CLOCK_PERIOD;
 
@@ -68,13 +72,14 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
                 MS_Stm_CLK,           // This signal represents the clock signal for the stream rate.
                 MS_DE,                // This signal indicates the active period of the stream when HIGH and the blanking period when LOW.
                 MS_Stm_BW,            // This signal indicates the bandwidth of the stream source (e.g, 60 MHz, 80 MHz, etc.)
+                MS_Stm_BW_VLD,        // This signal indicates the validity of the stream bandwidth.
                 MS_VSYNC,             // This signal is asserted to indicate the start of the vertical blanking period and is activated after the front porch phase at its beginning.
                 MS_HSYNC,             // This signal is asserted to indicate the start of the horizontal blanking period and is activated after the front porch phase at its beginning.
           // SPM - ISO
                 SPM_ISO_start,        // The signal marks the beginning of a new video transmission and is asserted by the Stream Policy Maker to indicate that the main video stream is valid and should be processed. When de-asserted, it signifies either the end of the video stream or an error that requires stopping stream data transmission.          
                 SPM_Lane_Count,       // The signal represents the number of lanes that will be used for the stream transmission.  
                 SPM_Lane_BW,          // The signal indicates the bandwidth of a single lane for stream transmission after link training. The 8-bit value is multiplied by 0.27 to determine the lane bandwidth (e.g., 1.62 Gbps, 2.7 Gbps).
-                SPM_MSA,              // The signal defines the Main Stream Attributes (MSA), which includes Hactive, Hblank, Vactive, Vblank, Color Depth, and other video timing details.
+                SPM_Full_MSA,         // The signal defines the Main Stream Attributes (MSA), which includes Hactive, Hblank, Vactive, Vblank, Color Depth, and other video timing details.
                 SPM_MSA_VLD,          // This signal represents the valid flag of the MSA Data, asserting when the MSA input is valid and ready for use.
                 SPM_BW_Sel,           // It represents the selection line for the PLL-generated clock, corresponding to the different rates supported by 8b/10b DisplayPort devices. It selects the proper clock based on the lane bandwidth after link training.
           // SPM - AUX  
@@ -133,7 +138,9 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
                  EQ_Final_ADJ_LC,         // The adjusted number of lanes after successful link training, used for sending main video stream.
                  CR_Completed,            // Signal indicating the completion of the Clock Recovery phase during link training.   
                  EQ_FSM_CR_Failed,        // Signal indicating the failure of the Clock Recovery phase during EQ phase of link training.  
-                 Timer_Timeout            // Signal indicating the timeout of the timer during link training process.
+                 Timer_Timeout,           // Signal indicating the timeout of the timer during link training process.
+          // ISO
+                 WFULL                    // Signal indicating that FIFO is full
     );
     
       // RESET task
@@ -278,17 +285,19 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             MAX_TPS_SUPPORTED = max_tps_supported;
             MAX_TPS_SUPPORTED_VLD = logic'(max_tps_supported_vld);
       endtask
-
-      task ISO(input real clk_stream, bit iso_start, msa_vld, de, vsync, hsync, [AUX_DATA_WIDTH-1:0] adj_bw, [1:0] adj_lc, bw_sel, [47:0] pixels, [9:0] stm_bw, [7:0] msa [23:0]);
+      
+      // Modified adj_bw to be 16 bits instead of 8 bits and adj_lc to be 3 bits instead of 2 bits and used SPM_Full_MSA instead of SPM_MSA
+      task ISO(input real clk_stream, bit iso_start, msa_vld, stm_bw_vld, de, vsync, hsync, [15:0] adj_bw, [2:0] adj_lc, bw_sel, [47:0] pixels, [9:0] stm_bw, [191:0] msa);
             // Set SPM-related signals for Isochronous Transport Layer
             SPM_Lane_BW = adj_bw;
             SPM_Lane_Count = adj_lc;
             SPM_BW_Sel = bw_sel;
             SPM_ISO_start = iso_start;
             SPM_MSA_VLD = msa_vld; // Set MSA valid signal to indicate that the MSA data is ready
-            SPM_MSA = msa ; // Set MSA data to indicate the attributes of the main stream
+            SPM_Full_MSA = msa ; // Set MSA data to indicate the attributes of the main stream
             MS_Pixel_Data = pixels; // Set pixel data to indicate the pixel values for the transmitted frame
             MS_Stm_BW = stm_bw; // Set stream bandwidth to indicate the bandwidth of the stream source
+            MS_Stm_BW_VLD = stm_bw_vld; // Set stream bandwidth valid signal to indicate that the stream bandwidth is valid
             MS_DE = de; // Set DE signal to indicate the active period of the stream
             MS_VSYNC = vsync; // Set Vsync signal to indicate the start of the vertical blanking period
             MS_HSYNC = hsync; // Set Hsync signal to indicate the start of the horizontal blanking period
