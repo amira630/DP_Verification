@@ -8,7 +8,7 @@
 `default_nettype none  // Disable implicit net declarations
 module i2c_fsm #
 (
-    parameter EDID_SIZE = 5
+    parameter EDID_SIZE = 128 // EDID size in bytes
 )
 (
 

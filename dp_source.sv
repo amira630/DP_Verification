@@ -319,14 +319,14 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     // outputs //      
     //=========//
 
-    assign sink_if.ISO_Symbols_Lane0 = iso_symbols_lane0;
-    assign sink_if.ISO_Control_Sym_Flag_Lane0 = iso_control_sym_flag_lane0;
-    assign sink_if.ISO_Symbols_Lane1 = iso_symbols_lane1;
-    assign sink_if.ISO_Control_Sym_Flag_Lane1 = iso_control_sym_flag_lane1;
-    assign sink_if.ISO_Symbols_Lane2 = iso_symbols_lane2;
-    assign sink_if.ISO_Control_Sym_Flag_Lane2 = iso_control_sym_flag_lane2;
-    assign sink_if.ISO_Symbols_Lane3 = iso_symbols_lane3;
-    assign sink_if.ISO_Control_Sym_Flag_Lane3 = iso_control_sym_flag_lane3;
+    assign sink_if.ISO_symbols_lane0 = iso_symbols_lane0;
+    assign sink_if.Control_sym_flag_lane0 = iso_control_sym_flag_lane0;
+    assign sink_if.ISO_symbols_lane1 = iso_symbols_lane1;
+    assign sink_if.Control_sym_flag_lane1 = iso_control_sym_flag_lane1;
+    assign sink_if.ISO_symbols_lane2 = iso_symbols_lane2;
+    assign sink_if.Control_sym_flag_lane2 = iso_control_sym_flag_lane2;
+    assign sink_if.ISO_symbols_lane3 = iso_symbols_lane3;
+    assign sink_if.Control_sym_flag_lane3 = iso_control_sym_flag_lane3;
     assign tl_if.WFULL = wfull;  //// Don't know what to do with
     
     

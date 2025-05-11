@@ -3,8 +3,8 @@ class dp_source_ref extends uvm_component;
     `uvm_component_utils(dp_source_ref)
 
     // Input and output analysis ports for connecting to the scoreboard
-    uvm_analysis_export #(dp_sink_sequence_item) sink_in_port;  // Receives transactions from dp_sink_monitor
-    uvm_analysis_export #(dp_tl_sequence_item) tl_in_port;      // Receives transactions from dp_tl_monitor
+    uvm_tlm_analysis_fifo #(dp_sink_sequence_item) sink_in_port;  // Receives transactions from dp_sink_monitor
+    uvm_tlm_analysis_fifo #(dp_tl_sequence_item) tl_in_port;      // Receives transactions from dp_tl_monitor
     uvm_analysis_port #(dp_ref_transaction) ref_model_out_port; // Sends expected transactions to the scoreboard
 
     // Transaction variables for output of Reference model

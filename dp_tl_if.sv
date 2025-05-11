@@ -45,7 +45,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
     logic [15:0]               SPM_Lane_BW; // Modified to be 16 bits instead of 8 bits
     logic [191:0]              SPM_Full_MSA; // added to store the full MSA data
     logic [7:0]                SPM_MSA [23:0]; // 24 bytes of MSA data
-    logic [2:0]                SPM_Lane_Count: // Modified to be 3 bits instead of 2 bits
+    logic [2:0]                SPM_Lane_Count; // Modified to be 3 bits instead of 2 bits
     logic [1:0]                SPM_BW_Sel;
     logic                      SPM_ISO_start, SPM_MSA_VLD;
 
@@ -82,7 +82,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
                 SPM_Full_MSA,         // The signal defines the Main Stream Attributes (MSA), which includes Hactive, Hblank, Vactive, Vblank, Color Depth, and other video timing details.
                 SPM_MSA_VLD,          // This signal represents the valid flag of the MSA Data, asserting when the MSA input is valid and ready for use.
                 SPM_BW_Sel,           // It represents the selection line for the PLL-generated clock, corresponding to the different rates supported by 8b/10b DisplayPort devices. It selects the proper clock based on the lane bandwidth after link training.
-          // SPM - AUX  
+          // SPM - AUX   
                 SPM_Address,          // Address sent by SPM to indicate register to be written to or read from when initiating a transaction.
                 SPM_Data,             // Data written by SPM when initiating a write transaction (byte-by-byte)
                 SPM_LEN,              // Length of data, in bytes, sent by SPM to be written or read for request transaction
@@ -138,7 +138,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
                  EQ_Final_ADJ_LC,         // The adjusted number of lanes after successful link training, used for sending main video stream.
                  CR_Completed,            // Signal indicating the completion of the Clock Recovery phase during link training.   
                  EQ_FSM_CR_Failed,        // Signal indicating the failure of the Clock Recovery phase during EQ phase of link training.  
-                 Timer_Timeout,           // Signal indicating the timeout of the timer during link training process.
+                 Timer_Timeout,            // Signal indicating the timeout of the timer during link training process.
           // ISO
                  WFULL                    // Signal indicating that FIFO is full
     );
@@ -239,11 +239,54 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             SPM_Transaction_VLD = spm_transaction_vld;
       endtask
 
+      task Wait_Reply_Data(output logic [AUX_DATA_WIDTH-1:0] spm_reply_data, output logic [1:0] spm_reply_ack, output logic spm_reply_ack_vld, output logic spm_reply_data_vld, output logic spm_native_i2c,
+            output logic [AUX_DATA_WIDTH-1:0] lpm_reply_data, output logic [1:0] lpm_reply_ack, output logic lpm_reply_ack_vld, output logic lpm_reply_data_vld, output logic lpm_native_i2c);
+
+            SPM_Transaction_VLD = 1'b0; // Set SPM transaction valid to 0
+            LPM_Transaction_VLD = 1'b0; // Set LPM transaction valid to 0
+
+            spm_reply_ack_vld = SPM_Reply_ACK_VLD;
+            spm_reply_data_vld = SPM_Reply_Data_VLD;
+            lpm_reply_ack_vld = LPM_Reply_ACK_VLD;
+            lpm_reply_data_vld = LPM_Reply_Data_VLD;
+
+            if (SPM_Reply_ACK_VLD && SPM_NATIVE_I2C) begin              // I2C Reply ACK
+                  spm_reply_ack = SPM_Reply_ACK;
+                  spm_native_i2c = 1'b1;
+            end
+            else if (LPM_Reply_ACK_VLD && ~LPM_NATIVE_I2C) begin        // Native Reply ACK
+                  lpm_reply_ack = LPM_Reply_ACK;
+                  lpm_native_i2c = 1'b1;
+            end
+            else begin
+                  spm_reply_ack = 2'b0;
+                  spm_native_i2c = 1'b0;
+                  lpm_reply_ack = 2'b0;
+                  lpm_native_i2c = 1'b0;
+            end
+
+            if (SPM_Reply_Data_VLD && SPM_NATIVE_I2C) begin             // I2C Reply Data
+                  spm_reply_data = SPM_Reply_Data;
+                  spm_reply_ack = SPM_Reply_ACK;
+                  spm_native_i2c = 1'b1;
+            end
+            else if (LPM_Reply_Data_VLD && ~LPM_NATIVE_I2C) begin        // Native Reply Data
+                  lpm_reply_data = LPM_Reply_Data;
+                  lpm_native_i2c = 1'b1;
+            end
+            else begin
+                  spm_reply_data = 8'b0;
+                  spm_native_i2c = 1'b0;
+                  lpm_reply_data = 8'b0;
+                  lpm_native_i2c = 1'b0;
+            end
+      endtask
+
       // //////////////////////////// LINK TRAINING ////////////////////////////
 
       // Clock Recovery Link Training task
       // This task is used to set the parameters for the Clock Recovery Link Training phase
-      task LT_CT (input bit config_vld, driving_vld, start_cr, done_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, link_bw_cr, eq_rd_value, [3:0] cr_done, [1:0] link_lc_cr, max_vtg, max_pre);
+      task LT_CT (input bit config_vld, driving_vld, start_cr, done_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, link_bw_cr, eq_rd_value, [3:0] cr_done, [1:0] link_lc_cr, max_vtg, max_pre, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, timer_timeout, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
             // Set LPM-related signals for Clock Recovery Link Training
             // wait(HPD_Detect == 1'b1); // Wait for HPD detection
             // @(negedge clk_AUX)
@@ -261,11 +304,29 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             Driving_Param_VLD = driving_vld;
             Config_Param_VLD = config_vld;
             EQ_RD_Value  = eq_rd_value;
+
+            hpd_detect = HPD_Detect;
+            hpd_irq = HPD_IRQ;
+            reply_data = LPM_Reply_Data;
+            reply_data_vld = LPM_Reply_Data_VLD;
+            reply_ack = LPM_Reply_ACK;
+            reply_ack_vld = LPM_Reply_ACK_VLD;
+            lpm_vld = LPM_NATIVE_I2C;
+            native_failed = CTRL_Native_Failed; 
+
+            fsm_cr_failed = FSM_CR_Failed;
+            eq_failed = EQ_Failed;
+            eq_lt_pass = EQ_LT_Pass;
+            eq_final_adj_bw = EQ_Final_ADJ_BW;
+            eq_final_adj_lc = EQ_Final_ADJ_LC;
+            cr_completed = CR_Completed;
+            eq_fsm_cr_failed = EQ_FSM_CR_Failed;
+            timer_timeout = Timer_Timeout;
       endtask
 
       // Channel Equalization Link Training task
       // This task is used to set the parameters for the Channel Equalization Link Training phase
-      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, training_pattern_t max_tps_supported);
+      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, training_pattern_t max_tps_supported, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, timer_timeout, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
             // @(negedge clk_AUX)
             LPM_Transaction_VLD = 1'b0;
             SPM_Transaction_VLD = 1'b0;
@@ -284,10 +345,28 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
 
             MAX_TPS_SUPPORTED = max_tps_supported;
             MAX_TPS_SUPPORTED_VLD = logic'(max_tps_supported_vld);
+
+            hpd_detect = HPD_Detect;
+            hpd_irq = HPD_IRQ;
+            reply_data = LPM_Reply_Data;
+            reply_data_vld = LPM_Reply_Data_VLD;
+            reply_ack = LPM_Reply_ACK;
+            reply_ack_vld = LPM_Reply_ACK_VLD;
+            lpm_vld = LPM_NATIVE_I2C;
+            native_failed = CTRL_Native_Failed; 
+
+            fsm_cr_failed = FSM_CR_Failed;
+            eq_failed = EQ_Failed;
+            eq_lt_pass = EQ_LT_Pass;
+            eq_final_adj_bw = EQ_Final_ADJ_BW;
+            eq_final_adj_lc = EQ_Final_ADJ_LC;
+            cr_completed = CR_Completed;
+            eq_fsm_cr_failed = EQ_FSM_CR_Failed;
+            timer_timeout = Timer_Timeout;
       endtask
-      
+
       // Modified adj_bw to be 16 bits instead of 8 bits and adj_lc to be 3 bits instead of 2 bits and used SPM_Full_MSA instead of SPM_MSA
-      task ISO(input real clk_stream, bit iso_start, msa_vld, stm_bw_vld, de, vsync, hsync, [15:0] adj_bw, [2:0] adj_lc, bw_sel, [47:0] pixels, [9:0] stm_bw, [191:0] msa);
+      task ISO(input real clk_stream, bit iso_start, msa_vld, stm_bw_vld, de, vsync, hsync, [15:0] adj_bw, [2:0] adj_lc, bw_sel, [47:0] pixels, [9:0] stm_bw, [191:0] msa, output logic hpd_detect, hpd_irq);
             // Set SPM-related signals for Isochronous Transport Layer
             SPM_Lane_BW = adj_bw;
             SPM_Lane_Count = adj_lc;
@@ -302,39 +381,13 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             MS_VSYNC = vsync; // Set Vsync signal to indicate the start of the vertical blanking period
             MS_HSYNC = hsync; // Set Hsync signal to indicate the start of the horizontal blanking period
             CLOCK_PERIOD = clk_stream;
+
+            hpd_detect = HPD_Detect;
+            hpd_irq = HPD_IRQ;
       endtask
 
       task DETECT(output logic hpd_detect);
             hpd_detect = HPD_Detect;
-      endtask
-
-      task FULL_FLOW(input bit config_vld, driving_vld, start_cr, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, link_bw_cr, eq_rd_value, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, [1:0] link_lc_cr, max_vtg, max_pre, training_pattern_t max_tps_supported, output logic hpd_detect);
-            hpd_detect = HPD_Detect;
-            LPM_Transaction_VLD = 1'b0;
-            SPM_Transaction_VLD = 1'b0;
-            LPM_Start_CR = start_cr;
-            CR_DONE_VLD  = done_vld;
-            CR_DONE      = cr_done;
-            Link_LC_CR   = link_lc_cr;
-            Link_BW_CR   = link_bw_cr;
-            PRE          = pre;
-            VTG          = vtg;
-            MAX_VTG      = max_vtg;
-            MAX_PRE      = max_pre;
-            Driving_Param_VLD = driving_vld;
-            Config_Param_VLD = config_vld;
-            EQ_RD_Value  = eq_rd_value;
-
-            EQ_CR_DN     = eq_cr_dn;
-            Channel_EQ   = channel_eq;
-            Symbol_Lock  = symbol_lock;
-            Lane_Align   = lane_align;
-            EQ_Data_VLD  = eq_data_vld;
-
-            MAX_TPS_SUPPORTED = max_tps_supported;
-            MAX_TPS_SUPPORTED_VLD = logic'(max_tps_supported_vld);
-
-            // ISO
       endtask
       
 endinterface

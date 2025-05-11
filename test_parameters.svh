@@ -160,7 +160,7 @@
         EQ_LT_op        = 4'b0110,
         ISO             = 4'b0111,
         DETECT_op       = 4'b1000,
-        FLOW_FSM_op     = 4'b1001
+        WAIT_REPLY      = 4'b1001
     } op_code;
 
 // Sink Driver Operation

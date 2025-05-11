@@ -22,10 +22,6 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
              `uvm_fatal("SEQ_build_phase","Unable to get configuration object in TL base sequence!");
     endtask
 
-// uvm_config_db #(dp_source_config)::get(this, "", "CFG", seq_cfg)
-
-// uvm_config_db#(your_cfg_type)::get(uvm_root::get(), "uvm_test_top.*", "cfg", cfg_handle);
-
 /////////////////////////////// FSM ///////////////////////////////////////
 task FLOW_FSM();
         tl_flow_stages_e cs, ns; // Declare current and next state variables
@@ -40,8 +36,10 @@ task FLOW_FSM();
                         DETECTING:begin
                             detect_wait(seq_item.HPD_Detect);
                             if(seq_item.HPD_Detect) begin
-                                cs = CR_STAGE;
-                                `uvm_info("TL_BASE_SEQ", $sformatf("HPD detected, moving to CR stage"), UVM_MEDIUM)
+                                // cs = CR_STAGE;
+                                // `uvm_info("TL_BASE_SEQ", $sformatf("HPD detected, moving to CR stage"), UVM_MEDIUM)
+                                cs = ISO_STAGE;
+                                `uvm_info("TL_BASE_SEQ", $sformatf("HPD detected, moving to ISO stage"), UVM_MEDIUM)
                             end
                             else begin
                                 cs = DETECTING;
@@ -122,11 +120,6 @@ task FLOW_FSM();
 
             begin
                 forever begin
-                    // if (!seq_cfg.rst_n)
-                    //     cs = DETECTING;
-                    // else
-                    //     cs = ns;
-
                     wait(~seq_cfg.rst_n);                  // Wait for the reset signal to go low
                         reset_task();                  // Set the current state to Not Ready
                         `uvm_info(get_type_name(), $sformatf("Time=%0t: TL at wait ~rst", $time), UVM_MEDIUM)
@@ -141,69 +134,70 @@ task FLOW_FSM();
 
 
 ////////////////////////////// Detecting //////////////////////////////
-task detect_wait(output logic HPD_Detect);
-    `uvm_info(get_type_name(), "Detect wait DUT", UVM_MEDIUM)
-    seq_item = dp_tl_sequence_item::type_id::create("seq_item");
-    start_item(seq_item);
-        seq_item.operation = DETECT_op;
-    finish_item(seq_item);
-    `uvm_info(get_type_name(), "Detect wait complete", UVM_MEDIUM)
-    get_response(seq_item);
-    HPD_Detect = seq_item.HPD_Detect;
-    if(seq_item.HPD_Detect) begin
-        `uvm_info(get_type_name(), $sformatf("HPD detected"), UVM_MEDIUM)
-    end
-    else begin
-        `uvm_info(get_type_name(), $sformatf("No HPD detected"), UVM_MEDIUM)
-    end
 
-endtask
+    task detect_wait(output logic HPD_Detect);
+        `uvm_info(get_type_name(), "Detect wait DUT", UVM_MEDIUM)
+        seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        start_item(seq_item);
+            seq_item.operation = DETECT_op;
+        finish_item(seq_item);
+        `uvm_info(get_type_name(), "Detect wait complete", UVM_MEDIUM)
+        get_response(seq_item);
+        HPD_Detect = seq_item.HPD_Detect;
+        if(seq_item.HPD_Detect) begin
+            `uvm_info(get_type_name(), $sformatf("HPD detected"), UVM_MEDIUM)
+        end
+        else begin
+            `uvm_info(get_type_name(), $sformatf("No HPD detected"), UVM_MEDIUM)
+        end
+
+    endtask
 
 /////////////////////////// Reset /////////////////////////////////////
 
-task reset_task();
-    // Reset the DUT and wait for it to be ready
-    `uvm_info(get_type_name(), "Resetting DUT", UVM_MEDIUM)
-    seq_item = dp_tl_sequence_item::type_id::create("seq_item");
-    start_item(seq_item);
-        seq_item.operation = reset_op;
-        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-        seq_item.LT_Failed = 1'b0; 
-        seq_item.LT_Pass = 1'b0;
-    finish_item(seq_item);
-    `uvm_info(get_type_name(), "DUT Reset complete", UVM_MEDIUM)
-    get_response(seq_item);
-endtask
+    task reset_task();
+        // Reset the DUT and wait for it to be ready
+        `uvm_info(get_type_name(), "Resetting DUT", UVM_MEDIUM)
+        seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        start_item(seq_item);
+            seq_item.operation = reset_op;
+            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+            seq_item.LT_Failed = 1'b0; 
+            seq_item.LT_Pass = 1'b0;
+        finish_item(seq_item);
+        `uvm_info(get_type_name(), "DUT Reset complete", UVM_MEDIUM)
+        get_response(seq_item);
+    endtask
 
 ////////////////////////////////////// HPD //////////////////////////////////////
 
-task HPD_IRQ_sequence();
-    for(int i=0; i<16; i++)
-        native_read_request(20'h200 + i*16, 8'h0F);   // Read Link/Sink Device Status Register
-    start_item(seq_item);
-        `uvm_info(get_type_name(), "HPD IRQ sequence", UVM_MEDIUM)
-        seq_item.error_flag.rand_mode(1);  
-        assert(seq_item.randomize());                 // Randomize the data
-        if (seq_item.error_flag) begin
-            seq_item.SPM_ISO_start = 1'b0;
-            seq_item.LT_Pass = 1'b0;
-        end
-    finish_item(seq_item);
-    `uvm_info(get_type_name(), "HPD IRQ sequence complete", UVM_MEDIUM)
-    get_response(seq_item);
-endtask
+    task HPD_IRQ_sequence();
+        for(int i=0; i<16; i++)
+            native_read_request(20'h200 + i*16, 8'h0F);   // Read Link/Sink Device Status Register
+        start_item(seq_item);
+            `uvm_info(get_type_name(), "HPD IRQ sequence", UVM_MEDIUM)
+            seq_item.error_flag.rand_mode(1);  
+            assert(seq_item.randomize());                 // Randomize the data
+            if (seq_item.error_flag) begin
+                seq_item.SPM_ISO_start = 1'b0;
+                seq_item.LT_Pass = 1'b0;
+            end
+        finish_item(seq_item);
+        `uvm_info(get_type_name(), "HPD IRQ sequence complete", UVM_MEDIUM)
+        get_response(seq_item);
+    endtask
 
 //////////////////////////// I2C AUX REQUEST TRANSACTION //////////////////////////////////
 
 // I2C AUX REQUEST TRANSACTION sequence
     task i2c_request(input i2c_aux_request_cmd_e CMD, logic [19:0] address);
         int ack_count = 0;
+        int data_count = 0;
         seq_item = dp_tl_sequence_item::type_id::create("seq_item");
 
         seq_item.CTRL_I2C_Failed = 1;
         while (seq_item.CTRL_I2C_Failed) begin
             seq_item.CTRL_I2C_Failed = 0;
-
             start_item(seq_item);
                 seq_item.SPM_Address.rand_mode(0);    // randomization off
                 seq_item.SPM_CMD.rand_mode(0);        // randomization off
@@ -213,55 +207,36 @@ endtask
                 seq_item.SPM_Address = address;       // Address
                 seq_item.SPM_LEN = 0;               // Length
                 seq_item.SPM_Data = 0;               // Data
-                
-                // if (CMD == AUX_I2C_WRITE) begin
-                //     seq_item.SPM_Data.delete();  // Clear the queue
-                //     assert(seq_item.randomize() with { SPM_Data.size() == 1;});
-                // end
             finish_item(seq_item);
-            while(ack_count<1) begin
-                // Wait for the response from the DUT
-                get_response(seq_item);
-                while(~seq_item.SPM_NATIVE_I2C) begin
-                    start_item(seq_item);
-                    seq_item.SPM_Transaction_VLD = 1'b0;
-                    seq_item.operation = I2C_READ;
-                    finish_item(seq_item);
-                    get_response(seq_item);
-                end           
-                if (seq_item.CTRL_I2C_Failed) begin
-                    `uvm_info("TL_I2C_REQ_SEQ", $sformatf("I2C AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.SPM_CMD, seq_item.SPM_Address, seq_item.SPM_LEN +1, seq_item.SPM_Transaction_VLD), UVM_MEDIUM)
-                    break;
-                end
-                else if(seq_item.SPM_Reply_ACK_VLD) begin
-                    if(seq_item.SPM_Reply_ACK == I2C_ACK[3:2]) begin
-                        ack_count++;
-                    end else begin
-                        start_item(seq_item);
-                        seq_item.SPM_Transaction_VLD = 1'b0; 
-                        seq_item.operation = I2C_READ;
-                        finish_item(seq_item);
-                    end
-                end
-                else begin
-                    start_item(seq_item);
-                    seq_item.SPM_Transaction_VLD = 1'b0; 
-                    seq_item.operation = I2C_READ;
-                    finish_item(seq_item);
-                end
-            end
-            ack_count = 0;
-            while (ack_count < seq_item.SPM_LEN) begin
+
+            while ((ack_count <= seq_item.SPM_LEN) && (data_count <= seq_item.SPM_LEN)) begin
                 start_item(seq_item);
-                seq_item.SPM_Transaction_VLD = 1'b1; 
+                seq_item.SPM_Transaction_VLD = 1'b0; 
+                seq_item.operation = WAIT_REPLY;
                 finish_item(seq_item);
                 get_response(seq_item);
-                if(seq_item.SPM_NATIVE_I2C && seq_item.SPM_Reply_Data_VLD)
-                    ack_count++;
-            end
+
+                if (seq_item.CTRL_I2C_Failed) begin
+                    `uvm_info("TL_I2C_REQ_SEQ_FAILED", $sformatf("I2C AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.SPM_CMD, seq_item.SPM_Address, seq_item.SPM_LEN +1, seq_item.SPM_Transaction_VLD), UVM_MEDIUM)
+                    break;
+                end
+
+                if(seq_item.SPM_NATIVE_I2C && seq_item.SPM_Reply_ACK_VLD) begin
+                    if (seq_item.SPM_Reply_ACK == I2C_ACK[3:2]) begin
+                        ack_count++;
+                    end
+                end
+                else if (seq_item.SPM_NATIVE_I2C && seq_item.SPM_Reply_Data_VLD) begin
+                    data_count++;
+                end
+                `uvm_info(get_type_name(), $sformatf("ACK Counter = %0d, DATA Counter = %0d",ack_count, data_count), UVM_MEDIUM)
+                if (ack_count == 130) begin
+                    break; // Exit the loop if ACK count reaches 130 (2 for address-only transaction + 128 for data)
+                end
+            end          
         end
         // 
-        `uvm_info("TL_I2C_REQ_SEQ", $sformatf("I2C AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.SPM_CMD, seq_item.SPM_Address, seq_item.SPM_LEN +1, seq_item.SPM_Transaction_VLD), UVM_MEDIUM)
+        `uvm_info("TL_I2C_REQ_SEQ_SUCCESS", $sformatf("I2C AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.SPM_CMD, seq_item.SPM_Address, seq_item.SPM_LEN +1, seq_item.SPM_Transaction_VLD), UVM_MEDIUM)
     endtask
 
 
@@ -272,6 +247,7 @@ endtask
 // for write burst i can start from the point where it failed based on the M value
     task native_read_request(input logic [19:0] address, [7:0] LEN);
         int ack_count = 0;
+        int data_count = 0;
         seq_item = dp_tl_sequence_item::type_id::create("seq_item");
 
         seq_item.CTRL_Native_Failed = 1;
@@ -287,51 +263,27 @@ endtask
                 assert(seq_item.randomize());                 // Randomize the data
             finish_item(seq_item);
             // Wait for the response from the DUT
-            while(ack_count<1) begin
+            while ((ack_count <= seq_item.LPM_LEN) || (data_count <= seq_item.LPM_LEN)) begin
+                start_item(seq_item);
+                seq_item.LPM_Transaction_VLD = 1'b0; 
+                seq_item.operation = WAIT_REPLY;
+                finish_item(seq_item);
                 get_response(seq_item);
-                while(~seq_item.LPM_NATIVE_I2C) begin
-                    start_item(seq_item);
-                    seq_item.LPM_Transaction_VLD = 1'b0; 
-                    seq_item.operation = NATIVE_READ;
-                    finish_item(seq_item);
-                    get_response(seq_item);
-                    if (seq_item.LPM_Reply_ACK_VLD == 1) begin
-                        break; // Exit the loop if LPM_Reply_ACK_VLD is set
-                    end
-                end
-                //seq_item.LPM_Transaction_VLD = 1'b0;    
-                if (seq_item.CTRL_Native_Failed) begin
+
+                if (seq_item.CTRL_I2C_Failed) begin
                     `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
                     break;
                 end
-                else if(seq_item.LPM_Reply_ACK_VLD) begin
-                    if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
+
+                if(seq_item.LPM_NATIVE_I2C && seq_item.LPM_Reply_ACK_VLD) begin
+                    if (seq_item.LPM_Reply_ACK == I2C_ACK[3:2]) begin
                         ack_count++;
-                    end else begin
-                        start_item(seq_item);
-                        seq_item.LPM_Transaction_VLD = 1'b1; 
-                        seq_item.operation = NATIVE_READ;
-                        finish_item(seq_item);
-                        get_response(seq_item);
                     end
                 end
-                else begin
-                    start_item(seq_item);
-                    seq_item.LPM_Transaction_VLD = 1'b0; 
-                    seq_item.operation = NATIVE_READ;
-                    finish_item(seq_item);  
-                    get_response(seq_item);
+                else if (seq_item.LPM_NATIVE_I2C && seq_item.LPM_Reply_Data_VLD) begin
+                    data_count++;
                 end
-                
-            end
-            ack_count = 0;
-            while (ack_count < LEN) begin
-                start_item(seq_item);
-                seq_item.LPM_Transaction_VLD = 1'b1; 
-                finish_item(seq_item);
-                get_response(seq_item);
-                if(seq_item.LPM_NATIVE_I2C && seq_item.LPM_Reply_Data_VLD)
-                    ack_count++;
+                `uvm_info(get_type_name(), $sformatf("ACK Counter = %0d, DATA Counter = %0d",ack_count, data_count), UVM_MEDIUM)
             end
         end
         `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
@@ -425,6 +377,7 @@ endtask
         seq_item.LT_Failed = 1'b0; 
         seq_item.LT_Pass = 1'b0;
         seq_item.operation = CR_LT_op;
+        `uvm_info("TL_CR_LT", $sformatf("We are inside CLOCK RECOVERY"), UVM_MEDIUM)
         // We go in the first cycle, give the LL all the max allowed values and minimum VTG and PRE
         start_item(seq_item);
         seq_item.rand_mode(1);
@@ -447,7 +400,11 @@ endtask
             // Wait for the response from the DUT
         while(~done) begin
             get_response(seq_item);
-            while(~seq_item.LPM_NATIVE_I2C) begin
+            if (seq_item.FSM_CR_Failed) begin 
+                `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+                break;
+            end 
+            while(seq_item.LPM_NATIVE_I2C) begin
                 start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                     seq_item.LPM_Start_CR = 0;          
@@ -505,93 +462,102 @@ endtask
             assert(seq_item.randomize());
             finish_item(seq_item);
             get_response(seq_item);
-            ack_count = 0;
-            while (~seq_item.CR_Completed) begin
-                // Wait for 202 to 207 to be read
-                while(~done) begin
-                    do begin
-                        start_item(seq_item);
-                            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                        finish_item(seq_item);
+            if (seq_item.FSM_CR_Failed) begin 
+                `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+            end
+            else begin
+                ack_count = 0;
+                while (~seq_item.CR_Completed) begin
+                    // Wait for 202 to 207 to be read
+                    while(~done) begin
+                        do begin
+                            start_item(seq_item);
+                                seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                            finish_item(seq_item);
+                            get_response(seq_item);
+                        end while(seq_item.LPM_NATIVE_I2C);
+                        if (seq_item.FSM_CR_Failed || seq_item.CTRL_Native_Failed) begin
+                            `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+                            break;
+                        end
+                        else if(seq_item.CR_Completed) begin
+                            `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training CR transaction Successful: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+                            break; // Exit the loop if CR is completed
+                        end
+                        else if(seq_item.LPM_Reply_ACK_VLD) begin
+                            if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
+                                ack_count++;
+                            end
+                        end
+                        else if(ack_count==1 && seq_item.LPM_Reply_Data_VLD) 
+                            done = 0;
+                        else if(ack_count==1 && !seq_item.LPM_Reply_Data_VLD)
+                            done = 1;        
+                    end
+                    ack_count = 0;
+                    done = 0;
+                    if (seq_item.CR_Completed) begin
+                        continue; // Exit the loop if CR is completed
+                    end
+                    else if(seq_item.FSM_CR_Failed || seq_item.CTRL_Native_Failed) begin
+                        seq_item.LT_Failed = 1'b1; 
+                        break; // Exit the loop if CR is failed
+                    end
+                    start_item(seq_item);
+                    seq_item.rand_mode(0);
+                    seq_item.VTG.rand_mode(1);
+                    seq_item.PRE.rand_mode(1);
+                    seq_item.CR_DONE.rand_mode(1);
+                    seq_item.CR_DONE_VLD = 1'b1; // CR_DONE is valid
+                    seq_item.LPM_Transaction_VLD = 1'b0;
+                    seq_item.Driving_Param_VLD = 1'b1;
+                    seq_item.LPM_Start_CR = 0;
+                    seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
+                    seq_item.rand_mode(1);
+                    finish_item(seq_item);
+                    // Wait for 103 to 106 to be written
+                    while(ack_count<1) begin
                         get_response(seq_item);
-                    end while(~seq_item.LPM_NATIVE_I2C);
-                    if (seq_item.FSM_CR_Failed || seq_item.CTRL_Native_Failed) begin
-                        `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                        break;
-                    end
-                    else if(seq_item.CR_Completed) begin
-                        `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training CR transaction Successful: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                        break; // Exit the loop if CR is completed
-                    end
-                    else if(seq_item.LPM_Reply_ACK_VLD) begin
-                        if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
-                            ack_count++;
+                        if (seq_item.FSM_CR_Failed) begin 
+                            `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+                            break;
+                        end
+                        while(seq_item.LPM_NATIVE_I2C) begin
+                            start_item(seq_item);
+                                seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                                seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+                            finish_item(seq_item);
+                            get_response(seq_item);
+                        end
+                        if (seq_item.FSM_CR_Failed) begin
+                            `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training CR transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+                            break;
+                        end
+                        else if(seq_item.CR_Completed) begin
+                            `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training CR transaction Successful: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+                            break; // Exit the loop if CR is completed
+                        end
+                        else if(seq_item.LPM_Reply_ACK_VLD) begin
+                            if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
+                                ack_count++;
+                            end
+                            start_item(seq_item);
+                                seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                                seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+                            finish_item(seq_item);
+                        end
+                        else begin
+                            start_item(seq_item);
+                                seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                                seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+                            finish_item(seq_item);  
                         end
                     end
-                    else if(ack_count==1 && seq_item.LPM_Reply_Data_VLD) 
-                        done = 0;
-                    else if(ack_count==1 && !seq_item.LPM_Reply_Data_VLD)
-                        done = 1;        
-                end
-                ack_count = 0;
-                done = 0;
-                if (seq_item.CR_Completed) begin
-                    continue; // Exit the loop if CR is completed
-                end
-                else if(seq_item.FSM_CR_Failed || seq_item.CTRL_Native_Failed) begin
-                    seq_item.LT_Failed = 1'b1; 
-                    break; // Exit the loop if CR is failed
-                end
-                start_item(seq_item);
-                seq_item.rand_mode(0);
-                seq_item.VTG.rand_mode(1);
-                seq_item.PRE.rand_mode(1);
-                seq_item.CR_DONE.rand_mode(1);
-                seq_item.CR_DONE_VLD = 1'b1; // CR_DONE is valid
-                seq_item.LPM_Transaction_VLD = 1'b0;
-                seq_item.Driving_Param_VLD = 1'b1;
-                seq_item.LPM_Start_CR = 0;
-                seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
-                seq_item.rand_mode(1);
-                finish_item(seq_item);
-                // Wait for 103 to 106 to be written
-                while(ack_count<1) begin
-                    get_response(seq_item);
-                    while(~seq_item.LPM_NATIVE_I2C) begin
-                        start_item(seq_item);
-                            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                            seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                        finish_item(seq_item);
-                        get_response(seq_item);
+                    ack_count = 0;
+                    if(seq_item.FSM_CR_Failed) begin
+                        seq_item.LT_Failed = 1'b1; 
+                        break; // Exit the loop if CR is failed
                     end
-                    if (seq_item.FSM_CR_Failed) begin
-                        `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training CR transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                        break;
-                    end
-                    else if(seq_item.CR_Completed) begin
-                        `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training CR transaction Successful: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                        break; // Exit the loop if CR is completed
-                    end
-                    else if(seq_item.LPM_Reply_ACK_VLD) begin
-                        if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
-                            ack_count++;
-                        end
-                        start_item(seq_item);
-                            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                            seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                        finish_item(seq_item);
-                    end
-                    else begin
-                        start_item(seq_item);
-                            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                            seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                        finish_item(seq_item);  
-                    end
-                end
-                ack_count = 0;
-                if(seq_item.FSM_CR_Failed) begin
-                    seq_item.LT_Failed = 1'b1; 
-                    break; // Exit the loop if CR is failed
                 end
             end
         end
@@ -622,14 +588,18 @@ endtask
             // Wait for the response from the DUT
         while(~done) begin
             get_response(seq_item);
-            while(~seq_item.LPM_NATIVE_I2C) begin
+            if (seq_item.EQ_FSM_CR_Failed) begin 
+                `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+                break;
+            end
+            while(seq_item.LPM_NATIVE_I2C) begin
                 start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                     seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                 finish_item(seq_item);
                 get_response(seq_item);
             end
-            if (seq_item.FSM_CR_Failed || seq_item.CTRL_Native_Failed) begin
+            if (seq_item.EQ_FSM_CR_Failed || seq_item.CTRL_Native_Failed) begin
                 `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
                 break;
             end
@@ -660,7 +630,7 @@ endtask
             end
         end
         done = 0;
-        if(~seq_item.FSM_CR_Failed) begin
+        if(~seq_item.EQ_FSM_CR_Failed) begin
             start_item(seq_item);
             seq_item.rand_mode(0);
             seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
@@ -682,8 +652,8 @@ endtask
                             seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                         finish_item(seq_item);
                         get_response(seq_item);
-                    end while(~seq_item.LPM_NATIVE_I2C);
-                    if (seq_item.FSM_CR_Failed) begin
+                    end while(seq_item.LPM_NATIVE_I2C);
+                    if (seq_item.EQ_FSM_CR_Failed) begin
                         `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
                         break;
                     end
@@ -699,7 +669,7 @@ endtask
                 end
                 ack_count = 0;
                 done = 0;
-                if(seq_item.FSM_CR_Failed) begin
+                if(seq_item.EQ_FSM_CR_Failed) begin
                     seq_item.LT_Failed = 1'b1;
                     break; // Exit the loop if CR is failed
                 end
@@ -718,14 +688,14 @@ endtask
                 // Wait for 103 to 106 to be written
                 while(ack_count<1) begin
                     get_response(seq_item);
-                    while(~seq_item.LPM_NATIVE_I2C) begin
+                    while(seq_item.LPM_NATIVE_I2C) begin
                         start_item(seq_item);
                             seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                             seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                         finish_item(seq_item);
                         get_response(seq_item);
                     end
-                    if (seq_item.FSM_CR_Failed) begin
+                    if (seq_item.EQ_FSM_CR_Failed) begin
                         `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training CR transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
                         break;
                     end
@@ -752,7 +722,7 @@ endtask
                     end
                 end
                 ack_count = 0;
-                if(seq_item.FSM_CR_Failed) begin
+                if(seq_item.EQ_FSM_CR_Failed) begin
                     seq_item.LT_Failed = 1'b1;
                     break; // Exit the loop if CR is failed
                 end
@@ -790,7 +760,11 @@ endtask
             // Wait for acknowledgment from the DUT for 2 writes and 1 read transactions
             while(~done) begin
                 get_response(seq_item);
-                while(~seq_item.LPM_NATIVE_I2C) begin
+                if (seq_item.EQ_Failed) begin
+                    `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+                    break;
+                end
+                while(seq_item.LPM_NATIVE_I2C) begin
                     start_item(seq_item);
                         seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                         seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
@@ -854,7 +828,7 @@ endtask
                             seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                         finish_item(seq_item);
                         get_response(seq_item);
-                    end while(~seq_item.LPM_NATIVE_I2C);
+                    end while(seq_item.LPM_NATIVE_I2C);
                     if (seq_item.EQ_Failed) begin
                             `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
                             break;
@@ -894,7 +868,7 @@ endtask
                 finish_item(seq_item);
                 
                 get_response(seq_item);
-                while(~seq_item.LPM_NATIVE_I2C) begin
+                while(seq_item.LPM_NATIVE_I2C) begin
                     start_item(seq_item);
                         seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                         seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
@@ -912,7 +886,7 @@ endtask
                 // Step 5: Check if CR is done
                 else if(seq_item.EQ_FSM_CR_Failed) begin
                     CR_LT_eq(); // Call the CR_LT task to perform clock recovery
-                    if(seq_item.LT_Failed != 1)
+                    if(!seq_item.LT_Failed)
                         restart = 1; // Set the restart flag to indicate a restart is needed
                     break;
                 end
@@ -923,7 +897,7 @@ endtask
                             seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                         finish_item(seq_item);
                         get_response(seq_item);
-                    end while(~seq_item.LPM_NATIVE_I2C);
+                    end while(seq_item.LPM_NATIVE_I2C);
                     if (seq_item.EQ_Failed) begin
                             `uvm_info("TL_EQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
                             break;
@@ -965,7 +939,7 @@ endtask
             // Wait for acknowledgment from the DUT for write transaction
             while(ack_count<1) begin
                 get_response(seq_item);
-                while(~seq_item.LPM_NATIVE_I2C) begin
+                while(seq_item.LPM_NATIVE_I2C) begin
                     start_item(seq_item);
                         seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                     finish_item(seq_item);
@@ -1006,38 +980,41 @@ endtask
         seq_item.SPM_MSA_VLD = 1'b1;
         seq_item.SPM_ISO_start = 1'b1;
         seq_item.operation = ISO;
-        case (seq_item.ISO_BW) // Made Case statement for SPM_Lane_BW
-            8'h06: begin
-                    seq_item.SPM_BW_Sel = 2'b00;
-                    seq_item.SPM_Lane_BW = 16'd162; // 1.62 Gbps/lane
-                   end
-            8'h0A: begin
-                    seq_item.SPM_BW_Sel = 2'b01;
-                    seq_item.SPM_Lane_BW = 16'd270; // 2.7 Gbps/lane
-                   end
-            8'h14: begin
-                    seq_item.SPM_BW_Sel = 2'b10;
-                    seq_item.SPM_Lane_BW = 16'd540; // 5.4 Gbps/lane
-                   end
-            8'h1E: begin
-                    seq_item.SPM_BW_Sel = 2'b11;
-                    seq_item.SPM_Lane_BW = 16'd810; // 8.1 Gbps/lane
-                   end
-            default: begin
-                seq_item.SPM_BW_Sel = 2'b00;
-                seq_item.SPM_Lane_BW = 16'd162; // 1.62 Gbps/lane
-                `uvm_info("TL_ISO_INIT_SEQ", $sformatf("The stored lane BW is incorrect!"), UVM_MEDIUM)
-            end
-        endcase
-        case (seq_item.ISO_LC) // Made Case statement for SPM_Lane_Count
-            2'b00: seq_item.SPM_Lane_Count = 3'b001; // 1 lane
-            2'b01: seq_item.SPM_Lane_Count = 3'b010; // 2 lanes
-            2'b11: seq_item.SPM_Lane_Count = 3'b100; // 4 lanes
-            default: begin
-                seq_item.SPM_Lane_Count = 3'b001; // 1 lane
-                `uvm_info("TL_ISO_INIT_SEQ", $sformatf("The stored lane count is incorrect!"), UVM_MEDIUM)
-            end
-        endcase
+        // case (seq_item.ISO_BW) // Made Case statement for SPM_Lane_BW
+        //     8'h06: begin
+        //             seq_item.SPM_BW_Sel = 2'b00;
+        //             seq_item.SPM_Lane_BW = 16'd162; // 1.62 Gbps/lane
+        //            end
+        //     8'h0A: begin
+        //             seq_item.SPM_BW_Sel = 2'b01;
+        //             seq_item.SPM_Lane_BW = 16'd270; // 2.7 Gbps/lane
+        //            end
+        //     8'h14: begin
+        //             seq_item.SPM_BW_Sel = 2'b10;
+        //             seq_item.SPM_Lane_BW = 16'd540; // 5.4 Gbps/lane
+        //            end
+        //     8'h1E: begin
+        //             seq_item.SPM_BW_Sel = 2'b11;
+        //             seq_item.SPM_Lane_BW = 16'd810; // 8.1 Gbps/lane
+        //            end
+        //     default: begin
+        //         seq_item.SPM_BW_Sel = 2'b00;
+        //         seq_item.SPM_Lane_BW = 16'd162; // 1.62 Gbps/lane
+        //         `uvm_info("TL_ISO_INIT_SEQ", $sformatf("The stored lane BW is incorrect!"), UVM_MEDIUM)
+        //     end
+        // endcase
+        // case (seq_item.ISO_LC) // Made Case statement for SPM_Lane_Count
+        //     2'b00: seq_item.SPM_Lane_Count = 3'b001; // 1 lane
+        //     2'b01: seq_item.SPM_Lane_Count = 3'b010; // 2 lanes
+        //     2'b11: seq_item.SPM_Lane_Count = 3'b100; // 4 lanes
+        //     default: begin
+        //         seq_item.SPM_Lane_Count = 3'b001; // 1 lane
+        //         `uvm_info("TL_ISO_INIT_SEQ", $sformatf("The stored lane count is incorrect!"), UVM_MEDIUM)
+        //     end
+        // endcase
+        seq_item.SPM_BW_Sel = 2'b00;
+        seq_item.SPM_Lane_BW = 16'd162; // 1.62 Gbps/lane
+        seq_item.SPM_Lane_Count = 3'b001; // 1 lane
         seq_item.MS_Stm_BW.rand_mode(1); // Randomize the stream bandwidth
         seq_item.MS_Stm_BW_VLD = 1'b1; // Stream bandwidth is valid
         //seq_item.MS_Stm_BW = 10'd80; // 80MHz for now, should be randomized
@@ -1052,7 +1029,7 @@ endtask
         seq_item.SPM_MSA[18] = seq_item.HWidth[7:0];   seq_item.SPM_MSA[19] = seq_item.HWidth[15:8];             seq_item.SPM_MSA[20] = seq_item.VHeight[7:0];
         seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
         // Concatenate all 24 bytes of MSA data into SPM_Full_MSA
-        SPM_Full_MSA = {seq_item.SPM_MSA[23], seq_item.SPM_MSA[22], seq_item.SPM_MSA[21], seq_item.SPM_MSA[20],
+        seq_item.SPM_Full_MSA = {seq_item.SPM_MSA[23], seq_item.SPM_MSA[22], seq_item.SPM_MSA[21], seq_item.SPM_MSA[20],
                         seq_item.SPM_MSA[19], seq_item.SPM_MSA[18], seq_item.SPM_MSA[17], seq_item.SPM_MSA[16],
                         seq_item.SPM_MSA[15], seq_item.SPM_MSA[14], seq_item.SPM_MSA[13], seq_item.SPM_MSA[12],
                         seq_item.SPM_MSA[11], seq_item.SPM_MSA[10], seq_item.SPM_MSA[9],  seq_item.SPM_MSA[8],
@@ -1114,7 +1091,7 @@ endtask
                     seq_item.SPM_MSA[18] = seq_item.HWidth[7:0];   seq_item.SPM_MSA[19] = seq_item.HWidth[15:8];             seq_item.SPM_MSA[20] = seq_item.VHeight[7:0];
                     seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
                     // Concatenate all 24 bytes of MSA data into SPM_Full_MSA
-                    SPM_Full_MSA = {seq_item.SPM_MSA[23], seq_item.SPM_MSA[22], seq_item.SPM_MSA[21], seq_item.SPM_MSA[20],
+                    seq_item.SPM_Full_MSA = {seq_item.SPM_MSA[23], seq_item.SPM_MSA[22], seq_item.SPM_MSA[21], seq_item.SPM_MSA[20],
                                     seq_item.SPM_MSA[19], seq_item.SPM_MSA[18], seq_item.SPM_MSA[17], seq_item.SPM_MSA[16],
                                     seq_item.SPM_MSA[15], seq_item.SPM_MSA[14], seq_item.SPM_MSA[13], seq_item.SPM_MSA[12],
                                     seq_item.SPM_MSA[11], seq_item.SPM_MSA[10], seq_item.SPM_MSA[9],  seq_item.SPM_MSA[8],
