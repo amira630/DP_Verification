@@ -17,11 +17,11 @@ class dp_source_test extends uvm_test;
 
     dp_tl_flow_fsm_sequence dp_tl_seq;
     dp_tl_reset_seq dp_tl_rst_seq;
-    dp_tl_lt_sequence dp_tl_lt_seq;
     dp_tl_i2c_sequence dp_tl_i2c_seq;
     dp_tl_native_ext_receiver_cap_sequence dp_tl_native_ext_receiver_cap_seq;
     dp_tl_native_link_config_sequence dp_tl_native_link_config_seq;
     dp_tl_native_receiver_cap_sequence dp_tl_native_receiver_cap_seq;
+    dp_tl_link_training_sequence dp_tl_link_training_seq;
 
     ////////////////////////////////////////////// Sink Sequences //////////////////////////////////////////
 
@@ -44,11 +44,11 @@ class dp_source_test extends uvm_test;
         dp_tl_seq = dp_tl_flow_fsm_sequence::type_id::create("dp_tl_seq", this);
         dp_tl_rst_seq = dp_tl_reset_seq::type_id::create("dp_tl_rst_seq", this);
         dp_tl_i2c_seq = dp_tl_i2c_sequence::type_id::create("dp_tl_i2c_seq", this);
-        dp_tl_lt_seq = dp_tl_lt_sequence::type_id::create("dp_tl_lt_seq", this);
         dp_tl_native_ext_receiver_cap_seq = dp_tl_native_ext_receiver_cap_sequence::type_id::create("dp_tl_native_ext_receiver_cap_seq", this);
         dp_tl_native_link_config_seq = dp_tl_native_link_config_sequence::type_id::create("dp_tl_native_link_config_seq", this);
         dp_tl_native_receiver_cap_seq = dp_tl_native_receiver_cap_sequence::type_id::create("dp_tl_native_receiver_cap_seq", this);
-
+        dp_tl_link_training_seq = dp_tl_link_training_sequence::type_id::create("dp_tl_link_training_seq", this);
+        
         // Sink Sequences creation
         dp_sink_seq = dp_sink_full_flow_seq::type_id::create("dp_sink_seq", this);
         dp_sink_intr_seq = dp_sink_interrupt_seq::type_id::create("dp_sink_intr_seq", this);            // DONE
@@ -106,6 +106,13 @@ class dp_source_test extends uvm_test;
                 dp_tl_native_receiver_cap_seq.start(env.tl_agt.sqr);
                 `uvm_info("run_phase", "TL DPCD stimulus generation ended", UVM_LOW);
             end
+
+            // // TL Link Training Sequence
+            // begin
+            //     `uvm_info("run_phase", "TL Link Training seq stimulus generation started", UVM_LOW);
+            //     dp_tl_link_training_seq.start(env.tl_agt.sqr);
+            //     `uvm_info("run_phase", "TL Link Training seq stimulus generation ended", UVM_LOW);
+            // end
 
             // EDID Read Sequence
             // begin
