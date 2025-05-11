@@ -22,6 +22,10 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     logic [7:0] PHY_ADJ_BW;
     logic       PHY_Instruct_VLD;
 
+// ISO signals
+    logic [7:0] ISO_symbols_lane0, ISO_symbols_lane1, ISO_symbols_lane2, ISO_symbols_lane3;
+    logic       Control_sym_flag_lane0, Control_sym_flag_lane1, Control_sym_flag_lane2, Control_sym_flag_lane3;
+
 // AUX fields moved from base_sequence
 // These fields are used to store the values of the AUX command, address, length, and data
 

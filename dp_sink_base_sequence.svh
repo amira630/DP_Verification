@@ -38,6 +38,8 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
     // Flow FSM Task
     task Sink_FSM();
         sink_flow_stages_e current_state;
+        int aux_stop_counter = 0;           // Counter for AUX_START_STOP being low
+        const int AUX_STOP_THRESHOLD = 5000; // Threshold for Stopping the FSM
 
         // Randomize all registers once at the start
         if (!(randomize(EDID_registers) &&
@@ -73,6 +75,16 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                                 `uvm_info(get_type_name(), "Sink is in Listen mode, Waiting for request command", UVM_MEDIUM)
                                 ready();      
                                 current_state = SINK_READY;                   // Set the current state to SINK_READY
+
+                                if (seq_item.AUX_START_STOP == 0) begin
+                                    aux_stop_counter++;
+                                    if (aux_stop_counter >= AUX_STOP_THRESHOLD) begin
+                                        `uvm_info(get_type_name(), "AUX_START_STOP threshold reached, stopping Sink_FSM", UVM_MEDIUM)
+                                        $finish; // Terminate the simulation
+                                    end
+                                end else begin
+                                    aux_stop_counter = 0; // Reset the counter
+                                end
                             end
                     endcase
                 end
@@ -84,6 +96,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                     wait(~sink_seq_cfg.rst_n);                  // Wait for the reset signal to go low
                         current_state = SINK_NOT_READY;                  // Set the current state to Not Ready
                         `uvm_info(get_type_name(), $sformatf("Time=%0t: sink at wait ~rst", $time), UVM_MEDIUM)
+                        aux_stop_counter = 0; // Reset the counter
                     wait(sink_seq_cfg.rst_n);                  // Wait for the reset signal to go high
                         current_state = SINK_READY;                  // Set the current state to SINK_LISTEN
                         `uvm_info(get_type_name(), $sformatf("Time=%0t: sink at wait rst", $time), UVM_MEDIUM)

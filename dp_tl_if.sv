@@ -232,6 +232,49 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             SPM_Transaction_VLD = spm_transaction_vld;
       endtask
 
+      task Wait_Reply_Data(output logic [AUX_DATA_WIDTH-1:0] spm_reply_data, output logic [1:0] spm_reply_ack, output logic spm_reply_ack_vld, output logic spm_reply_data_vld, output logic spm_native_i2c,
+            output logic [AUX_DATA_WIDTH-1:0] lpm_reply_data, output logic [1:0] lpm_reply_ack, output logic lpm_reply_ack_vld, output logic lpm_reply_data_vld, output logic lpm_native_i2c);
+
+            SPM_Transaction_VLD = 1'b0; // Set SPM transaction valid to 0
+            LPM_Transaction_VLD = 1'b0; // Set LPM transaction valid to 0
+
+            spm_reply_ack_vld = SPM_Reply_ACK_VLD;
+            spm_reply_data_vld = SPM_Reply_Data_VLD;
+            lpm_reply_ack_vld = LPM_Reply_ACK_VLD;
+            lpm_reply_data_vld = LPM_Reply_Data_VLD;
+
+            if (SPM_Reply_ACK_VLD && SPM_NATIVE_I2C) begin              // I2C Reply ACK
+                  spm_reply_ack = SPM_Reply_ACK;
+                  spm_native_i2c = 1'b1;
+            end
+            else if (LPM_Reply_ACK_VLD && ~LPM_NATIVE_I2C) begin        // Native Reply ACK
+                  lpm_reply_ack = LPM_Reply_ACK;
+                  lpm_native_i2c = 1'b1;
+            end
+            else begin
+                  spm_reply_ack = 2'b0;
+                  spm_native_i2c = 1'b0;
+                  lpm_reply_ack = 2'b0;
+                  lpm_native_i2c = 1'b0;
+            end
+
+            if (SPM_Reply_Data_VLD && SPM_NATIVE_I2C) begin             // I2C Reply Data
+                  spm_reply_data = SPM_Reply_Data;
+                  spm_reply_ack = SPM_Reply_ACK;
+                  spm_native_i2c = 1'b1;
+            end
+            else if (LPM_Reply_Data_VLD && ~LPM_NATIVE_I2C) begin        // Native Reply Data
+                  lpm_reply_data = LPM_Reply_Data;
+                  lpm_native_i2c = 1'b1;
+            end
+            else begin
+                  spm_reply_data = 8'b0;
+                  spm_native_i2c = 1'b0;
+                  lpm_reply_data = 8'b0;
+                  lpm_native_i2c = 1'b0;
+            end
+      endtask
+
       // //////////////////////////// LINK TRAINING ////////////////////////////
 
       // Clock Recovery Link Training task
