@@ -34,7 +34,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
     logic [3:0] CR_DONE, EQ_CR_DN, Channel_EQ, Symbol_Lock;
     logic [1:0] Link_LC_CR, EQ_Final_ADJ_LC, MAX_TPS_SUPPORTED, MAX_VTG, MAX_PRE;
     logic       LPM_Start_CR, Driving_Param_VLD, EQ_Data_VLD, FSM_CR_Failed, EQ_FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, Config_Param_VLD, CR_DONE_VLD;
-    logic       LPM_Start_CR_VLD, CR_Completed, MAX_TPS_SUPPORTED_VLD, Timer_Timeout;
+    logic       CR_Completed, MAX_TPS_SUPPORTED_VLD, Timer_Timeout;
 
     ///////////////////////////////////////////////////////////////
     ////////////////// ISOCHRONOUS TRANSPORT //////////////////////
@@ -139,7 +139,37 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
       // RESET task
       // This task is used to reset the DUT by asserting and deasserting the reset signal
       task Reset();
-            rst_n = 1'b0;           // Assert reset
+            rst_n = 1'b0;                       // Assert reset
+            SPM_Address = 20'b0;                // Reset SPM Address
+            SPM_Data = 8'b0;                    // Reset SPM Data
+            SPM_LEN = 8'b0;                     // Reset SPM Length
+            SPM_CMD = 2'b0;                     // Reset SPM Command
+            SPM_Transaction_VLD = 1'b0;         // Reset SPM Transaction Valid
+            LPM_Data = 8'b0;                    // Reset LPM Data
+            LPM_Address = 20'b0;                // Reset LPM Address
+            LPM_LEN = 8'b0;                     // Reset LPM Length
+            LPM_CMD = 2'b0;                     // Reset LPM Command
+            LPM_Transaction_VLD = 1'b0;         // Reset LPM Transaction Valid
+            LPM_Start_CR = 1'b0;                // Reset LPM Start Clock Recovery                
+            CR_DONE = 4'b0;                     // Reset CR_DONE
+            Link_LC_CR = 2'b0;                  // Reset Link Lane Count Clock Recovery
+            Link_BW_CR = 8'b0;                  // Reset Link Bandwidth Clock Recovery
+            PRE = 8'b0;                         // Reset PRE
+            VTG = 8'b0;                         // Reset VTG
+            Driving_Param_VLD = 1'b0;           // Reset Driving Parameter Valid
+            EQ_RD_Value = 8'b0;                 // Reset EQ_RD_Value
+            EQ_CR_DN = 4'b0;                    // Reset EQ_CR_DN
+            Channel_EQ = 4'b0;                  // Reset Channel_EQ
+            Symbol_Lock = 4'b0;                 // Reset Symbol_Lock
+            Lane_Align = 4'b0;                  // Reset Lane_Align
+            EQ_Data_VLD = 1'b0;                 // Reset EQ_Data Valid
+            MAX_VTG = 8'b0;                     // Reset MAX_VTG
+            MAX_PRE = 8'b0;                     // Reset MAX_PRE
+            MAX_TPS_SUPPORTED = 2'b0;           // Reset MAX_TPS_SUPPORTED
+            MAX_TPS_SUPPORTED_VLD = 1'b0;       // Reset MAX_TPS_SUPPORTED Valid
+            Config_Param_VLD = 1'b0;            // Reset Config Parameter Valid
+            CR_DONE_VLD = 1'b0;                 // Reset CR_DONE Valid        
+
             @(negedge clk_AUX);         // Wait for clock edge
             rst_n = 1'b1;           // Deassert reset
       endtask
@@ -147,41 +177,59 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
       // I2C_READ task
       task I2C_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
             // Set SPM-related signals to perform a read operation
+            wait(HPD_Detect == 1'b1); // Wait for HPD detection
+            @(negedge clk_AUX);
             SPM_Address = address;
             SPM_CMD     = command;
             SPM_LEN     = length;
             SPM_Transaction_VLD = transaction_vld;
+            LPM_Transaction_VLD = 1'b0; // Set LPM transaction valid to 0
             // SPM_Data = SPM.SPM_Data;                                 // Data is not used in read operation
       endtask
     
       // I2C_WRITE task
       task I2C_WRITE(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld, input logic[7:0] data);
             // Set SPM-related signals to perform a write operation
+            wait(HPD_Detect == 1'b1); // Wait for HPD detection
             SPM_Address = address;
             SPM_CMD     = command;
             SPM_LEN     = length;
             SPM_Transaction_VLD = transaction_vld;
+            LPM_Transaction_VLD = 1'b0; // Set LPM transaction valid to 0
             SPM_Data = data;
       endtask
 
       // // NATIVE_READ task
       task NATIVE_READ(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld);
             // Set LPM-related signals to perform a read operation
+            wait(HPD_Detect == 1'b1); // Wait for HPD detection
+            @(negedge clk_AUX);
             LPM_Address = address;
             LPM_CMD     = command;
             LPM_LEN     = length;
             LPM_Transaction_VLD = transaction_vld;
+            SPM_Transaction_VLD = 1'b0; // Set SPM transaction valid to 0
             // LPM_Data = LPM.LPM_Data; // Data is not used in read operation
+            //@(negedge clk_AUX); // Wait for clock edge
+            //LPM_Transaction_VLD = 1'b0; // Set the reply data valid signal to indicate that the data is ready
+
       endtask
 
       // NATIVE_WRITE task
       task NATIVE_WRITE(input logic[19:0] address, input logic[7:0] length, input logic [1:0] command, input bit transaction_vld, input logic[7:0] data);
             // Set LPM-related signals to perform a write operation
+            wait(HPD_Detect == 1'b1); // Wait for HPD detection
             LPM_Address = address;
             LPM_CMD     = command;
             LPM_LEN     = length;
             LPM_Transaction_VLD = transaction_vld;
+            SPM_Transaction_VLD = 1'b0; // Set SPM transaction valid to 0
             LPM_Data = data;
+      endtask
+
+      task Transaction_wait(input bit lpm_transaction_vld, input bit spm_transaction_vld);
+            LPM_Transaction_VLD = lpm_transaction_vld;
+            SPM_Transaction_VLD = spm_transaction_vld;
       endtask
 
       // //////////////////////////// LINK TRAINING ////////////////////////////
@@ -190,7 +238,9 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
       // This task is used to set the parameters for the Clock Recovery Link Training phase
       task LT_CT (input bit config_vld, driving_vld, start_cr, done_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, link_bw_cr, eq_rd_value, [3:0] cr_done, [1:0] link_lc_cr, max_vtg, max_pre);
             // Set LPM-related signals for Clock Recovery Link Training
-            LPM_Transaction_VLD = 1'b1;
+            // wait(HPD_Detect == 1'b1); // Wait for HPD detection
+            // @(negedge clk_AUX)
+            LPM_Transaction_VLD = 1'b0;
             SPM_Transaction_VLD = 1'b0;
             LPM_Start_CR = start_cr;
             CR_DONE_VLD  = done_vld;
@@ -209,14 +259,16 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
       // Channel Equalization Link Training task
       // This task is used to set the parameters for the Channel Equalization Link Training phase
       task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, training_pattern_t max_tps_supported);
-            LPM_Transaction_VLD = 1'b1;
+            // @(negedge clk_AUX)
+            LPM_Transaction_VLD = 1'b0;
             SPM_Transaction_VLD = 1'b0;
             CR_DONE_VLD  = done_vld;
             CR_DONE      = cr_done;
             PRE          = pre;
             VTG          = vtg;
             Driving_Param_VLD = driving_vld;
-            
+            Config_Param_VLD = 1'b0;
+
             EQ_CR_DN     = eq_cr_dn;
             Channel_EQ   = channel_eq;
             Symbol_Lock  = symbol_lock;
@@ -241,6 +293,39 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             MS_VSYNC = vsync; // Set Vsync signal to indicate the start of the vertical blanking period
             MS_HSYNC = hsync; // Set Hsync signal to indicate the start of the horizontal blanking period
             CLOCK_PERIOD = clk_stream;
+      endtask
+
+      task DETECT(output logic hpd_detect);
+            hpd_detect = HPD_Detect;
+      endtask
+
+      task FULL_FLOW(input bit config_vld, driving_vld, start_cr, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, link_bw_cr, eq_rd_value, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, [1:0] link_lc_cr, max_vtg, max_pre, training_pattern_t max_tps_supported, output logic hpd_detect);
+            hpd_detect = HPD_Detect;
+            LPM_Transaction_VLD = 1'b0;
+            SPM_Transaction_VLD = 1'b0;
+            LPM_Start_CR = start_cr;
+            CR_DONE_VLD  = done_vld;
+            CR_DONE      = cr_done;
+            Link_LC_CR   = link_lc_cr;
+            Link_BW_CR   = link_bw_cr;
+            PRE          = pre;
+            VTG          = vtg;
+            MAX_VTG      = max_vtg;
+            MAX_PRE      = max_pre;
+            Driving_Param_VLD = driving_vld;
+            Config_Param_VLD = config_vld;
+            EQ_RD_Value  = eq_rd_value;
+
+            EQ_CR_DN     = eq_cr_dn;
+            Channel_EQ   = channel_eq;
+            Symbol_Lock  = symbol_lock;
+            Lane_Align   = lane_align;
+            EQ_Data_VLD  = eq_data_vld;
+
+            MAX_TPS_SUPPORTED = max_tps_supported;
+            MAX_TPS_SUPPORTED_VLD = logic'(max_tps_supported_vld);
+
+            // ISO
       endtask
       
 endinterface

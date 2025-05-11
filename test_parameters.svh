@@ -52,7 +52,12 @@
         CR_STAGE = 2'b01,
         EQ_STAGE = 2'b10,
         ISO_STAGE = 2'b11
-    } flow_stages_e;
+    } tl_flow_stages_e;
+
+    typedef enum bit [1:0] {
+        SINK_NOT_READY = 2'b00,
+        SINK_READY = 2'b01
+    } sink_flow_stages_e;
 
 // Training Patterns
     typedef enum bit [1:0] {
@@ -92,12 +97,6 @@
         LISTEN_MODE
     } source_mode_e;
 
-// LTTPR MODES
-    typedef enum bit {
-        LTTPR_NON_TRANSPARENT_MODE, 
-        LTTPR_TRANSPARENT_MODE
-    } lttpr_mode_e;
-
 // DPTX AUX_CH FSM
     typedef enum logic [3:0] {
         S0_DPTX_NOT_READY      = 4'b0001,
@@ -120,7 +119,7 @@
     } native_aux_request_cmd_e;
 
 // AUX Request Command Definitions (bits 0-1 when bit 3 = 0, I2C-over-AUX) based on Table 2-176
-    typedef enum logic [1:0] {
+    typedef enum bit [1:0] {
         AUX_I2C_WRITE               = 2'b00,  // Bit 3=0, Bit 2= MOT, Bits[1:0]=00
         AUX_I2C_READ                = 2'b01,  // Bit 3=0, Bit 2= MOT, Bits[1:0]=01
         AUX_I2C_WRITE_STATUS_UPDATE = 2'b10,  // Bit 3=0, Bit 2= MOT, Bits[1:0]=10
@@ -150,19 +149,30 @@
         LINK_READY = 2'b10              // Link Training has been successful
     } link_training_phase_t;
 
-// AUX Channel Operation
+// AUX Channel Operation (TL)
     typedef enum logic [3:0] {
         reset_op        = 4'b0000,  
         I2C_READ        = 4'b0001,
         I2C_WRITE       = 4'b0010,
         NATIVE_READ     = 4'b0011,
         NATIVE_WRITE    = 4'b0100,
-        CR_LT           = 4'b0101,
-        EQ_LT           = 4'b0110,
+        CR_LT_op        = 4'b0101,
+        EQ_LT_op        = 4'b0110,
         ISO             = 4'b0111,
-        DETECT          = 4'b1000
+        DETECT_op       = 4'b1000,
+        FLOW_FSM_op     = 4'b1001
     } op_code;
 
+// Sink Driver Operation
+    typedef enum logic [3:0] {
+        Reset                   = 4'b0000,
+        Ready                   = 4'b0001,
+        Reply_operation         = 4'b0010,
+        HPD_test_operation      = 4'b0011,
+        Interrupt_operation     = 4'b0100
+    } sink_op_code;
+
+// Isochronous Services Operation
     typedef enum logic [1:0] {
         ISO_IDLE        = 2'b00,  // Sending IDLE pattern
         ISO_VBLANK      = 2'b01,  // Vblank period
@@ -170,6 +180,7 @@
         ISO_ACTIVE      = 2'b11   // Active video period
     } iso_op_code;
 
+// IDLE (or no data transmissions) in ISO Operation
     typedef enum logic [2:0] {
         ISO_SR    = 3'b000,   
         ISO_BS    = 3'b001,  
@@ -181,13 +192,12 @@
         ISO_MSA   = 3'b111
     } iso_idle_code;
 
-// Sink Driver Operation
+// Transfer Unit in ISO Operation
     typedef enum logic [1:0] {
-        HPD_operation   = 2'b00,  
-        Interrupt_operation       = 2'b01,
-        Reply_operation = 2'b10
-    } sink_op_code;
-
-    // 
+        ISO_TU_PIXELS = 2'b00,   
+        ISO_TU_FS     = 2'b01,  
+        ISO_TU_FE     = 2'b10,  
+        ISO_TU_DUMMY  = 2'b11
+    } iso_TU_code;
 
 `endif // DP_UVM_PARAMS_SVH

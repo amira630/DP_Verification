@@ -1,11 +1,11 @@
 class dp_tl_agent extends uvm_agent;
     `uvm_component_utils(dp_tl_agent)
     
-    dp_tl_sequencer #(dp_tl_lpm_sequence_item, dp_tl_spm_sequence_item) sqr;
+    uvm_sequencer #(dp_tl_sequence_item) sqr;
     dp_tl_driver drv;
     dp_tl_monitor mon;
     dp_source_config dp_source_cfg;
-    uvm_analysis_port #(dp_tl_lpm_sequence_item, dp_tl_spm_sequence_item) agt_ap;
+    uvm_analysis_port #(dp_tl_sequence_item) agt_ap;
 
     function new(string name = "dp_tl_agent", uvm_component parent = null);
         super.new(name, parent);
@@ -19,7 +19,7 @@ class dp_tl_agent extends uvm_agent;
             `uvm_fatal("build_phase","Unable to get configuration object in TL Agent");
         
         //building the Transport Layer sequencer, driver and monitor
-        sqr = dp_tl_sequencer::type_id::create("sqr", this);
+        sqr = uvm_sequencer#(dp_tl_sequence_item)::type_id::create("sqr", this);
         drv = dp_tl_driver::type_id::create("drv", this);
         mon = dp_tl_monitor::type_id::create("mon", this);
         // building the Transport Layer agent analysis port
@@ -30,8 +30,10 @@ class dp_tl_agent extends uvm_agent;
         super.connect_phase(phase);
 
         //connecting the virtual interface to the monitor and driver
-        drv.dp_tl_vif = dp_source_cfg.dp_tl_vif;
+        drv.dp_tl_vif = dp_source_cfg.dp_tl_vif;            // added
         mon.dp_tl_vif = dp_source_cfg.dp_tl_vif;
+
+        dp_source_cfg.rst_n = drv.drv_rst;                  // added
 
         //connecting the driver TLM port to the sequencer TLM export
         drv.seq_item_port.connect(sqr.seq_item_export);
