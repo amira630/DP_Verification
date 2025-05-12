@@ -84,30 +84,30 @@ task FLOW_FSM();
                             fork
                                 begin
                                     ISO_INIT();
-                                    Main_Stream(10);
+                                    Main_Stream(1);
                                 end
-                                begin 
-                                    forever begin
-                                        if(~seq_item.HPD_Detect) begin
-                                            cs = DETECTING;
-                                            seq_item.SPM_ISO_start = 1'b0; // Stop the ISO stream
-                                            `uvm_info("TL_BASE_SEQ", $sformatf("HPD not detected, moving back to DETECTING state"), UVM_MEDIUM)
-                                        end
-                                        else if(seq_item.HPD_IRQ) begin
-                                            // Call Interrput task
-                                            HPD_IRQ_sequence();
-                                            if(seq_item.error_flag) begin
-                                                cs = CR_STAGE;
-                                                seq_item.SPM_ISO_start = 1'b0; // Stop the ISO stream
-                                                `uvm_info("TL_BASE_SEQ", $sformatf("ISO stage completed, moving to IRQ state"), UVM_MEDIUM)
-                                            end
-                                            else begin
-                                                cs = ISO_STAGE;
-                                                `uvm_info("TL_BASE_SEQ", $sformatf("ISO stage not completed, staying in ISO stage"), UVM_MEDIUM)
-                                            end
-                                        end
-                                    end
-                                end
+                                // begin 
+                                //     forever begin
+                                //         if(~seq_item.HPD_Detect) begin
+                                //             cs = DETECTING;
+                                //             seq_item.SPM_ISO_start = 1'b0; // Stop the ISO stream
+                                //             `uvm_info("TL_BASE_SEQ", $sformatf("HPD not detected, moving back to DETECTING state"), UVM_MEDIUM)
+                                //         end
+                                //         else if(seq_item.HPD_IRQ) begin
+                                //             // Call Interrput task
+                                //             HPD_IRQ_sequence();
+                                //             if(seq_item.error_flag) begin
+                                //                 cs = CR_STAGE;
+                                //                 seq_item.SPM_ISO_start = 1'b0; // Stop the ISO stream
+                                //                 `uvm_info("TL_BASE_SEQ", $sformatf("ISO stage completed, moving to IRQ state"), UVM_MEDIUM)
+                                //             end
+                                //             else begin
+                                //                 cs = ISO_STAGE;
+                                //                 `uvm_info("TL_BASE_SEQ", $sformatf("ISO stage not completed, staying in ISO stage"), UVM_MEDIUM)
+                                //             end
+                                //         end
+                                //     end
+                                // end
                             join
                         end
                         default: begin
@@ -137,7 +137,7 @@ task FLOW_FSM();
 
     task detect_wait(output logic HPD_Detect);
         `uvm_info(get_type_name(), "Detect wait DUT", UVM_MEDIUM)
-        seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        // seq_item = dp_tl_sequence_item::type_id::create("seq_item");
         start_item(seq_item);
             seq_item.operation = DETECT_op;
         finish_item(seq_item);
@@ -972,9 +972,9 @@ task FLOW_FSM();
         if(!seq_item.isflow)
             seq_item = dp_tl_sequence_item::type_id::create("seq_item");
         start_item(seq_item);
-        seq_item.rand_mode(0);
-        seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1); seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
-        seq_item.HSW.rand_mode(1); seq_item.VSW.rand_mode(1); seq_item.HWidth.rand_mode(1); seq_item.VHeight.rand_mode(1); seq_item.MISC0.rand_mode(1); seq_item.MISC1.rand_mode(1);
+        // seq_item.rand_mode(1);
+        // seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1); seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
+        // seq_item.HSW.rand_mode(1); seq_item.VSW.rand_mode(1); seq_item.HWidth.rand_mode(1); seq_item.VHeight.rand_mode(1); seq_item.MISC0.rand_mode(1); seq_item.MISC1.rand_mode(1);
         seq_item.SPM_Transaction_VLD = 1'b0;
         seq_item.LPM_Transaction_VLD = 1'b0;
         seq_item.SPM_MSA_VLD = 1'b1;
@@ -1015,7 +1015,7 @@ task FLOW_FSM();
         seq_item.SPM_BW_Sel = 2'b00;
         seq_item.SPM_Lane_BW = 16'd162; // 1.62 Gbps/lane
         seq_item.SPM_Lane_Count = 3'b001; // 1 lane
-        seq_item.MS_Stm_BW.rand_mode(1); // Randomize the stream bandwidth
+        // seq_item.MS_Stm_BW.rand_mode(1); // Randomize the stream bandwidth
         seq_item.MS_Stm_BW_VLD = 1'b1; // Stream bandwidth is valid
         //seq_item.MS_Stm_BW = 10'd80; // 80MHz for now, should be randomized
         seq_item.MS_DE = 0;
@@ -1048,7 +1048,6 @@ task FLOW_FSM();
         else if(seq_item.MISC0[7:5] == 3'b100)
             seq_item.CLOCK_PERIOD = (48/seq_item.MS_Stm_BW);
         finish_item(seq_item);
-        get_response(seq_item);
         `uvm_info("TL_ISO_INIT_SEQ", $sformatf("ISO_INIT_SPM: ISO_start=%0b, SPM_Lane_BW=0x%0h, SPM_Lane_Count=0x%0h, Mvid=0x%0h, Nvid=0x%0h, HTotal=0x%0h, VTotal=0x%0h, HStart=0x%0h, VStart=0x%0h, HSP=0x%0h, VSP=0x%0h, HSW=0x%0h, VSW=0x%0h, HWidth=0x%0h, VHeight=0x%0h, MISC0=0x%0h, MISC1=0x%0h", seq_item.SPM_ISO_start, seq_item.SPM_Lane_BW, seq_item.SPM_Lane_Count, seq_item.Mvid, seq_item.Nvid, seq_item.HTotal, seq_item.VTotal, seq_item.HStart, seq_item.VStart, seq_item.HSP, seq_item.VSP, seq_item.HSW, seq_item.VSW, seq_item.HWidth, seq_item.VHeight, seq_item.MISC0, seq_item.MISC1), UVM_MEDIUM); 
     endtask
 
@@ -1063,33 +1062,33 @@ task FLOW_FSM();
             repeat(seq_item.VTotal) begin // Start new line
                 repeat(seq_item.HTotal) begin // start new pixel
                     start_item(seq_item);
-                    seq_item.rand_mode(0);
+                    //seq_item.rand_mode(0);
                     seq_item.MS_Stm_BW_VLD = 1'b0; // Stream bandwidth is not valid
                     seq_item.SPM_Transaction_VLD = 1'b0;
                     if(new_frame) begin
                         seq_item.SPM_MSA_VLD = 1'b1;
-                        /*seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1);*/ seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
-                        seq_item.HSW.rand_mode(1); seq_item.VSW.rand_mode(1); seq_item.HWidth.rand_mode(1); seq_item.VHeight.rand_mode(1); //seq_item.MISC0.rand_mode(1); seq_item.MISC1.rand_mode(1);
+                        // /*seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1);*/ seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
+                        // seq_item.HSW.rand_mode(1); seq_item.VSW.rand_mode(1); seq_item.HWidth.rand_mode(1); seq_item.VHeight.rand_mode(1); //seq_item.MISC0.rand_mode(1); seq_item.MISC1.rand_mode(1);
                         new_frame = 0;
                     end
                     else
                         seq_item.SPM_MSA_VLD = 1'b0;
                     if(countv >= seq_item.VStart && counth >= seq_item.HStart) begin // inside active video
                         seq_item.MS_DE = 1;
-                        seq_item.MS_Pixel_Data.rand_mode(1);
+                        // seq_item.MS_Pixel_Data.rand_mode(1);
                     end
                     else begin // outside active video
                         seq_item.MS_DE = 0;
                     end
                     assert(seq_item.randomize());
-                    seq_item.SPM_MSA[0]  = seq_item.Mvid[7:0];     seq_item.SPM_MSA[1]  = seq_item.Mvid[15:8];               seq_item.SPM_MSA[2] = seq_item.Mvid[23:16];
-                    seq_item.SPM_MSA[3]  = seq_item.Nvid[7:0];     seq_item.SPM_MSA[4]  = seq_item.Nvid[15:8];               seq_item.SPM_MSA[5] = seq_item.Nvid[23:16];
+                    // seq_item.SPM_MSA[0]  = seq_item.Mvid[7:0];    seq_item.SPM_MSA[1]  = seq_item.Mvid[15:8];               seq_item.SPM_MSA[2] = seq_item.Mvid[23:16];
+                    // seq_item.SPM_MSA[3]  = seq_item.Nvid[7:0];     seq_item.SPM_MSA[4]  = seq_item.Nvid[15:8];               seq_item.SPM_MSA[5] = seq_item.Nvid[23:16];
                     seq_item.SPM_MSA[6]  = seq_item.HTotal[7:0];   seq_item.SPM_MSA[7]  = seq_item.HTotal[15:8];             seq_item.SPM_MSA[8] = seq_item.VTotal[7:0];
                     seq_item.SPM_MSA[9]  = seq_item.VTotal[15:8];  seq_item.SPM_MSA[10] = seq_item.HStart[7:0];              seq_item.SPM_MSA[11] = seq_item.HStart[15:8];
                     seq_item.SPM_MSA[12] = seq_item.VStart[7:0];   seq_item.SPM_MSA[13] = seq_item.VStart[15:8];             seq_item.SPM_MSA[14] = {seq_item.HSW[6:0], seq_item.HSP};
                     seq_item.SPM_MSA[15] = seq_item.HSW[14:7];     seq_item.SPM_MSA[16] = {seq_item.VSW[6:0], seq_item.VSP}; seq_item.SPM_MSA[17] = seq_item.VSW[14:7];
                     seq_item.SPM_MSA[18] = seq_item.HWidth[7:0];   seq_item.SPM_MSA[19] = seq_item.HWidth[15:8];             seq_item.SPM_MSA[20] = seq_item.VHeight[7:0];
-                    seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
+                    seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; // seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
                     // Concatenate all 24 bytes of MSA data into SPM_Full_MSA
                     seq_item.SPM_Full_MSA = {seq_item.SPM_MSA[23], seq_item.SPM_MSA[22], seq_item.SPM_MSA[21], seq_item.SPM_MSA[20],
                                     seq_item.SPM_MSA[19], seq_item.SPM_MSA[18], seq_item.SPM_MSA[17], seq_item.SPM_MSA[16],
@@ -1124,7 +1123,6 @@ task FLOW_FSM();
                     end
                     counth++;
                     finish_item(seq_item);
-                    get_response(seq_item);
                 end
                 counth = 0; // reset the counter
                 countv++;
@@ -1132,12 +1130,11 @@ task FLOW_FSM();
             countv=0;
         end
         start_item(seq_item);
-        seq_item.rand_mode(0);
+        // seq_item.rand_mode(0);
         seq_item.SPM_Transaction_VLD = 1'b0;
         seq_item.SPM_MSA_VLD = 1'b0;
         seq_item.SPM_ISO_start = 1'b0; // NEED TO ADD A CONDITION FOR ERROR THAT RELATES TO THE HPD_IRQ // I think I will need to add a flag in the IRQ task that I will check here
         finish_item(seq_item);
-        get_response(seq_item);
     endtask
 
 endclass //dp_tl_base_sequence extends superClass
