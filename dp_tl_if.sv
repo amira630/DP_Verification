@@ -5,7 +5,8 @@ import uvm_pkg::*;
 interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk_AUX, clk_RBR, clk_HBR, clk_HBR2, clk_HBR3, MS_Stm_CLK);
 
     
-    logic rst_n;   // Reset is asynchronous active low
+    logic rst_n;    // Reset is asynchronous and active low
+    logic MS_rst_n; // Main stream reset; is asynchronous and active low // not added to the interface yet.
     
     ///////////////////////////////////////////////////////////////
     //////////////////// AUXILIARY CHANNEL ////////////////////////
@@ -43,8 +44,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
     /////////////////// STREAM POLICY MAKER ///////////////////////
 
     logic [15:0]               SPM_Lane_BW; // Modified to be 16 bits instead of 8 bits
-    logic [191:0]              SPM_Full_MSA; // added to store the full MSA data
-    logic [7:0]                SPM_MSA [23:0]; // 24 bytes of MSA data
+    logic [191:0]              SPM_Full_MSA; // added to store the full MSA data (24 bytes of MSA data)
     logic [2:0]                SPM_Lane_Count; // Modified to be 3 bits instead of 2 bits
     logic [1:0]                SPM_BW_Sel;
     logic                      SPM_ISO_start, SPM_MSA_VLD;
@@ -55,7 +55,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
     logic [9:0]  MS_Stm_BW;
     logic        MS_DE, MS_VSYNC, MS_HSYNC;
     logic        MS_Stm_BW_VLD;
-    logic        WFULL;  //Don't know what to do with it
+    logic        WFULL;  //Don't know what to do with it // not given a sequence yet mesh 3arfa ha3melaha logic eh
 
     real CLOCK_PERIOD;
 
@@ -147,6 +147,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
       // This task is used to reset the DUT by asserting and deasserting the reset signal
       task Reset();
             rst_n = 1'b0;                       // Assert reset
+            MS_rst_n = 1'b0;                    // Assert Main Stream reset
             SPM_Address = 20'b0;                // Reset SPM Address
             SPM_Data = 8'b0;                    // Reset SPM Data
             SPM_LEN = 8'b0;                     // Reset SPM Length
@@ -175,10 +176,17 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             MAX_TPS_SUPPORTED = 2'b0;           // Reset MAX_TPS_SUPPORTED
             MAX_TPS_SUPPORTED_VLD = 1'b0;       // Reset MAX_TPS_SUPPORTED Valid
             Config_Param_VLD = 1'b0;            // Reset Config Parameter Valid
-            CR_DONE_VLD = 1'b0;                 // Reset CR_DONE Valid        
+            CR_DONE_VLD = 1'b0;                 // Reset CR_DONE Valid     
+            MS_DE = 1'b0;                       // Reset Main Stream DE   
+            MS_Pixel_Data = 48'b0;              // Reset Main Stream Pixel Data
+            MS_Stm_BW = 10'b0;                  // Reset Main Stream Bandwidth
+            MS_Stm_BW_VLD = 1'b0;               // Reset Main Stream Bandwidth Valid
+            MS_VSYNC = 1'b0;                    // Reset Main Stream Vsync
+            MS_HSYNC = 1'b0;                    // Reset Main Stream Hsync
 
             @(negedge clk_AUX);         // Wait for clock edge
             rst_n = 1'b1;           // Deassert reset
+            MS_rst_n = 1'b1;        // Deassert Main Stream reset
       endtask
 
       // I2C_READ task

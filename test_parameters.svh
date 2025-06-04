@@ -182,8 +182,8 @@
 
 // IDLE (or no data transmissions) in ISO Operation
     typedef enum logic [2:0] {
-        ISO_BS    = 3'b000,   
-        ISO_SR    = 3'b001,  
+        ISO_SR    = 3'b000,   
+        ISO_BS    = 3'b001,  
         ISO_BF    = 3'b010,  
         ISO_VB_ID = 3'b011,  
         ISO_MVID  = 3'b100,   

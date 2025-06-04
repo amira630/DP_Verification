@@ -105,7 +105,7 @@ class dp_source_ref_iso extends uvm_component;
                     expected_transaction.Control_sym_flag_lane2 ='bx;
                     expected_transaction.Control_sym_flag_lane3 ='bx;
                     cs = ISO_IDLE; // Reset state to ISO_IDLE
-                    cs_0 = ISO_BS; cs_1 = ISO_BS; cs_2 = ISO_BS; cs_3 = ISO_BS; 
+                    cs_0 = ISO_SR; cs_1 = ISO_SR; cs_2 = ISO_SR; cs_3 = ISO_SR; 
                     cs_0_TU = ISO_TU_PIXELS; cs_1_TU = ISO_TU_PIXELS; cs_2_TU = ISO_TU_PIXELS; cs_3_TU = ISO_TU_PIXELS;
                     counter_0 = 0; counter_SR_0 = 0; // Reset state and counters to initial values
                     counter_1 = 0; counter_SR_1 = 0; // Reset state and counters to initial values
@@ -130,7 +130,7 @@ class dp_source_ref_iso extends uvm_component;
                 expected_transaction.Control_sym_flag_lane3 ='bx;
                 calc_flag = 0;
                 cs = ISO_IDLE; // Reset state to ISO_IDLE
-                cs_0 = ISO_BS; cs_1 = ISO_BS; cs_2 = ISO_BS; cs_3 = ISO_BS; 
+                cs_0 = ISO_SR; cs_1 = ISO_SR; cs_2 = ISO_SR; cs_3 = ISO_SR; 
                 cs_0_TU = ISO_TU_PIXELS; cs_1_TU = ISO_TU_PIXELS; cs_2_TU = ISO_TU_PIXELS; cs_3_TU = ISO_TU_PIXELS;
                 counter_0 = 0; counter_SR_0 = 0; // Reset state and counters to initial values
                 counter_1 = 0; counter_SR_1 = 0; // Reset state and counters to initial values
@@ -189,17 +189,18 @@ class dp_source_ref_iso extends uvm_component;
                 end
                 cs = ISO_VBLANK; // Transition to VBLANK state
                 ISO_IDLE_PATTERN(tl_item, expected_transaction); // Call ISO_IDLE task to handle IDLE state
-                counter_SR_0 = 0; // about to start a new video
                 cs_0_TU = ISO_TU_PIXELS; cs_1_TU = ISO_TU_PIXELS; cs_2_TU = ISO_TU_PIXELS; cs_3_TU = ISO_TU_PIXELS;
-                cs_0 = ISO_BS; 
-                if(tl_item.ISO_LC == 2'b01) begin
-                    counter_SR_1 = 0;
-                    cs_1 = ISO_BS; 
-                end
-                else if (tl_item.ISO_LC == 2'b11) begin
-                    counter_SR_1 = 0; counter_SR_2 = 0; counter_SR_3 = 0;
-                    cs_1 = ISO_BS; cs_2 = ISO_BS; cs_3 = ISO_BS;
-                end
+                //Optional
+                //counter_SR_0 = 0; // about to start a new video
+                // cs_0 = ISO_SR; 
+                // if(tl_item.ISO_LC == 2'b01) begin
+                //     counter_SR_1 = 0;
+                //     cs_1 = ISO_SR; 
+                // end
+                // else if (tl_item.ISO_LC == 2'b11) begin
+                //     counter_SR_1 = 0; counter_SR_2 = 0; counter_SR_3 = 0;
+                //     cs_1 = ISO_SR; cs_2 = ISO_SR; cs_3 = ISO_SR;
+                // end
             end 
             ISO_VBLANK: begin
                 if (tl_item.SPM_ISO_start && tl_item.MS_DE) begin

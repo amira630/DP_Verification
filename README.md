@@ -16,6 +16,7 @@
 | clk_HBR3       | input     | 1 bit  |-         | 810MHz Clock  |
 | MS_Stm_CLK       | input     | 1 bit  |-          | Clock with variable frequency  |
 | rst_n     | input     | 1 bit  |-          | Active low async. reset|
+| ms_rst_n     | input     | 1 bit  |-          | Active low async. main stream reset|
 | SPM_Transaction_VLD       | input     | 1 bit |TL     |  Active high valid signal for I2C request transactions. |
 | SPM_Data  | input     | 8 bits  |TL     | Data to be written through I2C write request transaction. |
 | SPM_Address         | input     | 20 bits |TL     | Register address to be written to or read from when requesting an I2C transaction. |
@@ -79,6 +80,7 @@
 | EQ_FSM_CR_Failed      | output    | 1 bit  |TL    | Signal indicating the failure of the CR phase during EQ phase of link training. |
 | EQ_Final_ADJ_BW      | output    | 8 bits  |TL    | The adjusted link BW after successful LT used for sending main video stream.|
 | EQ_Final_ADJ_LC      | output    | 2 bits  |TL    | The adjusted lane count after successful LT used for sending main video stream.|
+| Wfull      | output    | 1 bit  |TL    |  Asserted when the internal FIFO becomes full while the stream source is actively sending pixels. It indicates that a pixel overflow is imminent.|
 | HPD_Signal      | input    | 1 bit  |PL    | Indicates the connection status based on its duration. Status may be a IRQ_HPD event, Hot Unplug event or a Hot Plug/Re-plug event.|
 | PHY_START_STOP      | input    | 1 bit  |PL    | Indicates the beginning and end of the reply transaction.|
 | AUX_IN_OUT      | inout    | 8 bits  |PL    | A request/reply transaction where each byte is transmitted or received byte-by-byte.|
@@ -87,6 +89,8 @@
 | PHY_Instruct      | output    | 2 bits  |PL    | Instructs the PHY layer to begin sending a specific training pattern sequence (TPS1, 2, 3, 4).|
 | PHY_ADJ_BW      | output    | 8 bits  |PL    | Adjusted BW after successful LT.|
 | PHY_ADJ_LC      | output    | 2 bits  |PL    | Adjusted lane count after successful LT.|
+| ISO_symbols_lanex      | output    | 8 bits  |PL    | Carry the processed main video stream data and control symbols.|
+| Control_sym_flag_lanex      | output    | 1 bit  |PL    | Asserted when the block outputs control symbols.|
 ___
 
 
