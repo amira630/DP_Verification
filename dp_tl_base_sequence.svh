@@ -454,6 +454,7 @@ task FLOW_FSM();
         end
         done = 0;
         if(!seq_item.FSM_CR_Failed && !seq_item.CTRL_Native_Failed) begin
+            // I think I will comment this to not give the link layer EQ_RD_Value now but in EQ stage.
             start_item(seq_item);
             seq_item.rand_mode(0);
             seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value

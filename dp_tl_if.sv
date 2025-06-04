@@ -138,7 +138,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
                  EQ_Final_ADJ_LC,         // The adjusted number of lanes after successful link training, used for sending main video stream.
                  CR_Completed,            // Signal indicating the completion of the Clock Recovery phase during link training.   
                  EQ_FSM_CR_Failed,        // Signal indicating the failure of the Clock Recovery phase during EQ phase of link training.  
-                 Timer_Timeout,            // Signal indicating the timeout of the timer during link training process.
+                 Timer_Timeout,           // Signal indicating the timeout of the timer during link training process.
           // ISO
                  WFULL                    // Signal indicating that FIFO is full
     );
