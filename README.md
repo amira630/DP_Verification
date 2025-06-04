@@ -97,4 +97,4 @@ ___
 #### **Verification Environment Architecture**
 ![Alt text](./Pictures/Verification_Architecture_DP.drawio.png) |
 |:--:|
-| *Figure 2: Verification Arichitecture for DP Link Layer Source* |
+| *Figure 2: Verification Architecture for DP Link Layer Source* |

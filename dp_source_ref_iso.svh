@@ -96,14 +96,14 @@ class dp_source_ref_iso extends uvm_component;
                 `uvm_info(get_type_name(), "Calling generate_expected_transaction()", UVM_LOW)
                 generate_expected_transaction(tl_item, expected_transaction); // Generate expected transaction based on TL item
                 if(!tl_item.rst_n || !tl_item.LT_Pass) begin 
-                    expected_transaction.ISO_symbols_lane0 ='bx;
-                    expected_transaction.ISO_symbols_lane1 ='bx;
-                    expected_transaction.ISO_symbols_lane2 ='bx;
-                    expected_transaction.ISO_symbols_lane3 ='bx;
-                    expected_transaction.Control_sym_flag_lane0 ='bx;
-                    expected_transaction.Control_sym_flag_lane1 ='bx;
-                    expected_transaction.Control_sym_flag_lane2 ='bx;
-                    expected_transaction.Control_sym_flag_lane3 ='bx;
+                    expected_transaction.ISO_symbols_lane0 ='b0;
+                    expected_transaction.ISO_symbols_lane1 ='b0;
+                    expected_transaction.ISO_symbols_lane2 ='b0;
+                    expected_transaction.ISO_symbols_lane3 ='b0;
+                    expected_transaction.Control_sym_flag_lane0 ='b0;
+                    expected_transaction.Control_sym_flag_lane1 ='b0;
+                    expected_transaction.Control_sym_flag_lane2 ='b0;
+                    expected_transaction.Control_sym_flag_lane3 ='b0;
                     cs = ISO_IDLE; // Reset state to ISO_IDLE
                     cs_0 = ISO_SR; cs_1 = ISO_SR; cs_2 = ISO_SR; cs_3 = ISO_SR; 
                     cs_0_TU = ISO_TU_PIXELS; cs_1_TU = ISO_TU_PIXELS; cs_2_TU = ISO_TU_PIXELS; cs_3_TU = ISO_TU_PIXELS;
@@ -120,14 +120,14 @@ class dp_source_ref_iso extends uvm_component;
             end
             else begin // if reset is off or LT is no longer passed
             `uvm_info(get_type_name(), "Reset or LT not passed — initializing internal state", UVM_MEDIUM)
-                expected_transaction.ISO_symbols_lane0 ='bx;
-                expected_transaction.ISO_symbols_lane1 ='bx;
-                expected_transaction.ISO_symbols_lane2 ='bx;
-                expected_transaction.ISO_symbols_lane3 ='bx;
-                expected_transaction.Control_sym_flag_lane0 ='bx;
-                expected_transaction.Control_sym_flag_lane1 ='bx;
-                expected_transaction.Control_sym_flag_lane2 ='bx;
-                expected_transaction.Control_sym_flag_lane3 ='bx;
+                expected_transaction.ISO_symbols_lane0 ='b0;
+                expected_transaction.ISO_symbols_lane1 ='b0;
+                expected_transaction.ISO_symbols_lane2 ='b0;
+                expected_transaction.ISO_symbols_lane3 ='b0;
+                expected_transaction.Control_sym_flag_lane0 ='b0;
+                expected_transaction.Control_sym_flag_lane1 ='b0;
+                expected_transaction.Control_sym_flag_lane2 ='b0;
+                expected_transaction.Control_sym_flag_lane3 ='b0;
                 calc_flag = 0;
                 cs = ISO_IDLE; // Reset state to ISO_IDLE
                 cs_0 = ISO_SR; cs_1 = ISO_SR; cs_2 = ISO_SR; cs_3 = ISO_SR; 
@@ -357,7 +357,7 @@ class dp_source_ref_iso extends uvm_component;
             end
             ISO_VB_ID:begin
                 Control_sym_flag_lanex = 1'b0;
-                ISO_symbols_lanex = 8'bx000_1000; // No Video or audio or active video stream this is VB-ID for an IDLE pattern
+                ISO_symbols_lanex = 8'b0_000_1000; // No Video or audio or active video stream this is VB-ID for an IDLE pattern
                 counter++; // Increment the counter for the number of symbols sent
                 cs = ISO_MVID; // Transition to MVID state
                 BF_flag = 1'b0; // Reset BF_flag after sending VB_ID symbols
@@ -501,7 +501,7 @@ class dp_source_ref_iso extends uvm_component;
             end
             ISO_VB_ID:begin
                 Control_sym_flag_lanex = 1'b0;
-                ISO_symbols_lanex = 8'bx000_0001; 
+                ISO_symbols_lanex = 8'b0000_0001; 
                 counter++; // Increment the counter for the number of symbols sent
                 cs = ISO_MVID; // Transition to MVID state
                 BF_flag = 1'b0; // Reset BF_flag after sending VB_ID symbols
@@ -874,7 +874,7 @@ class dp_source_ref_iso extends uvm_component;
             end
             ISO_VB_ID:begin
                 Control_sym_flag_lanex = 1'b0;
-                ISO_symbols_lanex = 8'bx000_0000;
+                ISO_symbols_lanex = 8'b0000_0000;
                 counter++; // Increment the counter for the number of symbols sent
                 cs = ISO_MVID; // Transition to MVID state
                 BF_flag = 1'b0; // Reset BF_flag after sending VB_ID symbols
