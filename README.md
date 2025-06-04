@@ -16,7 +16,7 @@
 | clk_HBR3       | input     | 1 bit  |-         | 810MHz Clock  |
 | MS_Stm_CLK       | input     | 1 bit  |-          | Clock with variable frequency  |
 | rst_n     | input     | 1 bit  |-          | Active low async. reset|
-| ms_rst_n     | input     | 1 bit  |-          | Active low async. main stream reset|
+| MS_rst_n     | input     | 1 bit  |TL          | Active low async. main stream reset|
 | SPM_Transaction_VLD       | input     | 1 bit |TL     |  Active high valid signal for I2C request transactions. |
 | SPM_Data  | input     | 8 bits  |TL     | Data to be written through I2C write request transaction. |
 | SPM_Address         | input     | 20 bits |TL     | Register address to be written to or read from when requesting an I2C transaction. |
