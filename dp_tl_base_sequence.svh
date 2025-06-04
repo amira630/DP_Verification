@@ -397,7 +397,8 @@ task FLOW_FSM();
         finish_item(seq_item);
         // Now LL is supposed to native write all the configurations to the Sink (3 writes and 1 read)
         // Waiting for DPCD reg 0000E to be read and value be returned
-            // Wait for the response from the DUT
+        // the DPCD reg 0000E read is incorrect at this stage so was removed
+        // Wait for the response from the DUT
         while(~done) begin
             get_response(seq_item);
             if (seq_item.FSM_CR_Failed) begin 
@@ -421,24 +422,17 @@ task FLOW_FSM();
                 if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
                     ack_count++;
                 end
+                if(ack_count == 3) begin
+                    done = 1; 
+                end
                 start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
                     seq_item.LPM_Start_CR = 0; 
                     seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                     seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid     
                 finish_item(seq_item);
-            end
-            else if(ack_count==4 && seq_item.LPM_Reply_Data_VLD) begin
-                done = 0; 
-                start_item(seq_item);
-                    seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                    seq_item.LPM_Start_CR = 0;      
-                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                    seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
-                finish_item(seq_item);
-            end
-            else if(ack_count==4 && !seq_item.LPM_Reply_Data_VLD) begin
-                done = 1; 
+                if (done)
+                    get_response(seq_item);
             end
             else begin
                 start_item(seq_item);
@@ -448,6 +442,15 @@ task FLOW_FSM();
                     seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
                 finish_item(seq_item);  
             end
+            // else if(ack_count==4 && seq_item.LPM_Reply_Data_VLD) begin
+            //     done = 0; 
+            //     start_item(seq_item);
+            //         seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+            //         seq_item.LPM_Start_CR = 0;      
+            //         seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+            //         seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
+            //     finish_item(seq_item);
+            // end
         end
         done = 0;
         if(!seq_item.FSM_CR_Failed && !seq_item.CTRL_Native_Failed) begin
@@ -541,10 +544,12 @@ task FLOW_FSM();
                             if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
                                 ack_count++;
                             end
-                            start_item(seq_item);
-                                seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                                seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                            finish_item(seq_item);
+                            else begin
+                                start_item(seq_item);
+                                    seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+                                finish_item(seq_item);
+                            end
                         end
                         else begin
                             start_item(seq_item);
@@ -607,25 +612,24 @@ task FLOW_FSM();
                 if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
                     ack_count++;
                 end
-                start_item(seq_item);
-                    seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                finish_item(seq_item);
-            end
-            else if(ack_count==4 && seq_item.LPM_Reply_Data_VLD) begin
-                done = 0; 
-                start_item(seq_item);
-                    seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                finish_item(seq_item);
-            end
-            else if(ack_count==4 && !seq_item.LPM_Reply_Data_VLD) begin
-                done = 1; 
+                if(ack_count == 3) begin
+                    done = 1; 
+                end
+                else begin
+                    start_item(seq_item);
+                        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                        seq_item.LPM_Start_CR = 0; 
+                        seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+                        seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid     
+                    finish_item(seq_item);
+                end
             end
             else begin
                 start_item(seq_item);
                     seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                    seq_item.LPM_Start_CR = 0; 
                     seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+                    seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
                 finish_item(seq_item);  
             end
         end
@@ -1048,6 +1052,7 @@ task FLOW_FSM();
         else if(seq_item.MISC0[7:5] == 3'b100)
             seq_item.CLOCK_PERIOD = (48/seq_item.MS_Stm_BW);
         finish_item(seq_item);
+        get_response(seq_item);
         `uvm_info("TL_ISO_INIT_SEQ", $sformatf("ISO_INIT_SPM: ISO_start=%0b, SPM_Lane_BW=0x%0h, SPM_Lane_Count=0x%0h, Mvid=0x%0h, Nvid=0x%0h, HTotal=0x%0h, VTotal=0x%0h, HStart=0x%0h, VStart=0x%0h, HSP=0x%0h, VSP=0x%0h, HSW=0x%0h, VSW=0x%0h, HWidth=0x%0h, VHeight=0x%0h, MISC0=0x%0h, MISC1=0x%0h", seq_item.SPM_ISO_start, seq_item.SPM_Lane_BW, seq_item.SPM_Lane_Count, seq_item.Mvid, seq_item.Nvid, seq_item.HTotal, seq_item.VTotal, seq_item.HStart, seq_item.VStart, seq_item.HSP, seq_item.VSP, seq_item.HSW, seq_item.VSW, seq_item.HWidth, seq_item.VHeight, seq_item.MISC0, seq_item.MISC1), UVM_MEDIUM); 
     endtask
 
@@ -1123,6 +1128,7 @@ task FLOW_FSM();
                     end
                     counth++;
                     finish_item(seq_item);
+                    get_response(seq_item); 
                 end
                 counth = 0; // reset the counter
                 countv++;
@@ -1135,6 +1141,7 @@ task FLOW_FSM();
         seq_item.SPM_MSA_VLD = 1'b0;
         seq_item.SPM_ISO_start = 1'b0; // NEED TO ADD A CONDITION FOR ERROR THAT RELATES TO THE HPD_IRQ // I think I will need to add a flag in the IRQ task that I will check here
         finish_item(seq_item);
+        get_response(seq_item); 
     endtask
 
 endclass //dp_tl_base_sequence extends superClass

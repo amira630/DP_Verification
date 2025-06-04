@@ -6,13 +6,16 @@ class dp_source_ref_iso extends uvm_component;
     `uvm_component_utils(dp_source_ref_iso)
 
     // Input and output analysis ports for connecting to the scoreboard
-    uvm_analysis_export #(dp_sink_sequence_item) sink_in_export;  // Receives transactions from dp_sink_monitor
+    // uvm_analysis_export #(dp_sink_sequence_item) sink_in_export;  // Receives transactions from dp_sink_monitor
     uvm_analysis_export #(dp_tl_sequence_item) tl_in_export;      // Receives transactions from dp_tl_monitor
     uvm_analysis_port #(dp_ref_transaction) ref_model_out_port; // Sends expected transactions to the scoreboard
 
+    uvm_tlm_analysis_fifo #(dp_tl_sequence_item) ref_tl_fifo;
+    // dummy_tl_sink dummy_sink;
+
     // Transaction variables for output of Reference model
     dp_ref_transaction expected_transaction;
-    dp_sink_sequence_item sink_item;
+    // dp_sink_sequence_item sink_item;
     dp_tl_sequence_item tl_item;
     
     iso_op_code cs; // Current and next state variables for the reference model
@@ -20,7 +23,7 @@ class dp_source_ref_iso extends uvm_component;
     iso_TU_code cs_0_TU, cs_1_TU, cs_2_TU, cs_3_TU; // Current and next state variables for the Transfer Unit
 
     bit ready; // for when ISO is ready to transition from IDLE to actual stream transmission
-    bit BS_flag, SR_flag, BF_flag, MSA_done, FS_flag, FE_flag; // Flags for ready and busy states
+    bit BS_flag, SR_flag, BF_flag, MSA_done, FS_flag, FE_flag, calc_flag; // Flags for ready and busy states
     
     int counter_0, counter_SR_0, counter_1, counter_SR_1, counter_2, counter_SR_2, counter_3, counter_SR_3, count_MSA_0, count_MSA_1, count_MSA_2, count_MSA_3; // Reset MSA counters to initial values; // Counters for the number of symbols sent
     int count_VBLANK, count_HBLANK_ACTIVE, count_HACTIVE; // Counter for the number of VBLANK  and HBLANK symbols sent
@@ -50,13 +53,23 @@ class dp_source_ref_iso extends uvm_component;
     // Build phase
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
-        sink_in_export = new("sink_in_export", this);
+        // sink_in_export = new("sink_in_export", this);
+        `uvm_info(get_type_name(), "build_phase reached", UVM_LOW)
         tl_in_export = new("tl_in_export", this);
         ref_model_out_port = new("ref_model_out_port", this);
         expected_transaction = dp_ref_transaction::type_id::create("expected_transaction", this);
         tl_item = dp_tl_sequence_item::type_id::create("tl_item");
         // sink_item = dp_sink_sequence_item::type_id::create("sink_item");
+        // dummy_sink = dummy_tl_sink::type_id::create("dummy_sink", this);
+        ref_tl_fifo = new("ref_tl_fifo", this);
         `uvm_info(get_type_name(), "Reference model build_phase completed", UVM_LOW)
+    endfunction
+
+    function void connect_phase(uvm_phase phase);
+        super.connect_phase(phase);
+        tl_in_export.connect(ref_tl_fifo.analysis_export);
+
+        `uvm_info(get_type_name(), "Ref model connect_phase completed", UVM_LOW)
     endfunction
 
 // Run phase
@@ -66,12 +79,21 @@ class dp_source_ref_iso extends uvm_component;
         // Reference model logic to generate expected transactions
         // This is a placeholder for the actual reference model logic
 
+        `uvm_info(get_type_name(), "Reference model run_phase started", UVM_MEDIUM)
+
         // Wait for the next transaction
-        tl_in_export.get(tl_item);
-        calculate_timing_parameters( tl_item, expected_transaction, hactive_period, hblank_period, vblank_period, htotal_period, valid_symbols_integer, valid_symbols_fraction, tu_alternate_up, tu_alternate_down, alternate_valid);
+        ref_tl_fifo.get(tl_item);
+
+        `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
 
         forever begin
             if ((tl_item.LT_Pass && tl_item.rst_n)) begin // if reset is off and LT is passed
+                if(!calc_flag) begin
+                    calculate_timing_parameters( tl_item, expected_transaction, hactive_period, hblank_period, vblank_period, htotal_period, valid_symbols_integer, valid_symbols_fraction, tu_alternate_up, tu_alternate_down, alternate_valid);
+                    `uvm_info(get_type_name(), "Calculated timing parameters for expected transaction", UVM_LOW)
+                    calc_flag = 1;
+                end
+                `uvm_info(get_type_name(), "Calling generate_expected_transaction()", UVM_LOW)
                 generate_expected_transaction(tl_item, expected_transaction); // Generate expected transaction based on TL item
                 if(!tl_item.rst_n || !tl_item.LT_Pass) begin 
                     expected_transaction.ISO_symbols_lane0 ='bx;
@@ -83,7 +105,7 @@ class dp_source_ref_iso extends uvm_component;
                     expected_transaction.Control_sym_flag_lane2 ='bx;
                     expected_transaction.Control_sym_flag_lane3 ='bx;
                     cs = ISO_IDLE; // Reset state to ISO_IDLE
-                    cs_0 = ISO_SR; cs_1 = ISO_SR; cs_2 = ISO_SR; cs_3 = ISO_SR; 
+                    cs_0 = ISO_BS; cs_1 = ISO_BS; cs_2 = ISO_BS; cs_3 = ISO_BS; 
                     cs_0_TU = ISO_TU_PIXELS; cs_1_TU = ISO_TU_PIXELS; cs_2_TU = ISO_TU_PIXELS; cs_3_TU = ISO_TU_PIXELS;
                     counter_0 = 0; counter_SR_0 = 0; // Reset state and counters to initial values
                     counter_1 = 0; counter_SR_1 = 0; // Reset state and counters to initial values
@@ -92,10 +114,12 @@ class dp_source_ref_iso extends uvm_component;
                     count_MSA_0 = 0; count_MSA_1 = 0; count_MSA_2 = 0; count_MSA_3 = 0;// Reset MSA counters to initial values
                     count_VBLANK =0; count_HBLANK_ACTIVE =0; count_HACTIVE =0; // Reset VBLANK and HBLANK counters to initial values
                     RED_8.delete(); RED_16.delete(); GREEN_8.delete(); GREEN_16.delete(); BLUE_8.delete(); BLUE_8.delete(); // Clear the pixel queue
+                    `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
                     ref_model_out_port.write(expected_transaction);
                 end
             end
             else begin // if reset is off or LT is no longer passed
+            `uvm_info(get_type_name(), "Reset or LT not passed — initializing internal state", UVM_MEDIUM)
                 expected_transaction.ISO_symbols_lane0 ='bx;
                 expected_transaction.ISO_symbols_lane1 ='bx;
                 expected_transaction.ISO_symbols_lane2 ='bx;
@@ -104,8 +128,9 @@ class dp_source_ref_iso extends uvm_component;
                 expected_transaction.Control_sym_flag_lane1 ='bx;
                 expected_transaction.Control_sym_flag_lane2 ='bx;
                 expected_transaction.Control_sym_flag_lane3 ='bx;
+                calc_flag = 0;
                 cs = ISO_IDLE; // Reset state to ISO_IDLE
-                cs_0 = ISO_SR; cs_1 = ISO_SR; cs_2 = ISO_SR; cs_3 = ISO_SR; 
+                cs_0 = ISO_BS; cs_1 = ISO_BS; cs_2 = ISO_BS; cs_3 = ISO_BS; 
                 cs_0_TU = ISO_TU_PIXELS; cs_1_TU = ISO_TU_PIXELS; cs_2_TU = ISO_TU_PIXELS; cs_3_TU = ISO_TU_PIXELS;
                 counter_0 = 0; counter_SR_0 = 0; // Reset state and counters to initial values
                 counter_1 = 0; counter_SR_1 = 0; // Reset state and counters to initial values
@@ -114,11 +139,13 @@ class dp_source_ref_iso extends uvm_component;
                 count_MSA_0 = 0; count_MSA_1 = 0; count_MSA_2 = 0; count_MSA_3 = 0; // Reset MSA counters to initial values
                 count_VBLANK = 0; count_HBLANK_ACTIVE =0; count_HACTIVE =0; // Reset VBLANK and HBLANK counters to initial values
                 RED_8.delete(); RED_16.delete(); GREEN_8.delete(); GREEN_16.delete(); BLUE_8.delete(); BLUE_8.delete(); // Clear the pixel queue
+                `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
                 ref_model_out_port.write(expected_transaction);
                 break;
             end
             // Wait for the next transaction
-            tl_in_export.get(tl_item);
+            ref_tl_fifo.get(tl_item);
+            `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
         end
         phase.drop_objection(this); // Drop objection when done
         `uvm_info(get_type_name(), "Reference model run_phase completed", UVM_LOW)
@@ -164,14 +191,14 @@ class dp_source_ref_iso extends uvm_component;
                 ISO_IDLE_PATTERN(tl_item, expected_transaction); // Call ISO_IDLE task to handle IDLE state
                 counter_SR_0 = 0; // about to start a new video
                 cs_0_TU = ISO_TU_PIXELS; cs_1_TU = ISO_TU_PIXELS; cs_2_TU = ISO_TU_PIXELS; cs_3_TU = ISO_TU_PIXELS;
-                cs_0 = ISO_SR; 
+                cs_0 = ISO_BS; 
                 if(tl_item.ISO_LC == 2'b01) begin
                     counter_SR_1 = 0;
-                    cs_1 = ISO_SR; 
+                    cs_1 = ISO_BS; 
                 end
                 else if (tl_item.ISO_LC == 2'b11) begin
                     counter_SR_1 = 0; counter_SR_2 = 0; counter_SR_3 = 0;
-                    cs_1 = ISO_SR; cs_2 = ISO_SR; cs_3 = ISO_SR;
+                    cs_1 = ISO_BS; cs_2 = ISO_BS; cs_3 = ISO_BS;
                 end
             end 
             ISO_VBLANK: begin
@@ -257,9 +284,11 @@ class dp_source_ref_iso extends uvm_component;
             IDLE_PATTERN(tl_item, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
             IDLE_PATTERN(tl_item, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
             // Send the expected transaction to the scoreboard
+            `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
             ref_model_out_port.write(expected_transaction);
             // Wait for the next transaction
-            tl_in_export.get(tl_item);
+            ref_tl_fifo.get(tl_item);
+            `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
             if(tl_item.MS_DE && tl_item.SPM_ISO_start) begin
                 case(tl_item.MISC0[7:5])
                     3'b001: begin // 8bpc
@@ -313,12 +342,12 @@ class dp_source_ref_iso extends uvm_component;
                 Control_sym_flag_lanex = 1'b1;
                 ISO_symbols_lanex = BF;
                 if(!BF_flag) begin
-                    cs = ISO_BF; // Transition to VB_ID state
+                    cs = ISO_BF; // Transition to ISO_BF state
                     BF_flag= 1'b1;
                 end
                 else begin
                     if(SR_flag) begin // If this Control symbol sequnce is SR go back and end it with an SR symbol
-                        cs = ISO_SR; // Transition to VB_ID state
+                        cs = ISO_SR; // Transition to ISO_SR state
                     end
                     else if (BS_flag) begin // If this Control symbol sequnce is BS go back and end it with an BS symbol
                         cs = ISO_BS; // Reset count_SR after sending BS and BF symbols
@@ -336,13 +365,13 @@ class dp_source_ref_iso extends uvm_component;
             end
             ISO_MVID:begin
                 Control_sym_flag_lanex = 1'b0;
-                ISO_symbols_lanex = 'bx;
+                ISO_symbols_lanex = 'b0;
                 counter++; // Increment the counter for the number of symbols sent
                 cs = ISO_MAUD; // Transition to MAUD state
             end
             ISO_MAUD:begin
                 Control_sym_flag_lanex = 1'b0;
-                ISO_symbols_lanex = 'bx;
+                ISO_symbols_lanex = 'b0;
                 counter++; // Increment the counter for the number of symbols sent
                 cs = ISO_DUMMY; // Transition to IDLE state
             end
@@ -396,8 +425,10 @@ class dp_source_ref_iso extends uvm_component;
                 endcase
             end
             // Send the expected transaction to the scoreboard
+            `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
             ref_model_out_port.write(expected_transaction);
-            tl_in_export.get(tl_item);
+            ref_tl_fifo.get(tl_item);
+            `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
             if(tl_item.MS_DE && tl_item.SPM_ISO_start)begin
                 case(tl_item.MISC0[7:5])
                     3'b001: begin // 8bpc
@@ -755,8 +786,10 @@ class dp_source_ref_iso extends uvm_component;
                 endcase
             end
             // Send the expected transaction to the scoreboard
+            `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
             ref_model_out_port.write(expected_transaction);
-            tl_in_export.get(tl_item);
+            ref_tl_fifo.get(tl_item);
+            `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
             if(tl_item.MS_DE && tl_item.SPM_ISO_start)begin
                 case(tl_item.MISC0[7:5])
                     3'b001: begin // 8bpc
@@ -938,8 +971,10 @@ class dp_source_ref_iso extends uvm_component;
                 count_HACTIVE++; // Increment the HACTIVE counter
             end
             // Send the expected transaction to the scoreboard
+            `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
             ref_model_out_port.write(expected_transaction);
-            tl_in_export.get(tl_item);
+            ref_tl_fifo.get(tl_item);
+            `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
             if(tl_item.MS_DE && tl_item.SPM_ISO_start)begin
                 case(tl_item.MISC0[7:5])
                     3'b001: begin // 8bpc
@@ -1182,7 +1217,8 @@ class dp_source_ref_iso extends uvm_component;
         logic [15:0] FRACTIONAL_PART_SCALED, FIRST_DECIMAL, SECOND_DECIMAL, ROUNDED_FIRST_DECIMAL;
 
         // Wait for the next transaction
-        tl_in_port.get(tl_item); 
+        ref_tl_fifo.get(tl_item); 
+        `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
 
         // Extract the parameters from the transaction item
         htotal[7:0] = tl_item.SPM_MSA[6];
@@ -1361,3 +1397,23 @@ class dp_source_ref_iso extends uvm_component;
         end
     endtask
 endclass
+
+
+// class dummy_tl_sink extends uvm_component;
+//     `uvm_component_utils(dummy_tl_sink)
+
+//     uvm_analysis_imp #(dp_tl_sequence_item, dummy_tl_sink) imp;
+
+//     function new(string name, uvm_component parent);
+//         super.new(name, parent);
+//     endfunction
+
+//     function void build_phase(uvm_phase phase);
+//         super.build_phase(phase);
+//         imp = new("imp", this);
+//     endfunction
+
+//     function void write(dp_tl_sequence_item t);
+//         // Do nothing
+//     endfunction
+// endclass
