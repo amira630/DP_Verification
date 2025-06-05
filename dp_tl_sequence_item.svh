@@ -88,6 +88,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     rand logic [9:0]  MS_Stm_BW;        // takes values on MHz max 1Ghz
     rand logic        MS_DE, MS_VSYNC, MS_HSYNC;
     bit MS_Stm_BW_VLD;   // added to indicate if MS_Stm_BW is valid
+    bit MS_rst_n; // Reset is asynchronous active low for the MS Stream
     bit WFULL;  // Indicates if the FIFO is full
     //rand bit          MS_Stm_CLK;
 
@@ -104,6 +105,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
     bit LT_Failed, LT_Pass, isflow;
     rand bit error_flag;
+
+    logic [1:0] MAX_PRE_in, MAX_VTG_in;
 
     real CLOCK_PERIOD; // Clock period in ns
 

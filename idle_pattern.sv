@@ -20,9 +20,10 @@ module idle_pattern
 );
 
   // Symbol definitions
+  localparam [7:0] SR    = 8'b00001111;    // Scrambler Reset symbol
   localparam [7:0] BS    = 8'b10111100;    // Blanking Start            
   localparam [7:0] BF    = 8'b10111101;    // Blanking Fill
-  localparam [7:0] VB_ID = 8'b10011000;    // VB-ID symbol
+  localparam [7:0] VB_ID = 8'b00001000;    // VB-ID symbol
   localparam [7:0] MVID  = 8'b00000000;    // Mvid symbol  (all zeros)
   localparam [7:0] MAUD  = 8'b00000000;    // Maud symbol  (all zeros)
   localparam [7:0] DUMMY = 8'b00000000;    // Dummy symbol (all zeros)
@@ -45,6 +46,7 @@ module idle_pattern
   state_t     current_state, next_state;
   reg [12:0]  symbol_counter;              // Counter for 8192 symbols (2^13 = 8192)
   reg         last_dummy_symbol;           // Flag for the last dummy symbol before BS
+  reg         first_idle_pattern;
   
   reg [7:0]   idle_symbols_comb;
   reg         idle_control_sym_flag_comb;
@@ -58,10 +60,22 @@ module idle_pattern
       current_state       <= IDLE_STATE;
       symbol_counter      <= 13'd0;
       last_dummy_symbol   <= 1'b0;
+      first_idle_pattern  <= 1'b1;
      end 
      else if (sched_idle_en) 
      begin
       current_state       <= next_state; 
+
+      //////////////
+      if (current_state == IDLE_STATE)
+       begin
+        first_idle_pattern  <= 1'b1;
+       end
+      else if (current_state == BS4)
+       begin
+        first_idle_pattern  <= 1'b0;
+       end
+
       // Update symbol counter
       if (symbol_counter == 13'd8191)
        begin
@@ -165,7 +179,14 @@ module idle_pattern
           end
     BS1:
           begin 
-            idle_symbols_comb           = BS;
+            if (first_idle_pattern)
+            begin
+              idle_symbols_comb         = SR;
+            end
+            else
+            begin
+              idle_symbols_comb         = BS;
+            end
             idle_control_sym_flag_comb  = 1'b1;
             idle_activate_en_comb = 1'b0;  // Deasserted during BS symbols
           end
@@ -183,7 +204,14 @@ module idle_pattern
           end
     BS4: 
           begin
-            idle_symbols_comb           = BS;
+            if (first_idle_pattern)
+            begin
+              idle_symbols_comb         = SR;
+            end
+            else
+            begin
+              idle_symbols_comb         = BS;
+            end
             idle_control_sym_flag_comb  = 1'b1;
             idle_activate_en_comb = 1'b1;  // Asserted for the last BS Symbol
           end

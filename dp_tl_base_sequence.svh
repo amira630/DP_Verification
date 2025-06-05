@@ -399,6 +399,8 @@ task FLOW_FSM();
         // Waiting for DPCD reg 0000E to be read and value be returned
         // the DPCD reg 0000E read is incorrect at this stage so was removed
         // Wait for the response from the DUT
+        seq_item.MAX_PRE_in = seq_item.MAX_PRE; // Store the max PRE value for later use
+        seq_item.MAX_VTG_in = seq_item.MAX_VTG; // Store the max VTG value for later use
         while(~done) begin
             get_response(seq_item);
             if (seq_item.FSM_CR_Failed) begin 
@@ -455,21 +457,21 @@ task FLOW_FSM();
         done = 0;
         if(!seq_item.FSM_CR_Failed && !seq_item.CTRL_Native_Failed) begin
             // I think I will comment this to not give the link layer EQ_RD_Value now but in EQ stage.
-            start_item(seq_item);
-            seq_item.rand_mode(0);
-            seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
-            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-            seq_item.Driving_Param_VLD = 1'b0;  // Driving parameters are not valid
-            seq_item.LPM_Start_CR = 0; 
-            seq_item.CR_DONE_VLD = 0; 
-            seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
-            assert(seq_item.randomize());
-            finish_item(seq_item);
-            get_response(seq_item);
-            if (seq_item.FSM_CR_Failed) begin 
-                `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-            end
-            else begin
+            // start_item(seq_item);
+            // seq_item.rand_mode(0);
+            // seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
+            // seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+            // seq_item.Driving_Param_VLD = 1'b0;  // Driving parameters are not valid
+            // seq_item.LPM_Start_CR = 0; 
+            // seq_item.CR_DONE_VLD = 0; 
+            // seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
+            // assert(seq_item.randomize());
+            // finish_item(seq_item);
+            // get_response(seq_item);
+            // if (seq_item.FSM_CR_Failed) begin 
+            //     `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+            // end
+            // else begin
                 ack_count = 0;
                 while (~seq_item.CR_Completed) begin
                     // Wait for 202 to 207 to be read
@@ -565,7 +567,7 @@ task FLOW_FSM();
                         break; // Exit the loop if CR is failed
                     end
                 end
-            end
+            // end
         end
         else begin
             seq_item.LT_Failed = 1'b1; 
@@ -637,18 +639,18 @@ task FLOW_FSM();
         done = 0;
         if(~seq_item.EQ_FSM_CR_Failed) begin
             start_item(seq_item);
-            seq_item.rand_mode(0);
-            seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
-            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-            seq_item.Driving_Param_VLD = 1'b0;  // Driving parameters are not valid
-            seq_item.LPM_Start_CR = 1'b0; 
-            seq_item.CR_DONE_VLD = 1'b0; 
-            seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
-            assert(seq_item.randomize());
-            finish_item(seq_item);
-            get_response(seq_item);
+            // seq_item.rand_mode(0);
+            // // seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
+            // seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+            // seq_item.Driving_Param_VLD = 1'b0;  // Driving parameters are not valid
+            // seq_item.LPM_Start_CR = 1'b0; 
+            // seq_item.CR_DONE_VLD = 1'b0; 
+            // seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
+            // assert(seq_item.randomize());
+            // finish_item(seq_item);
+            // get_response(seq_item);
             ack_count = 0;
-            // Waiting for DPCD reg 0000E to be read and value be returned
+            // Waiting for DPCD reg 0000E (no) to be read and value be returned
             while (~seq_item.CR_Completed) begin
                 // Wait for 202 to 207 to be read
                 while(~done) begin
@@ -811,16 +813,16 @@ task FLOW_FSM();
                 seq_item.LT_Failed = 1'b1; 
                 break;
             end 
-            start_item(seq_item);
-            seq_item.rand_mode(0);
-            seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
-            seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate change of max TPS
-            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-            seq_item.EQ_Data_VLD = 0; // Indicate that EQ data is not valid
-            seq_item.Driving_Param_VLD = 1'b0;
-            assert(seq_item.randomize());
-            finish_item(seq_item);
-            get_response(seq_item);
+            // start_item(seq_item);
+            // seq_item.rand_mode(0);
+            // seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
+            // seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate change of max TPS
+            // seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+            // seq_item.EQ_Data_VLD = 0; // Indicate that EQ data is not valid
+            // seq_item.Driving_Param_VLD = 1'b0;
+            // assert(seq_item.randomize());
+            // finish_item(seq_item);
+            // get_response(seq_item);
             ack_count = 0;
             // wait for dut to receive EQ_RD_Value
             
@@ -830,7 +832,10 @@ task FLOW_FSM();
                 while(~done) begin
                     do begin
                         start_item(seq_item);
+                            seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate change of max TPS
                             seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                            seq_item.EQ_Data_VLD = 0; // Indicate that EQ data is not valid
+                            seq_item.Driving_Param_VLD = 1'b0;
                         finish_item(seq_item);
                         get_response(seq_item);
                     end while(seq_item.LPM_NATIVE_I2C);

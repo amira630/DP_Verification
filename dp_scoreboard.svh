@@ -383,6 +383,15 @@ class dp_scoreboard extends uvm_scoreboard;
             `uvm_info(get_type_name(), "Transactions match", UVM_MEDIUM)
             correct_count++;
         end
+
+        if (expected_transaction.WFULL !== tl_item.WFULL) begin
+            `uvm_error(get_type_name(), $sformatf("Mismatch in WFULL: expected=%0h, actual=%0h", expected_transaction.WFULL, tl_item.WFULL))
+            error_count++;
+        end
+        else begin
+            `uvm_info(get_type_name(), "Transactions match", UVM_MEDIUM)
+            correct_count++;
+        end
     endfunction
 
     function void report_phase(uvm_phase phase);

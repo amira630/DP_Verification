@@ -177,6 +177,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             MAX_TPS_SUPPORTED_VLD = 1'b0;       // Reset MAX_TPS_SUPPORTED Valid
             Config_Param_VLD = 1'b0;            // Reset Config Parameter Valid
             CR_DONE_VLD = 1'b0;                 // Reset CR_DONE Valid     
+            SPM_ISO_start = 1'b0;                // Reset SPM ISO Start
             MS_DE = 1'b0;                       // Reset Main Stream DE   
             MS_Pixel_Data = 48'b0;              // Reset Main Stream Pixel Data
             MS_Stm_BW = 10'b0;                  // Reset Main Stream Bandwidth
@@ -334,12 +335,14 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
 
       // Channel Equalization Link Training task
       // This task is used to set the parameters for the Channel Equalization Link Training phase
-      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, training_pattern_t max_tps_supported, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, timer_timeout, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
+      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, max_pre_in, max_vtg_in, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, training_pattern_t max_tps_supported, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, timer_timeout, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
             // @(negedge clk_AUX)
             LPM_Transaction_VLD = 1'b0;
             SPM_Transaction_VLD = 1'b0;
             CR_DONE_VLD  = done_vld;
             CR_DONE      = cr_done;
+            MAX_VTG      = max_vtg_in;
+            MAX_PRE      = max_pre_in;
             PRE          = pre;
             VTG          = vtg;
             Driving_Param_VLD = driving_vld;

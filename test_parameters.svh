@@ -10,8 +10,8 @@
     parameter logic [7:0] BF = 8'hBD; // BF (Blanking Fill) symbol
     parameter logic [7:0] SS = 8'hDC; // SS (Secondary data Start) symbol
     parameter logic [7:0] SE = 8'hDE; // SE (Secondary data End) symbol
-    parameter logic [7:0] FS = 8'hFC; // BS (Fill Start) symbol
-    parameter logic [7:0] FE = 8'hFE; // BE (Fill End) symbol 
+    parameter logic [7:0] FS = 8'hFC; // FS (Fill Start) symbol
+    parameter logic [7:0] FE = 8'hFE; // FE (Fill End) symbol 
 
 // Data Rates in Gbps per lane
     parameter int RBR  = 1620;          // 1.62 Gbps/lane, meaning 162MHz, which means a clock period of 6.172839506 ns

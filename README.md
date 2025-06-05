@@ -58,7 +58,7 @@
 | PRE       | input     | 8 bits |TL     |  The pre-emphasis level. |
 | CR_Done_VLD       | input     | 1 bit |TL     |  Active high valid signal for the CR_Done bus. |
 | CR_Done       | input     | 4 bits |TL     |Indicates whether CR has been completed for the four lanes.|
-| TPS_VLD       | input     | 1 bit |TL     |Active high valid signal for the TPS bus.|
+| TPS_VLD       | input     | 1 bit |TL     |Active high valid signal for the TPS bus, MAX_PRE and MAX_VTG.|
 | TPS       | input     | 2 bits |TL     |This signal indicates the maximum supported TPS Pattern Sequence.|
 | EQ_RD_Value       | input     | 8 bits |TL     |This signal indicates the time the source waits during the EQ phase before checking the status update registers.|
 | EQ_Data_VLD       | input     | 1 bit |TL     |Active high valid signal for the arrival of Channel_EQ, Symbol_Lock and Lane_Align.|

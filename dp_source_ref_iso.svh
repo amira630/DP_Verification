@@ -23,9 +23,9 @@ class dp_source_ref_iso extends uvm_component;
     iso_TU_code cs_0_TU, cs_1_TU, cs_2_TU, cs_3_TU; // Current and next state variables for the Transfer Unit
 
     bit ready; // for when ISO is ready to transition from IDLE to actual stream transmission
-    bit BS_flag, SR_flag, BF_flag, MSA_done, FS_flag, FE_flag, calc_flag; // Flags for ready and busy states
+    bit BS_flag, SR_flag, BF_flag, MSA_done, FS_flag, FE_flag, calc_flag, entered; // Flags for ready and busy states
     
-    int counter_0, counter_SR_0, counter_1, counter_SR_1, counter_2, counter_SR_2, counter_3, counter_SR_3, count_MSA_0, count_MSA_1, count_MSA_2, count_MSA_3; // Reset MSA counters to initial values; // Counters for the number of symbols sent
+    int counter, counter_0, counter_SR_0, counter_1, counter_SR_1, counter_2, counter_SR_2, counter_3, counter_SR_3, count_MSA_0, count_MSA_1, count_MSA_2, count_MSA_3; // Reset MSA counters to initial values; // Counters for the number of symbols sent
     int count_VBLANK, count_HBLANK_ACTIVE, count_HACTIVE; // Counter for the number of VBLANK  and HBLANK symbols sent
     
     logic [7:0] RED_8 [$];   logic [15:0] RED_16 [$];
@@ -74,28 +74,34 @@ class dp_source_ref_iso extends uvm_component;
 
 // Run phase
     task run_phase(uvm_phase phase);
-        phase.raise_objection(this); // Raise objection to keep the simulation running
         super.run_phase(phase);
+        phase.raise_objection(this); // Raise objection to keep the simulation running
+        
         // Reference model logic to generate expected transactions
         // This is a placeholder for the actual reference model logic
-
-        `uvm_info(get_type_name(), "Reference model run_phase started", UVM_MEDIUM)
+        repeat(50)
+            `uvm_info(get_type_name(), "Reference model run_phase started", UVM_MEDIUM)
 
         // Wait for the next transaction
         ref_tl_fifo.get(tl_item);
+        counter++; // Increment the counter for the number of symbols sent
 
         `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
 
         forever begin
-            if ((tl_item.LT_Pass && tl_item.rst_n)) begin // if reset is off and LT is passed
+            if ((tl_item.rst_n && tl_item.SPM_ISO_start)) begin // if reset is off and LT is passed
+                entered = 1'b1; // Set entered flag to indicate that the reference model has entered the ISO operation  
                 if(!calc_flag) begin
-                    calculate_timing_parameters( tl_item, expected_transaction, hactive_period, hblank_period, vblank_period, htotal_period, valid_symbols_integer, valid_symbols_fraction, tu_alternate_up, tu_alternate_down, alternate_valid);
+                    calculate_timing_parameters( tl_item, hactive_period, hblank_period, vblank_period, htotal_period, valid_symbols_integer, valid_symbols_fraction, tu_alternate_up, tu_alternate_down, alternate_valid);
                     `uvm_info(get_type_name(), "Calculated timing parameters for expected transaction", UVM_LOW)
                     calc_flag = 1;
                 end
                 `uvm_info(get_type_name(), "Calling generate_expected_transaction()", UVM_LOW)
-                generate_expected_transaction(tl_item, expected_transaction); // Generate expected transaction based on TL item
-                if(!tl_item.rst_n || !tl_item.LT_Pass) begin 
+                if(!tl_item.MS_rst_n)
+                    expected_transaction.WFULL = 1'b0;
+                generate_expected_transaction(tl_item); // Generate expected transaction based on TL item
+                if(!tl_item.rst_n) begin
+                    entered = 1'b0; // Reset entered flag if reset is active 
                     expected_transaction.ISO_symbols_lane0 ='b0;
                     expected_transaction.ISO_symbols_lane1 ='b0;
                     expected_transaction.ISO_symbols_lane2 ='b0;
@@ -104,6 +110,7 @@ class dp_source_ref_iso extends uvm_component;
                     expected_transaction.Control_sym_flag_lane1 ='b0;
                     expected_transaction.Control_sym_flag_lane2 ='b0;
                     expected_transaction.Control_sym_flag_lane3 ='b0;
+                    expected_transaction.WFULL = 1'b0; // Reset WFULL flag
                     cs = ISO_IDLE; // Reset state to ISO_IDLE
                     cs_0 = ISO_SR; cs_1 = ISO_SR; cs_2 = ISO_SR; cs_3 = ISO_SR; 
                     cs_0_TU = ISO_TU_PIXELS; cs_1_TU = ISO_TU_PIXELS; cs_2_TU = ISO_TU_PIXELS; cs_3_TU = ISO_TU_PIXELS;
@@ -117,9 +124,13 @@ class dp_source_ref_iso extends uvm_component;
                     `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
                     ref_model_out_port.write(expected_transaction);
                 end
+                else if(!tl_item.SPM_ISO_start) begin
+                    ISO_IDLE_PATTERN(tl_item); // Call ISO_IDLE task to handle IDLE state
+                end
             end
-            else begin // if reset is off or LT is no longer passed
-            `uvm_info(get_type_name(), "Reset or LT not passed — initializing internal state", UVM_MEDIUM)
+            else if(!entered || !tl_item.rst_n) begin // LT not passed
+                repeat(50)
+                    `uvm_info(get_type_name(), "Reset or LT not passed — initializing internal state", UVM_MEDIUM)
                 expected_transaction.ISO_symbols_lane0 ='b0;
                 expected_transaction.ISO_symbols_lane1 ='b0;
                 expected_transaction.ISO_symbols_lane2 ='b0;
@@ -128,6 +139,8 @@ class dp_source_ref_iso extends uvm_component;
                 expected_transaction.Control_sym_flag_lane1 ='b0;
                 expected_transaction.Control_sym_flag_lane2 ='b0;
                 expected_transaction.Control_sym_flag_lane3 ='b0;
+                if(!tl_item.MS_rst_n)
+                    expected_transaction.WFULL = 1'b0; // Reset WFULL flag
                 calc_flag = 0;
                 cs = ISO_IDLE; // Reset state to ISO_IDLE
                 cs_0 = ISO_SR; cs_1 = ISO_SR; cs_2 = ISO_SR; cs_3 = ISO_SR; 
@@ -139,9 +152,13 @@ class dp_source_ref_iso extends uvm_component;
                 count_MSA_0 = 0; count_MSA_1 = 0; count_MSA_2 = 0; count_MSA_3 = 0; // Reset MSA counters to initial values
                 count_VBLANK = 0; count_HBLANK_ACTIVE =0; count_HACTIVE =0; // Reset VBLANK and HBLANK counters to initial values
                 RED_8.delete(); RED_16.delete(); GREEN_8.delete(); GREEN_16.delete(); BLUE_8.delete(); BLUE_8.delete(); // Clear the pixel queue
-                `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
+                repeat(50)    
+                    `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
                 ref_model_out_port.write(expected_transaction);
                 break;
+            end
+            else if(tl_item.rst_n && entered) begin
+                ISO_IDLE_PATTERN(tl_item); // Call ISO_IDLE task to handle IDLE state
             end
             // Wait for the next transaction
             ref_tl_fifo.get(tl_item);
@@ -168,8 +185,7 @@ class dp_source_ref_iso extends uvm_component;
 
     // This task is basically an FSM for what is the expected output of the DP source Main Lanes and Control Signals during ISO Services
     task generate_expected_transaction( 
-        input dp_tl_sequence_item tl_item,      // Transaction from dp_tl_monitor
-        output dp_ref_transaction expected_transaction // Generated expected transaction
+        input dp_tl_sequence_item tl_item      // Transaction from dp_tl_monitor
     );
         case (cs)
             ISO_IDLE: begin
@@ -188,7 +204,8 @@ class dp_source_ref_iso extends uvm_component;
                     endcase
                 end
                 cs = ISO_VBLANK; // Transition to VBLANK state
-                ISO_IDLE_PATTERN(tl_item, expected_transaction); // Call ISO_IDLE task to handle IDLE state
+                ISO_IDLE_PATTERN(tl_item); // Call ISO_IDLE task to handle IDLE state
+                counter = 0; // Reset counter after sending IDLE state for the current video
                 cs_0_TU = ISO_TU_PIXELS; cs_1_TU = ISO_TU_PIXELS; cs_2_TU = ISO_TU_PIXELS; cs_3_TU = ISO_TU_PIXELS;
                 //Optional
                 //counter_SR_0 = 0; // about to start a new video
@@ -218,7 +235,7 @@ class dp_source_ref_iso extends uvm_component;
                     endcase
                 end
                 cs = ISO_HBLANK; // Transition to HBLANK state
-                ISO_VBLANK_PATTERN(tl_item, expected_transaction); // Call VBLANK task to handle VBLANK state
+                ISO_VBLANK_PATTERN(tl_item); // Call VBLANK task to handle VBLANK state
                 MSA_done = 1'b0; // Reset MSA_done flag after sending VBLANK symbols for the current video frame
                 count_MSA_0 = 0; count_MSA_1 = 0; count_MSA_2 = 0; count_MSA_3 = 0;
                 count_VBLANK =0; // Reset VBLANK counter after sending VBLANK symbols for the current video frame
@@ -238,7 +255,7 @@ class dp_source_ref_iso extends uvm_component;
                         end
                     endcase
                 end
-                ISO_HBLANK_PATTERN(tl_item, expected_transaction); // Call HBLANK task to handle HBLANK state
+                ISO_HBLANK_PATTERN(tl_item); // Call HBLANK task to handle HBLANK state
                 cs = ISO_ACTIVE;
             end 
             ISO_ACTIVE: begin
@@ -256,16 +273,18 @@ class dp_source_ref_iso extends uvm_component;
                         end
                     endcase
                 end
-                ISO_ACTIVE_PATTERN(tl_item, expected_transaction); // Call ACTIVE task to handle ACTIVE state
+                ISO_ACTIVE_PATTERN(tl_item); // Call ACTIVE task to handle ACTIVE state
                 count_HBLANK_ACTIVE++;
                 count_HACTIVE = 0;
                 if(count_HBLANK_ACTIVE < tl_item.VHeight)    // If all lines are done, go back to VBLANK state
                     cs = ISO_HBLANK; // Transition to HBLANK state
-                else begin // Start a new frame
+                else if(RED_8.size() != 0 || GREEN_8.size() != 0 || BLUE_8.size() != 0 || RED_16.size() != 0 || GREEN_16.size() != 0 || BLUE_16.size() != 0) begin // Start a new frame
                     cs = ISO_VBLANK; // Transition to VBLANK state
                     count_HBLANK_ACTIVE = 0;
+                end 
+                else begin
+                    cs = ISO_IDLE;
                 end
-                cs = ISO_IDLE;
             end
             default: begin
                 // Default case to handle unexpected states
@@ -275,11 +294,14 @@ class dp_source_ref_iso extends uvm_component;
     endtask
 
     // This task sends the idle pattern on all 4 lanes 
-    task ISO_IDLE_PATTERN(input dp_tl_sequence_item tl_item, output dp_ref_transaction expected_transaction);
+    task ISO_IDLE_PATTERN(input dp_tl_sequence_item tl_item);
         while(!ready) begin
             if (!tl_item.rst_n || !tl_item.LT_Pass) begin
                 break; // Exit the loop if reset is active or link training no longer valid so ISO signals are don't cares
             end
+            if(!tl_item.MS_rst_n) begin
+                expected_transaction.WFULL = 1'b0; // Reset WFULL flag
+            end 
             IDLE_PATTERN(tl_item, counter_SR_0, counter_0, cs_0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call IDLE_PATTERN task to handle IDLE state
             IDLE_PATTERN(tl_item, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
             IDLE_PATTERN(tl_item, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
@@ -287,6 +309,7 @@ class dp_source_ref_iso extends uvm_component;
             // Send the expected transaction to the scoreboard
             `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
             ref_model_out_port.write(expected_transaction);
+            counter++; // Increment the counter for the number of symbols sent
             // Wait for the next transaction
             ref_tl_fifo.get(tl_item);
             `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
@@ -303,6 +326,18 @@ class dp_source_ref_iso extends uvm_component;
                         BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
                     end
                 endcase
+            end
+            if(tl_item.SPM_ISO_start) begin
+                if(counter < 408) begin // 408 Ls_clks need to go buy for the IDLE pattern to stop sending
+                    ready = 1'b0; // Not ready to stop IDLE pattern
+                end
+                else begin
+                    ready = 1'b1; // Ready to stop IDLE pattern
+                end
+            end
+            else begin
+                counter = 0; // because there is no video stream to countdown to.
+                ready = 1'b0; // Not ready to stop IDLE pattern
             end
         end             
     endtask
@@ -396,7 +431,7 @@ class dp_source_ref_iso extends uvm_component;
         endcase
     endtask
 
-    task ISO_VBLANK_PATTERN(input dp_tl_sequence_item tl_item, output dp_ref_transaction expected_transaction);
+    task ISO_VBLANK_PATTERN(input dp_tl_sequence_item tl_item);
         while(count_VBLANK < vblank_period) begin
             if (!tl_item.rst_n || !tl_item.LT_Pass) begin
                 break; // Exit the loop if reset is active
@@ -753,7 +788,7 @@ class dp_source_ref_iso extends uvm_component;
     // This task creates the HBLANK pattern to be sent on each lane
     // This task is similar to the ISO_VBLANK_PATTERN task but Without sending MSA symbols and instead 
     // continuously sending the DUMMY pattern until the beginning of the Hactive period
-    task ISO_HBLANK_PATTERN(input dp_tl_sequence_item tl_item, output dp_ref_transaction expected_transaction);
+    task ISO_HBLANK_PATTERN(input dp_tl_sequence_item tl_item);
         while (counter_0 < hblank_period) begin
             if (!tl_item.rst_n || !tl_item.LT_Pass) begin
                 break; // Exit the loop if reset is active
@@ -924,7 +959,7 @@ class dp_source_ref_iso extends uvm_component;
         endcase
     endtask
 
-    task ISO_ACTIVE_PATTERN(input dp_tl_sequence_item tl_item, output dp_ref_transaction expected_transaction);
+    task ISO_ACTIVE_PATTERN(input dp_tl_sequence_item tl_item);
         
         int count_data_0, count_data_1, count_data_2, count_data_3; // Counters for the number of symbols sent
         bit ceil_flag_0, floor_flag_0, ceil_flag_1, floor_flag_1, ceil_flag_2, floor_flag_2, ceil_flag_3, floor_flag_3; // Flags for the up and down states
@@ -1167,7 +1202,6 @@ class dp_source_ref_iso extends uvm_component;
        // This task calculates the timing parameters for the ISO operation
     task calculate_timing_parameters(
         input dp_tl_sequence_item tl_item, 
-        output dp_ref_transaction expected_transaction,
         output logic [15:0] hactive_period,
         output logic [15:0] hblank_period,
         output logic [15:0] vblank_period,
@@ -1398,23 +1432,3 @@ class dp_source_ref_iso extends uvm_component;
         end
     endtask
 endclass
-
-
-// class dummy_tl_sink extends uvm_component;
-//     `uvm_component_utils(dummy_tl_sink)
-
-//     uvm_analysis_imp #(dp_tl_sequence_item, dummy_tl_sink) imp;
-
-//     function new(string name, uvm_component parent);
-//         super.new(name, parent);
-//     endfunction
-
-//     function void build_phase(uvm_phase phase);
-//         super.build_phase(phase);
-//         imp = new("imp", this);
-//     endfunction
-
-//     function void write(dp_tl_sequence_item t);
-//         // Do nothing
-//     endfunction
-// endclass
