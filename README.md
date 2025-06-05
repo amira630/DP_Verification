@@ -1,10 +1,30 @@
 <img src="./Pictures/Siemens_logo.png" alt="Description" width="200" style="float: right; margin-left: 10px;" />
 
 # DisplayPort (v2.1) Link Layer Source Verification
+
+  <h3>Submitted to: Dr. Abdel Rahman Abo Taleb and Eng. Nour ElDeen ElHout</h3>
+  <h4>By: Amira Atef, Aya El Desouky and Mohamed Ayman</h4>
+
+***Notes***
 - Basic testing is finished.
 - Working on integrating the reference model class and including more elaborate test scenarios.
 - Starting to document our work.
-- Working on SVAs and coverage.
+- Working on SVAs, Scoreboard and coverage.
+
+**Table of Contents**
+1. [**Signals Definition**](#signals-definition)
+2. [**DP Source Link Layer Operation**](#dp-source-link-layer-operation)
+3. [**Verification Environment Architecture**](#verification-environment-architecture)
+4. [**Operation Wave Diagrams**](#operation-wave-diagrams)
+5. [**Testing Scenarios - Basic, Complex and Advanced/Negative**](#testing-scenarios---basic-complex-and-advancednegative)
+6. [**Verification Environment Issues and Solutions**](#verification-environment-issues-and-solutions)
+7. [**QuestaSim Waveforms and Discovered Bugs**](#questasim-waveforms-and-discovered-bugs)
+8. [**Code Coverage Report**](#code-coverage-report)
+9. [Statement Coverage](#statement-coverage)
+10. [Branch Coverage](#branch-coverage)
+11. [Toggle Coverage](#toggle-coverage)
+12. [**Functional Coverage Report**](#functional-coverage-report)
+13. [**Assertions and Cover Directives**](#assertions-and-cover-directives)
 
 #### **Signals Definition**
 | Name      | Direction | Length | Interface | Description |
@@ -27,7 +47,7 @@
 | LPM_Address         | input     | 20 bits |TL     | Register address to be written to or read from when requesting an Native AUX transaction. |
 | LPM_LEN         | input     | 8 bits |TL     | Length of burst Native AUX transaction in bytes (0 value means 1 byte). |
 | LPM_CMD       | input     | 2 bits  |TL     |  The command to specify the Native AUX transaction type (Read or Write). |
-| LPM_Start_CR      | input     | 1 bit |TL     |(Active high)Start link training by asserting this signal, marking the beginning of the Clock Recovery phase.|
+| LPM_Start_CR      | input     | 1 bit |TL     |(Active high) Start link training by asserting this signal, marking the beginning of the Clock Recovery phase.|
 | Config_Param_VLD       | input     | 1 bit |TL     |(Active high) Flag signal asserted indicating the arrival of Link BW, Lane Count, Max VTG, Max PRE, and EQ_RD_Value for the CR.|
 | LPM_Link_BW       | input     | 8 bits |TL     |Maximum bandwidth that the sink can support, based on its capabilities.|
 | LPM_Link_LC       | input     | 2 bits |TL     |The maximum number of lanes that the sink can support, based on its capabilities.|
@@ -93,8 +113,43 @@
 | Control_sym_flag_lanex      | output    | 1 bit  |PL    | Asserted when the block outputs control symbols.|
 ___
 
+#### **DP Source Link Layer Operation**
+
+___
 
 #### **Verification Environment Architecture**
 ![Alt text](./Pictures/Verification_Architecture_DP.drawio.png) |
 |:--:|
 | *Figure 2: Verification Architecture for DP Link Layer Source* |
+___
+
+#### **Operation Wave Diagrams**
+
+___
+
+#### **Testing Scenarios - Basic, Complex and Advanced/Negative**
+
+___
+
+#### **Verification Environment Issues and Solutions**
+
+___
+
+#### **QuestaSim Waveforms and Discovered Bugs**
+
+___
+
+####  **Code Coverage Report**
+#### Statement Coverage
+
+#### Branch Coverage
+
+#### Toggle Coverage
+
+___
+####  **Functional Coverage Report**
+
+___
+#### **Assertions and Cover Directives**
+
+___
