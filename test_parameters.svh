@@ -10,15 +10,15 @@
     parameter logic [7:0] BF = 8'hBD; // BF (Blanking Fill) symbol
     parameter logic [7:0] SS = 8'hDC; // SS (Secondary data Start) symbol
     parameter logic [7:0] SE = 8'hDE; // SE (Secondary data End) symbol
-    parameter logic [7:0] FS = 8'hFC; // BS (Fill Start) symbol
-    parameter logic [7:0] FE = 8'hFE; // BE (Fill End) symbol 
+    parameter logic [7:0] FS = 8'hFC; // FS (Fill Start) symbol
+    parameter logic [7:0] FE = 8'hFE; // FE (Fill End) symbol 
 
 // Data Rates in Gbps per lane
     parameter int RBR  = 1620;          // 1.62 Gbps/lane, meaning 162MHz, which means a clock period of 6.172839506 ns
     parameter int HBR  = 2700;          // 2.7 Gbps/lane, meaning 270MHz, which means a clock period of 3.703703704 ns
     parameter int HBR2 = 5400;          // 5.4 Gbps/lane, meaning 540MHz, which means a clock period of 1.851851852 ns
     parameter int HBR3 = 8100;          // 8.1 Gbps/lane, meaning 810MHz, which means a clock period of 0.1234567901 ns
-    parameter int AUX_RATE = 100000;    // 1OO KHz for AUX_CH, which means a clock period of 10us 
+    parameter int AUX_RATE = 100000;    // 100 KHz for AUX_CH, which means a clock period of 10us 
 
 // Lane Count
     parameter int LANE_1 = 1;
@@ -160,8 +160,7 @@
         EQ_LT_op        = 4'b0110,
         ISO             = 4'b0111,
         DETECT_op       = 4'b1000,
-        FLOW_FSM_op     = 4'b1001,
-        WAIT_REPLY      = 4'b1010
+        WAIT_REPLY      = 4'b1001
     } op_code;
 
 // Sink Driver Operation

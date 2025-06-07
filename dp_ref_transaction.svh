@@ -31,7 +31,7 @@ class dp_ref_transaction extends uvm_sequence_item;
     bit [1:0] EQ_Final_ADJ_LC;
     bit       FSM_CR_Failed, EQ_FSM_CR_Failed, EQ_Failed, EQ_LT_Pass;
     bit       CR_Completed;
-    // bit       Timer_Timeout;
+    bit       Timer_Timeout;
 
     ///////////////////////////////////////////////////////////////
     //////////////////// AUXILIARY CHANNEL ////////////////////////
@@ -51,20 +51,10 @@ class dp_ref_transaction extends uvm_sequence_item;
     ///////////////////// PHYSICAL LAYER //////////////////////////
 
     logic [AUX_DATA_WIDTH-1:0] ISO_symbols_lane0, ISO_symbols_lane1, ISO_symbols_lane2, ISO_symbols_lane3;
-    logic                      Control_sym_flag_lane0, Control_sym_flag_lane1, Control_sym_flag_lane2, Control_sym_flag_lane3;
-
-    /////////////////// STREAM POLICY MAKER ///////////////////////
-
-    logic [AUX_DATA_WIDTH-1:0] SPM_Lane_BW;
-    logic [7:0]                SPM_MSA [23:0]; // 24 bytes of MSA data
-    logic [1:0]                SPM_Lane_Count, SPM_BW_Sel;
-    logic                      SPM_ISO_start, SPM_MSA_VLD;
+    bit                      Control_sym_flag_lane0, Control_sym_flag_lane1, Control_sym_flag_lane2, Control_sym_flag_lane3;
 
     /////////////////// MAIN STREAM SOURCE ///////////////////////
-
-    logic [47:0] MS_Pixel_Data;
-    logic [9:0]  MS_Stm_BW;
-    logic        MS_DE, MS_VSYNC, MS_HSYNC;
+    bit        WFULL;
 
 
     // Constructor

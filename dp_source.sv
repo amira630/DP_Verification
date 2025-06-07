@@ -1,6 +1,13 @@
 module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
 
-    // inputs
+    /////////////////////////////////////////////////////
+    ///////////////////   AUX   /////////////////////////
+    /////////////////////////////////////////////////////
+
+    //=========//                 
+    // inputs  //      
+    //=========//
+
     logic        clk;                
     logic        rst_n;              
     logic        spm_transaction_vld;
@@ -54,9 +61,9 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
 
 
 
-    //===========================================================                   
-    // outputs       
-    //===========================================================
+    //=========//                 
+    // outputs //      
+    //=========//
 
     logic         aux_start_stop;
     logic         timer_timeout;
@@ -106,8 +113,66 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     // bidirectional data bus
     wire [7:0]  aux_in_out;
 
+    /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
 
-    // Inputs
+    /////////////////////////////////////////////////////
+    ///////////////////   ISO   /////////////////////////
+    /////////////////////////////////////////////////////
+    
+    //=========//                 
+    // inputs  //      
+    //=========//
+
+    logic            hbr3_clk;
+    logic            hbr2_clk;
+    logic            hbr_clk;
+    logic            rbr_clk;
+    logic    [1:0]   spm_bw_sel;
+    // logic            rst_n;
+    logic    [47:0]  ms_pixel_data;
+    logic            ms_stm_clk;
+    logic            ms_de;
+    logic    [9:0]   ms_stm_bw;
+    logic            ms_stm_bw_valid;
+    logic            ms_vsync;
+    logic            ms_hsync;
+    logic            spm_iso_start;
+    logic    [2:0]   spm_lane_count;
+    logic    [15:0]  spm_lane_bw;
+    logic    [191:0] spm_msa;
+    logic            spm_msa_vld;
+    logic            ms_rst_n;
+
+    //=========//                 
+    // outputs //      
+    //=========//
+
+    logic    [7:0]   iso_symbols_lane0;
+    logic            iso_control_sym_flag_lane0;
+    logic    [7:0]   iso_symbols_lane1;
+    logic            iso_control_sym_flag_lane1;
+    logic    [7:0]   iso_symbols_lane2;
+    logic            iso_control_sym_flag_lane2;
+    logic    [7:0]   iso_symbols_lane3;
+    logic            iso_control_sym_flag_lane3;
+
+    logic            wfull;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////
+    ///////////////////   AUX   /////////////////////////
+    /////////////////////////////////////////////////////
+
+    //=========//                 
+    // inputs  //      
+    //=========//
+
     assign clk = tl_if.clk_AUX;              
     assign rst_n = tl_if.rst_n;              
     assign spm_transaction_vld = tl_if.SPM_Transaction_VLD;
@@ -176,9 +241,9 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     assign lpm_reply_ack_vld = reply_ack_vld;
     assign lpm_native_i2c = reply_i2c_native;
 
-    //===========================================================                   
-    // Outputs       
-    //===========================================================
+    //=========//                 
+    // outputs //      
+    //=========//
 
     assign sink_if.AUX_START_STOP = aux_start_stop;
     assign tl_if.Timer_Timeout = timer_timeout;
@@ -218,8 +283,65 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     assign tl_if.EQ_LT_Pass = eq_lt_pass;
     assign tl_if.EQ_FSM_CR_Failed = eq_fsm_cr_failed;
 
-    //===========================================================
-    // Local Parameters
+    /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////
+    ///////////////////   ISO   /////////////////////////
+    /////////////////////////////////////////////////////
+
+    //=========//                 
+    // inputs  //      
+    //=========//
+
+    assign hbr3_clk = tl_if.clk_HBR3;              
+    assign hbr2_clk = tl_if.clk_HBR2;            
+    assign hbr_clk = tl_if.clk_HBR;  
+    assign rbr_clk = tl_if.clk_RBR;         
+    assign spm_bw_sel = tl_if.SPM_BW_Sel;        
+    // assign rst_n = tl_if.rst_n;     
+    assign ms_pixel_data = tl_if.MS_Pixel_Data;           
+    assign ms_stm_clk = tl_if.MS_Stm_CLK;  
+    assign ms_de = tl_if.MS_DE;
+    assign ms_stm_bw = tl_if.MS_Stm_BW;        
+    assign ms_stm_bw_valid = tl_if.MS_Stm_BW_VLD;
+    assign ms_vsync = tl_if.MS_VSYNC;
+    assign ms_hsync = tl_if.MS_HSYNC;     
+    assign spm_iso_start = tl_if.SPM_ISO_start;           
+    assign spm_lane_count = tl_if.SPM_Lane_Count;
+    assign spm_lane_bw = tl_if.SPM_Lane_BW;
+    assign spm_msa = tl_if.SPM_Full_MSA;        
+    assign spm_msa_vld = tl_if.SPM_MSA_VLD;    
+    assign ms_rst_n = tl_if.rst_n;  // Not Sure
+
+    //=========//                 
+    // outputs //      
+    //=========//
+
+    assign sink_if.ISO_symbols_lane0 = iso_symbols_lane0;
+    assign sink_if.Control_sym_flag_lane0 = iso_control_sym_flag_lane0;
+    assign sink_if.ISO_symbols_lane1 = iso_symbols_lane1;
+    assign sink_if.Control_sym_flag_lane1 = iso_control_sym_flag_lane1;
+    assign sink_if.ISO_symbols_lane2 = iso_symbols_lane2;
+    assign sink_if.Control_sym_flag_lane2 = iso_control_sym_flag_lane2;
+    assign sink_if.ISO_symbols_lane3 = iso_symbols_lane3;
+    assign sink_if.Control_sym_flag_lane3 = iso_control_sym_flag_lane3;
+    assign tl_if.WFULL = wfull;  //// Don't know what to do with
+    
+    
+
+    /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////
+    ///////////////////   AUX   /////////////////////////
+    /////////////////////////////////////////////////////
+
+    //===================//                 
+    // Local Parameters  //      
+    //===================//
 
     // ctrl unit interface signals
     wire         ctrl_tr_vld; 
@@ -283,7 +405,74 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     wire [1:0]  mux_eq_phy_instruct;
     wire        mux_eq_phy_instruct_vld;
 
+    /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////
+    ///////////////////   ISO   /////////////////////////
+    /////////////////////////////////////////////////////
     
+    wire             ls_clk;
+
+    wire    [8:0]    td_misc0_1;
+    wire    [1:0]    td_lane_count;
+    wire             td_vld_data;
+
+    wire             sched_steering_en;
+    wire    [1:0]    sched_stream_state;
+    wire             sched_stream_en_lane0;
+    wire             sched_stream_en_lane1;
+    wire             sched_stream_en_lane2;
+    wire             sched_stream_en_lane3;
+    wire             sched_blank_id;
+    wire    [1:0]    sched_blank_state;
+    wire             sched_blank_en_lane0;
+    wire             sched_blank_en_lane1;
+    wire             sched_blank_en_lane2;
+    wire             sched_blank_en_lane3;
+    wire             sched_idle_en_lane0;
+    wire             sched_idle_en_lane1;
+    wire             sched_idle_en_lane2;
+    wire             sched_idle_en_lane3;
+    wire    [1:0]    sched_stream_idle_sel_lane0;
+    wire    [1:0]    sched_stream_idle_sel_lane1;
+    wire    [1:0]    sched_stream_idle_sel_lane2;
+    wire    [1:0]    sched_stream_idle_sel_lane3;
+
+    wire             idle_activate_en_lane0;
+    wire             idle_activate_en_lane1;
+    wire             idle_activate_en_lane2;
+    wire             idle_activate_en_lane3;
+
+    wire    [7:0]    main_steered_lane0;
+    wire    [7:0]    main_steered_lane1;
+    wire    [7:0]    main_steered_lane2;
+    wire    [7:0]    main_steered_lane3;
+
+    wire    [1:0]    blank_steering_state_lane0;
+    wire    [1:0]    blank_steering_state_lane1;
+    wire    [1:0]    blank_steering_state_lane2;
+    wire    [1:0]    blank_steering_state_lane3;
+
+    wire    [7:0]    sec_steered_lane0;
+    wire    [7:0]    sec_steered_lane1;
+    wire    [7:0]    sec_steered_lane2;
+    wire    [7:0]    sec_steered_lane3;
+    wire             sec_steered_vld;
+
+    wire    [95:0]   fifo_pixel_data;
+    wire             rd_data_valid;
+    wire             fifo_almost_empty;
+    wire             mbs_empty_regs;
+
+    /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+
+    //===================//                 
+    // Local Parameters  //      
+    //===================//
 
     // Bidirectional Data Bus
     // always_comb begin
@@ -297,7 +486,11 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     // end
 
 
-    // Instantiate the AUX_CTRL_UNIT module
+/////////////////////////////////////////////////////
+///////////////////   AUX   /////////////////////////
+/////////////////////////////////////////////////////
+
+// Instantiate the AUX_CTRL_UNIT module
 aux_ctrl_unit  aux_ctrl_unit_inst 
 (
 .clk                   (clk),
@@ -510,7 +703,7 @@ hpd hpd_inst
 );
 
 
-cr_eq_mux c_eq_mux_inst
+cr_eq_mux cr_eq_mux_inst
 (
 .cr_phy_instruct     (mux_cr_phy_instruct),
 .cr_phy_instruct_vld (mux_cr_phy_instruct_vld),
@@ -525,5 +718,224 @@ cr_eq_mux c_eq_mux_inst
 .phy_adj_lc          (phy_adj_lc),
 .phy_adj_bw          (phy_adj_bw)
 );
+
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////
+///////////////////   ISO   /////////////////////////
+/////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////
+
+iso_ctrl_top iso_ctrl_top_0 (
+.clk(ls_clk),
+.rst_n(rst_n),
+.ms_de(ms_de),
+.ms_stm_bw(ms_stm_bw),
+.ms_stm_bw_valid(ms_stm_bw_valid),
+.td_vld_data(td_vld_data),
+.ms_vsync(ms_vsync),
+.ms_hsync(ms_hsync),
+.spm_iso_start(spm_iso_start),
+.spm_lane_count(spm_lane_count),
+.spm_lane_bw(spm_lane_bw),
+.htotal(spm_msa[63:48]),             // total horizontal pixels
+.hwidth(spm_msa[159:144]),             // active horizontal width
+.vtotal(spm_msa[79:64]),             // total vertical pixels
+.vheight(spm_msa[175:160]),            // active vertical height
+.misc0(spm_msa[183:176]),              // provide colormitry information as color depth and pixel format bpc   
+.misc1(spm_msa[191:184]),              // additional miscellaneous data
+.h_sync_polarity(spm_msa[112]),    // horizontal sync polarity
+.v_sync_polarity(spm_msa[128]),    // vertical sync polarity
+//.spm_msa(spm_msa),
+.spm_msa_vld(spm_msa_vld),
+.idle_activate_en_lane0(idle_activate_en_lane0),
+.idle_activate_en_lane1(idle_activate_en_lane1),
+.idle_activate_en_lane2(idle_activate_en_lane2),
+.idle_activate_en_lane3(idle_activate_en_lane3),
+.td_misc0_1(td_misc0_1),
+.td_lane_count(td_lane_count),
+.sched_steering_en(sched_steering_en),
+.sched_stream_state(sched_stream_state),
+.sched_stream_en_lane0(sched_stream_en_lane0),
+.sched_stream_en_lane1(sched_stream_en_lane1),
+.sched_stream_en_lane2(sched_stream_en_lane2),
+.sched_stream_en_lane3(sched_stream_en_lane3),
+.sched_blank_id(sched_blank_id),
+.sched_blank_state(sched_blank_state),
+.sched_blank_en_lane0(sched_blank_en_lane0),
+.sched_blank_en_lane1(sched_blank_en_lane1),
+.sched_blank_en_lane2(sched_blank_en_lane2),
+.sched_blank_en_lane3(sched_blank_en_lane3),
+.sched_idle_en_lane0(sched_idle_en_lane0),
+.sched_idle_en_lane1(sched_idle_en_lane1),
+.sched_idle_en_lane2(sched_idle_en_lane2),
+.sched_idle_en_lane3(sched_idle_en_lane3),
+.sched_stream_idle_sel_lane0(sched_stream_idle_sel_lane0),
+.sched_stream_idle_sel_lane1(sched_stream_idle_sel_lane1),
+.sched_stream_idle_sel_lane2(sched_stream_idle_sel_lane2),
+.sched_stream_idle_sel_lane3(sched_stream_idle_sel_lane3)
+);
+
+////////////////////////////////////////////////////////////////
+
+iso_lanes_top iso_lanes_top_0(
+.clk(ls_clk),
+.rst_n(rst_n),
+.main_steered(main_steered_lane0),
+.sec_steered(sec_steered_lane0),
+.sec_steered_vld(sec_steered_vld),
+.td_lane_count(td_lane_count),
+.sched_stream_state(sched_stream_state),
+.sched_stream_en(sched_stream_en_lane0),
+.sched_blank_id(sched_blank_id),
+.sched_blank_state(sched_blank_state),
+.sched_blank_en(sched_blank_en_lane0),
+.sched_idle_en(sched_idle_en_lane0),
+.idle_activate_en(idle_activate_en_lane0),
+.sched_stream_idle_sel(sched_stream_idle_sel_lane0),
+.iso_symbols(iso_symbols_lane0),
+.iso_control_sym_flag(iso_control_sym_flag_lane0),
+.blank_steering_state(blank_steering_state_lane0)
+);
+
+////////////////////////////////////////////////////////////////
+
+iso_lanes_top iso_lanes_top_1(
+.clk(ls_clk),
+.rst_n(rst_n),
+.main_steered(main_steered_lane1),
+.sec_steered(sec_steered_lane1),
+.sec_steered_vld(sec_steered_vld),
+.td_lane_count(td_lane_count),
+.sched_stream_state(sched_stream_state),
+.sched_stream_en(sched_stream_en_lane1),
+.sched_blank_id(sched_blank_id),
+.sched_blank_state(sched_blank_state),
+.sched_blank_en(sched_blank_en_lane1),
+.sched_idle_en(sched_idle_en_lane1),
+.idle_activate_en(idle_activate_en_lane1),
+.sched_stream_idle_sel(sched_stream_idle_sel_lane1),
+.iso_symbols(iso_symbols_lane1),
+.iso_control_sym_flag(iso_control_sym_flag_lane1),
+.blank_steering_state(blank_steering_state_lane1)
+);
+
+////////////////////////////////////////////////////////////////
+
+iso_lanes_top iso_lanes_top_2(
+.clk(ls_clk),
+.rst_n(rst_n),
+.main_steered(main_steered_lane2),
+.sec_steered(sec_steered_lane2),
+.sec_steered_vld(sec_steered_vld),
+.td_lane_count(td_lane_count),
+.sched_stream_state(sched_stream_state),
+.sched_stream_en(sched_stream_en_lane2),
+.sched_blank_id(sched_blank_id),
+.sched_blank_state(sched_blank_state),
+.sched_blank_en(sched_blank_en_lane2),
+.sched_idle_en(sched_idle_en_lane2),
+.idle_activate_en(idle_activate_en_lane2),
+.sched_stream_idle_sel(sched_stream_idle_sel_lane2),
+.iso_symbols(iso_symbols_lane2),
+.iso_control_sym_flag(iso_control_sym_flag_lane2),
+.blank_steering_state(blank_steering_state_lane2)
+);
+
+////////////////////////////////////////////////////////////////
+
+iso_lanes_top iso_lanes_top_3(
+.clk(ls_clk),
+.rst_n(rst_n),
+.main_steered(main_steered_lane3),
+.sec_steered(sec_steered_lane3),
+.sec_steered_vld(sec_steered_vld),
+.td_lane_count(td_lane_count),
+.sched_stream_state(sched_stream_state),
+.sched_stream_en(sched_stream_en_lane3),
+.sched_blank_id(sched_blank_id),
+.sched_blank_state(sched_blank_state),
+.sched_blank_en(sched_blank_en_lane3),
+.sched_idle_en(sched_idle_en_lane3),
+.idle_activate_en(idle_activate_en_lane3),
+.sched_stream_idle_sel(sched_stream_idle_sel_lane3),
+.iso_symbols(iso_symbols_lane3),
+.iso_control_sym_flag(iso_control_sym_flag_lane3),
+.blank_steering_state(blank_steering_state_lane3)
+);
+
+////////////////////////////////////////////////////////////////
+
+
+main_stream_bus_steering main_stream_bus_steering_0(
+.clk(ls_clk),
+.rst_n(rst_n),
+.sched_steering_en(sched_steering_en),
+.td_vld_data(td_vld_data),
+.td_lane_count(td_lane_count),
+.td_misc0_1(td_misc0_1),
+.fifo_pixel_data(fifo_pixel_data),
+.rd_data_valid(rd_data_valid),
+.fifo_almost_empty(fifo_almost_empty),
+.mbs_empty_regs(mbs_empty_regs),
+.main_steered_lane0(main_steered_lane0),
+.main_steered_lane1(main_steered_lane1),
+.main_steered_lane2(main_steered_lane2),
+.main_steered_lane3(main_steered_lane3)
+);
+
+////////////////////////////////////////////////////////////////
+
+sec_bus_steering sec_bus_steering_0(
+.clk(ls_clk),
+.rst_n(rst_n),
+.td_lane_count(td_lane_count),
+.spm_msa(spm_msa),
+.spm_vld(spm_msa_vld),
+.blank_steering_state0(blank_steering_state_lane0),        
+.blank_steering_state1(blank_steering_state_lane1), 
+.blank_steering_state2(blank_steering_state_lane2),
+.blank_steering_state3(blank_steering_state_lane3),
+.sec_steered_lane_vld(sec_steered_vld),
+.sec_steered_lane0(sec_steered_lane0),
+.sec_steered_lane1(sec_steered_lane1),
+.sec_steered_lane2(sec_steered_lane2),
+.sec_steered_lane3(sec_steered_lane3)        
+);
+
+////////////////////////////////////////////////////////////////
+
+
+ASYNC_FIFO_TOP #(.DATA_WIDTH(48), .FIFO_DEPTH(128), .WPTR_WIDTH(8), .RPTR_WIDTH(8), .NUM_STAGES(2), .ADDR_WIDTH(7)) ASYNC_FIFO_TOP_0 (
+.wr_data(ms_pixel_data),
+.winc(ms_de),
+.rinc(mbs_empty_regs),
+.wclk(ms_stm_clk),
+.wrst_n(ms_rst_n),
+.rclk(ls_clk),
+.rrst_n(rst_n),
+.wfull(wfull),
+.rempty(fifo_almost_empty),
+.rd_data_valid(rd_data_valid),   
+.rd_data(fifo_pixel_data)
+);
+
+////////////////////////////////////////////////////////////////
+
+clk_mux clk_mux_0(
+.hbr3_clk(hbr3_clk),
+.hbr2_clk(hbr2_clk),
+.hbr_clk(hbr_clk),
+.rbr_clk(rbr_clk),
+.spm_bw_sel(spm_bw_sel),
+.ls_clk(ls_clk)
+);
+
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
 
 endmodule

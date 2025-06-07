@@ -19,9 +19,9 @@ module hpd
     /*********************************************
      * PARAMETERS AND CONSTANTS
      *********************************************/
-    localparam  int CLK_FREQ            = 100_000;        // Clock frequency in Hz
+    localparam  int CLK_FREQ            = 100_000;            // Clock frequency in Hz
     localparam  int MS_TICKS            = CLK_FREQ / 1_000;   // Number of clock ticks per millisecond
-    localparam  int HPD_THRESHOLD       = MS_TICKS;     // HPD signal threshold in milliseconds (100 ms) -> (updated to be 1ms)
+    localparam  int HPD_THRESHOLD       = MS_TICKS;     // HPD signal threshold in milliseconds (100 ms)
     localparam  int HPD_IRQ_MIN         = 0.5 * MS_TICKS;     // Minimum ticks for HPD IRQ (0.5 ms)
     localparam  int HPD_IRQ_MAX         = 1 * MS_TICKS;       // Maximum ticks for HPD IRQ (1 ms)
     localparam  int HPD_IRQ_MIN_SPACING = 2 * MS_TICKS;       // Minimum spacing between two successive HPD IRQ requests (2 ms)
@@ -44,7 +44,7 @@ module hpd
 
     /*********************************************
      * HPD SIGNAL DURATION AND TOGGLE DETECTION
-     *********************************************/
+    *********************************************/
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) 
         begin
@@ -53,7 +53,7 @@ module hpd
             hpd_detect              <= 0;
             hpd_irq                 <= 0;
             flag                    <= 0;
-            irq_min_spacing_counter <= HPD_IRQ_MIN_SPACING;
+            //irq_min_spacing_counter <= HPD_IRQ_MIN_SPACING;
             min_spacing_reg         <= 0;
             first_time_flag         <= 0; // Initialize the minimum spacing flag
         end 
@@ -64,10 +64,10 @@ module hpd
                 first_time_flag <= 0; // Reset the flag to indicate that the minimum spacing is reached
                 hpd_irq         <= 0;
                 hpd_low_counter <= 0;
-                if (irq_min_spacing_counter < HPD_IRQ_MIN_SPACING)
+                /*if (irq_min_spacing_counter < HPD_IRQ_MIN_SPACING)
                 begin
                     irq_min_spacing_counter <= irq_min_spacing_counter + 1;            // Increment spacing counter after each IRQ request
-                end
+                end*/
                 if (hpd_counter == HPD_THRESHOLD - 1) 
                 begin
                     hpd_detect  <= 1;
@@ -92,10 +92,10 @@ module hpd
                     min_spacing_reg  <= irq_min_spacing_counter; // Store the current IRQ spacing counter value
                     first_time_flag  <= 1; // Set the flag to indicate that the minimum spacing is reached
                 end
-                if(irq_min_spacing_counter < HPD_IRQ_MIN_SPACING)
+                /*if(irq_min_spacing_counter < HPD_IRQ_MIN_SPACING)
                 begin
                     irq_min_spacing_counter <= irq_min_spacing_counter + 1;       // Increment spacing counter after each IRQ request
-                end
+                end*/
             end
             else
             if(toggle_down_up && flag)
@@ -106,7 +106,7 @@ module hpd
                     if(min_spacing_reg >= HPD_IRQ_MIN_SPACING - 1 ) 
                     begin
                         hpd_irq                 <= 1;
-                        irq_min_spacing_counter <= 0;  
+                        //irq_min_spacing_counter <= 0;  
                     end
                     else
                     begin 
@@ -119,11 +119,39 @@ module hpd
         end
     end
 
+    //*********************************************
+    // IRQ MIN SPACING COUNTER
+    //*********************************************
+    // This counter is used to ensure that the IRQ requests are spaced out by at least HPD_IRQ_MIN_SPACING
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) 
+        begin
+            irq_min_spacing_counter <= HPD_IRQ_MIN_SPACING; // Reset the IRQ spacing counter
+        end
+        else
+        begin
+            if (irq_min_spacing_counter < HPD_IRQ_MIN_SPACING)
+            begin
+                irq_min_spacing_counter <= irq_min_spacing_counter + 1;            // Increment spacing counter after each IRQ request
+            end
+            if(toggle_down_up && flag) // Check if toggle down up happens and flag is asserted
+            begin
+                if((hpd_low_counter >= HPD_IRQ_MIN) && (hpd_low_counter <= HPD_IRQ_MAX))
+                begin
+                    if(min_spacing_reg >= HPD_IRQ_MIN_SPACING - 1 ) 
+                    begin    
+                        irq_min_spacing_counter <= 0;  
+                    end
+                end
+            end
+        end
+    end
+
 
 
     /*********************************************
      * DETECTING TOGGLE IN HPD SIGNAL
-     *********************************************/
+    *********************************************/
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) 
         begin

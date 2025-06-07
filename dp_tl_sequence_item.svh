@@ -59,9 +59,11 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
     /////////////////// STREAM POLICY MAKER ///////////////////////
 
-    logic [AUX_DATA_WIDTH-1:0] SPM_Lane_BW;
+    logic [15:0]               SPM_Lane_BW; // Modified to 16 bits instead of 8 bits
+    logic [191:0]              SPM_Full_MSA; // added to contain the full MSA data
     logic [7:0]                SPM_MSA [23:0];
-    logic [1:0]                SPM_Lane_Count, SPM_BW_Sel;
+    logic [2:0]                SPM_Lane_Count; // Modified to 3 bits instead of 2 bits
+    logic [1:0]                SPM_BW_Sel;
     bit                        SPM_ISO_start, SPM_MSA_VLD;
 
     rand logic [23:0] Mvid;         //
@@ -85,6 +87,9 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     rand logic [47:0] MS_Pixel_Data;
     rand logic [9:0]  MS_Stm_BW;        // takes values on MHz max 1Ghz
     rand logic        MS_DE, MS_VSYNC, MS_HSYNC;
+    bit MS_Stm_BW_VLD;   // added to indicate if MS_Stm_BW is valid
+    bit MS_rst_n; // Reset is asynchronous active low for the MS Stream
+    bit WFULL;  // Indicates if the FIFO is full
     //rand bit          MS_Stm_CLK;
 
 
@@ -101,6 +106,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     bit LT_Failed, LT_Pass, isflow;
     rand bit error_flag;
 
+    logic [1:0] MAX_PRE_in, MAX_VTG_in;
+
     real CLOCK_PERIOD; // Clock period in ns
 
     ///////////////////////////////////////////////////////////////
@@ -108,11 +115,11 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     ///////////////////////////////////////////////////////////////
     
     // constraint spm_data_write_constraint {
-    //     if (SPM_CMD == AUX_I2C_WRITE) {
-    //         SPM_Data inside {[0:255]}; // Full range of SPM_Data
-    //     } else {
+    //     // if (SPM_CMD == AUX_I2C_WRITE) {
+    //         // SPM_Data inside {[0:255]}; // Full range of SPM_Data
+    //     // } else {
     //         SPM_Data == 8'bx; // Default value when not AUX_I2C_WRITE
-    //     }
+    //     // }
     // }
     
     // constraint spm_cmd_read_only_constraint {
@@ -123,89 +130,130 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     //    operation inside {[reset_op:EQ_LT_op]};
     // }
 
-    // constraint hsp_vsp_constraint {
-    //     HSP dist {1'b1 := 90, 1'b0 := 10}; // HSP is 1 90% of the time
-    //     VSP dist {1'b1 := 90, 1'b0 := 10}; // VSP is 1 90% of the time
-    // }
+    constraint hsp_vsp_constraint {
+        HSP dist {1'b1 := 90, 1'b0 := 10}; // HSP is 1 90% of the time
+        VSP dist {1'b1 := 90, 1'b0 := 10}; // VSP is 1 90% of the time
+    }
 
-    // constraint vtotal_constraint {
-    //     (VHeight + VStart - 1) == VTotal; // Ensure VTotal equals VHeight + VStart - 1
-    // }
+    // // constraint vtotal_constraint {
+    // //     (VHeight + VStart - 1) == VTotal; // Ensure VTotal equals VHeight + VStart - 1
+    // // }
 
-    // constraint htotal_constraint {
-    //     (HWidth + HStart - 1) == HTotal; // Ensure HTotal equals HWidth + HStart - 1
-    // }
+    // // constraint htotal_constraint {
+    // //     (HWidth + HStart - 1) == HTotal; // Ensure HTotal equals HWidth + HStart - 1
+    // // }
 
-    // constraint hstart_constraint {
-    //     HStart inside {[0:HTotal]}; // Ensure HStart is within the range of HTotal
-    // }
+    // // constraint hstart_constraint {
+    // //     HStart inside {[0:HTotal]}; // Ensure HStart is within the range of HTotal
+    // // }
 
-    // constraint vstart_constraint {
-    //     VStart inside {[0:VTotal]}; // Ensure VStart is within the range of VTotal
-    // }
+    // // constraint vstart_constraint {
+    // //     VStart inside {[0:VTotal]}; // Ensure VStart is within the range of VTotal
+    // // }
 
-    // constraint hwidth_constraint {
-    //     HWidth inside {[0:HTotal]}; // Ensure HWidth is within the range of HTotal
-    // }
+    // // constraint hwidth_constraint {
+    // //     HWidth inside {[0:HTotal]}; // Ensure HWidth is within the range of HTotal
+    // // }
 
-    // constraint vheight_constraint {
-    //     VHeight inside {[0:VTotal]}; // Ensure VHeight is within the range of VTotal
-    // }
+    // // constraint vheight_constraint {
+    // //     VHeight inside {[0:VTotal]}; // Ensure VHeight is within the range of VTotal
+    // // }
 
-    // constraint misc1_constraint {
-    //     MISC1[7:6] == 2'b00; // Ensure bits 7 and 6 are always 0
-    //     // MISC1[5:0] can be anything, no constraint needed
-    // }
+    constraint misc1_constraint {
+        MISC1[7:6] == 2'b00; // Ensure bits 7 and 6 are always 0
+        // MISC1[5:0] can be anything, no constraint needed
+    }
 
-    // constraint misc0_constraint {
-    //     MISC0[7:5] inside {3'b001, 3'b100}; // 8bpc or 16bpc
-    //     MISC0[4] == 1'b0;                  // MISC0[4] must always be 0
-    //     MISC0[3] inside {1'b0, 1'b1};      // RGB or YCbCr
-    //     if (MISC0[3] == 1'b0) {
-    //         MISC0[2:1] == 2'b00;           // RGB
-    //     } else {
-    //         MISC0[2:1] == 2'b10;           // YCbCr (4:4:4)
-    //     }
-    //     // MISC0[0] can be anything, no constraint needed
-    // }
+    constraint misc0_constraint {
+        MISC0[7:5] inside {3'b001, 3'b100}; // 8bpc or 16bpc
+        MISC0[4] == 1'b0;                  // MISC0[4] must always be 0
+        // MISC0[3] inside {1'b0, 1'b1};      // RGB or YCbCr
+        if (MISC0[3] == 1'b0) {
+            MISC0[2:1] == 2'b00;           // RGB
+        } else {
+            MISC0[2:1] == 2'b10;           // YCbCr (4:4:4)
+        }
+        // MISC0[0] can be anything, no constraint needed
+    }
 
-    // constraint hsw_constraint {
-    //     HSW == (HStart - 1) - HBack - HFront; // Ensure HSW is calculated correctly
-    // }
+    // // constraint hsw_constraint {
+    // //     HSW == (HStart - 1) - HBack - HFront; // Ensure HSW is calculated correctly
+    // // }
     
-    // constraint vsw_constraint {
-    //     VSW == (VStart - 1) - VBack - VFront; // Ensure VSW is calculated correctly
-    // }
+    // // constraint vsw_constraint {
+    // //     VSW == (VStart - 1) - VBack - VFront; // Ensure VSW is calculated correctly
+    // // }
 
-    // constraint hback_constraint {
-    //     HBack == (HStart - HSW); // Ensure HBack equals HStart - HSW
-    // }
+    // // constraint hback_constraint {
+    // //     HBack == (HStart - HSW); // Ensure HBack equals HStart - HSW
+    // // }
 
-    // constraint vback_constraint {
-    //     VBack == (VStart - VSW); // Ensure HBack equals VStart - VSW
-    // }    
+    // // constraint vback_constraint {
+    // //     VBack == (VStart - VSW); // Ensure HBack equals VStart - VSW
+    // // }    
 
-    // constraint hfront_constraint {
-    //     HFront == (HTotal - (HStart + HWidth)); // Ensure HFront equals HTotal - (HStart + HWidth)
-    // }
+    // // constraint hfront_constraint {
+    // //     HFront == (HTotal - (HStart + HWidth)); // Ensure HFront equals HTotal - (HStart + HWidth)
+    // // }
 
-    // constraint vfront_constraint {
-    //     VFront == (VTotal - (VStart + VHeight)); // Ensure VFront equals VTotal - (VStart + VHeight)
-    // } 
+    // // constraint vfront_constraint {
+    // //     VFront == (VTotal - (VStart + VHeight)); // Ensure VFront equals VTotal - (VStart + VHeight)
+    // // } 
 
-    // constraint ms_pixel_data_constraint {
-    //     if (MISC0[7:5] == 3'b001) {
-    //         MS_Pixel_Data[47:24] == 24'bx; // Most significant 24 bits are zero for 8bpc mode
-    //     } 
-    // }
+    constraint htotal_range {
+        HTotal inside {[100:200]};
+    }
 
-    // constraint ms_stm_bw_constraint {
-    //     MS_Stm_BW inside {[10:90]}; // Ensure MS_Stm_BW is within the range 10 to 90
-    // }
+    constraint vtotal_range {
+        VTotal inside {[100:300]};
+    }
 
-    // constraint error_flag_constraint {
-    //     error_flag dist {1'b0 := 90, 1'b1 := 10}; // 90% chance of being 0, 10% chance of being 1
-    // }
+    constraint hstart_range {
+        HStart inside {[0:HTotal]};
+    }
+
+    constraint vstart_range {
+        VStart inside {[0:VTotal]};
+    }
+
+    constraint hwidth_range {
+        HWidth inside {[0:HTotal - HStart + 1]};
+    }
+
+    constraint vheight_range {
+        VHeight inside {[0:VTotal - VStart + 1]};
+    }
+
+    constraint hfront_range {
+        HFront inside {[0:HTotal - (HStart + HWidth)]};
+    }
+
+    constraint vfront_range {
+        VFront inside {[0:VTotal - (VStart + VHeight)]};
+    }
+
+    constraint hsw_range {
+        HSW inside {[1:32]}; // example range
+    }
+
+    constraint vsw_range {
+        VSW inside {[1:32]};
+    }
+
+
+    constraint ms_pixel_data_constraint {
+        if (MISC0[7:5] == 3'b001) {
+            MS_Pixel_Data[47:24] == 24'b0; // Most significant 24 bits are zero for 8bpc mode
+        } 
+    }
+
+    constraint ms_stm_bw_constraint {
+        MS_Stm_BW inside {[10:90]}; // Ensure MS_Stm_BW is within the range 10 to 90
+    }
+
+    constraint error_flag_constraint {
+        error_flag dist {1'b0 := 90, 1'b1 := 10}; // 90% chance of being 0, 10% chance of being 1
+    }
 
     ///////////////////////////////////////////////////////////////
     /////////////////////// LPM CONSTRAINTS ///////////////////////
@@ -253,54 +301,58 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     // - Default weight for other values is 40%.
     
     constraint eq_cr_dn_constraint {
+        EQ_CR_DN inside {4'b1111, 4'b0011, 4'b0001};
         if (Link_LC_CR == 2'b11) {
             // For 2'b11, prioritize 4'b1111 with 90% weight
-            EQ_CR_DN dist {4'b1111 := 90, [0:4'b1110] :/ 10};
+            EQ_CR_DN dist {4'b1111 := 90, 4'b0011 :/ 10, 4'b0001 :/ 10};
         } else if (Link_LC_CR == 2'b01) {
             // For 2'b01, prioritize 4'b0011 with 90% weight
-            EQ_CR_DN dist {4'b0011 := 90, [0:4'b0010] :/ 10, [0100:$] :/ 10};
+            EQ_CR_DN dist {4'b0011 := 90, 4'b1111 :/ 10, 4'b0001 :/ 10};
             // For 2'b00, prioritize 4'b0001 with 90% weight
         } else if (Link_LC_CR == 2'b00) {
-            EQ_CR_DN dist {4'b0001 := 90, 4'b0 := 10, [4'b0010: $] :/ 10};
+            EQ_CR_DN dist {4'b0001 := 90, 4'b0011 :/ 10, 4'b1111 :/ 10};
         }
     }
 
     constraint cr_done_constraint {
+        CR_DONE inside {4'b1111, 4'b0011, 4'b0001};
         if (Link_LC_CR == 2'b11) {
             // For 2'b11, prioritize 4'b1111 with 90% weight
-            CR_DONE dist {4'b1111 := 90, [0:4'b1110] :/ 10};
+            CR_DONE dist {4'b1111 := 90, 4'b0011 :/ 10, 4'b0001 :/ 10};
         } else if (Link_LC_CR == 2'b01) {
             // For 2'b01, prioritize 4'b0011 with 90% weight
-            CR_DONE dist {4'b0011 := 90, [0:4'b0010] :/ 10, [0100:$] :/ 10};
+            CR_DONE dist {4'b0011 := 90, 4'b1111 :/ 10, 4'b0001 :/ 10};
             // For 2'b00, prioritize 4'b0001 with 90% weight
         } else if (Link_LC_CR == 2'b00) {
-            CR_DONE dist {4'b0001 := 90, 4'b0 := 10, [4'b0010: $] :/ 10};
+            CR_DONE dist {4'b0001 := 90, 4'b0011 :/ 10, 4'b1111 :/ 10};
         }
     }
 
     constraint channel_eq_constraint {
+        Channel_EQ inside {4'b1111, 4'b0011, 4'b0001};
         if (Link_LC_CR == 2'b11) {
             // For 2'b11, prioritize 4'b1111 with 90% weight
-            Channel_EQ dist {4'b1111 := 90, [0:4'b1110] :/ 10};
+            Channel_EQ dist {4'b1111 := 90, 4'b0011 :/ 10, 4'b0001 :/ 10};
         } else if (Link_LC_CR == 2'b01) {
             // For 2'b01, prioritize 4'b0011 with 90% weight
-            Channel_EQ dist {4'b0011 := 90, [0:4'b0010] :/ 10, [0100:$] :/ 10};
+            Channel_EQ dist {4'b0011 := 90, 4'b1111 :/ 10, 4'b0001 :/ 10};
             // For 2'b00, prioritize 4'b0001 with 90% weight
         } else if (Link_LC_CR == 2'b00) {
-            Channel_EQ dist {4'b0001 := 90, 4'b0 := 10, [4'b0010: $] :/ 10};
+            Channel_EQ dist {4'b0001 := 90, 4'b0011 :/ 10, 4'b1111 :/ 10};
         }
     }
 
     constraint symbol_lock_constraint {
+        Symbol_Lock inside {4'b1111, 4'b0011, 4'b0001};
         if (Link_LC_CR == 2'b11) {
             // For 2'b11, prioritize 4'b1111 with 90% weight
-            Symbol_Lock dist {4'b1111 := 90, [0:4'b1110] :/ 10};
+            Symbol_Lock dist {4'b1111 := 90, 4'b0011 :/ 10, 4'b0001 :/ 10};
         } else if (Link_LC_CR == 2'b01) {
             // For 2'b01, prioritize 4'b0011 with 90% weight
-            Symbol_Lock dist {4'b0011 := 90, [0:4'b0010] :/ 10, [0100:$] :/ 10};
+            Symbol_Lock dist {4'b0011 := 90, 4'b1111 :/ 10, 4'b0001 :/ 10};
             // For 2'b00, prioritize 4'b0001 with 90% weight
         } else if (Link_LC_CR == 2'b00) {
-            Symbol_Lock dist {4'b0001 := 90, 4'b0 := 10, [4'b0010: $] :/ 10};
+            Symbol_Lock dist {4'b0001 := 90, 4'b0011 :/ 10, 4'b1111 :/ 10};
         }
     }
 
@@ -418,6 +470,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         if (CR_Completed) begin
             cr_completed_flag = 1; // Allow a new random value when CR_Completed becomes 1
         end
+        HBack = HStart - HSW;
+        VBack = VStart - VSW;
     endfunction
 
   // Convert the sequence item to a string representation

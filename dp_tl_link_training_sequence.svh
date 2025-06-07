@@ -6,9 +6,9 @@ class dp_tl_link_training_sequence extends dp_tl_base_sequence;
     endfunction
     
     task body();
-        `uvm_info(get_type_name(), "Testing Link Training only case", UVM_MEDIUM)
+        `uvm_info(get_type_name(), "Testing dp_tl_link_training_sequence case", UVM_MEDIUM)
         CR_LT();
         EQ_LT();
-        `uvm_info(get_type_name(), "Completed Link Training only test", UVM_MEDIUM)
+        `uvm_info(get_type_name(), "Completed dp_tl_link_training_sequence test", UVM_MEDIUM)
     endtask
 endclass //dp_tl_link_training_sequence extends superClass
