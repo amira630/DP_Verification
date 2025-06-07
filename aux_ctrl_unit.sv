@@ -334,7 +334,6 @@ always @ (*)
         end
   I2C_LISTEN_MODE: 
         begin
-          ctrl_i2c_native_comb     = 1'b1;
           ctrl_tr_vld_comb         = 1'b0;
         end		
   I2C_FAILED_TRANSACTION: 

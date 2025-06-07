@@ -51,7 +51,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     // output Data from DUT
     logic [AUX_DATA_WIDTH-1:0] EQ_Final_ADJ_BW;
     logic [1:0]                EQ_Final_ADJ_LC;
-    bit                        FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, CR_Completed, EQ_FSM_CR_Failed;
+    bit                        FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, CR_Completed, EQ_FSM_CR_Failed, LPM_CR_Apply_New_BW_LC, LPM_CR_Apply_New_Driving_Param;
 
     ///////////////////////////////////////////////////////////////
     ////////////////// ISOCHRONOUS TRANSPORT //////////////////////

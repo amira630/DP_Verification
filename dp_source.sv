@@ -102,6 +102,10 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     logic         eq_lt_failed;
     logic         eq_lt_pass;
     logic         eq_fsm_cr_failed;
+    
+    // from cr err chk to lpm
+    logic         lpm_cr_apply_new_driving_param;
+    logic         lpm_cr_apply_new_bw_lc;
 
     logic [7:0] reply_data;
     logic       reply_data_vld;
@@ -275,6 +279,8 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     // CR FSM WITH LPM AND ERR CHK INTERFACE 
     assign tl_if.FSM_CR_Failed = fsm_cr_failed;
     assign tl_if.CR_Completed = cr_completed;
+    assign tl_if.LPM_CR_Apply_New_Driving_Param = lpm_cr_apply_new_driving_param;
+    assign tl_if.LPM_CR_Apply_New_BW_LC = lpm_cr_apply_new_bw_lc;
 
     // CHANNELL EQ FSM INTERFACE WITH LPM 
     assign tl_if.EQ_Final_ADJ_LC = eq_final_adj_lc;
@@ -313,7 +319,7 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     assign spm_lane_bw = tl_if.SPM_Lane_BW;
     assign spm_msa = tl_if.SPM_Full_MSA;        
     assign spm_msa_vld = tl_if.SPM_MSA_VLD;    
-    assign ms_rst_n = tl_if.rst_n;  // Not Sure
+    assign ms_rst_n = tl_if.rst_n;
 
     //=========//                 
     // outputs //      
@@ -690,7 +696,9 @@ cr_eq_lt_top link_trainning_inst
 .eq_adj_bw          (mux_eq_adj_bw),
 .eq_phy_instruct_vld(mux_eq_phy_instruct_vld),
 .ctrl_ack_flag      (ctrl_ack_flag),
-.ctrl_native_failed (ctrl_native_failed)
+.ctrl_native_failed (ctrl_native_failed),
+.lpm_cr_apply_new_driving_param (lpm_cr_apply_new_driving_param),  
+.lpm_cr_apply_new_bw_lc         (lpm_cr_apply_new_bw_lc)
 );
 
 hpd hpd_inst

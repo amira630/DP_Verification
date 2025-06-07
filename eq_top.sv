@@ -155,7 +155,8 @@ link_trainning_ctr  lt_ctr_inst
     .eq_ctr_fire        (eq_ctr_fire),
     .cr_ctr_start       (cr_ctr_start),
     .cr_ctr_fire        (cr_ctr_fire),
-    .eq_rd_value        (eq_rd_value)
+    .eq_rd_value        (eq_rd_value),
+    .config_param_vld   (config_param_vld)
 );
 endmodule 
 

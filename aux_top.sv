@@ -96,6 +96,9 @@ output wire         eq_lt_failed,
 output wire         eq_lt_pass,
 output wire         eq_fsm_cr_failed,
 
+// FRPM CR ERR CHK TO LPM
+output wire         lpm_cr_apply_new_driving_param,
+output wire         lpm_cr_apply_new_bw_lc,   
 
 // Bidirectional Data Bus
 inout  wire [7:0]  aux_in_out          
@@ -215,7 +218,7 @@ aux_ctrl_unit  aux_ctrl_unit_inst
 .reply_ack             (reply_ack),
 .reply_ack_vld         (reply_ack_vld),
 .timer_timeout         (timer_timeout),
-.i2c_complete          (i2c_complete),
+.i2c_complete          (i2c_fsm_complete),
 .i2c_fsm_failed        (i2c_fsm_failed),
 .ctrl_tr_vld           (ctrl_tr_vld),
 .ctrl_msg_cmd          (ctrl_msg_cmd),
@@ -255,7 +258,7 @@ native_message_encoder native_message_encoder_inst
 (
 .clk                  (clk),
 .rst_n                (rst_n),
-.ctrl_data_done_number(ctrl_done_data_number),
+.ctrl_done_data_number(ctrl_done_data_number),
 .ctrl_native_retrans  (ctrl_native_retrans),
 .de_mux_native_cmd    (de_mux_native_cmd),
 .de_mux_native_data   (de_mux_native_data),
@@ -293,8 +296,7 @@ i2c_top i2c_top_inst
 .i2c_fsm_complete   (i2c_fsm_complete),
 .i2c_splitted_msg   (i2c_splitted_msg),
 .i2c_msg_vld        (i2c_msg_vld),
-.i2c_fsm_failed     (i2c_fsm_failed),
-.i2c_complete       (i2c_complete)
+.i2c_fsm_failed     (i2c_fsm_failed)
 );
 
 // Instantiate the bidirectional_aux_phy_interface module
@@ -309,6 +311,7 @@ bidirectional_aux_phy_interface bidirectional_aux_phy_interface_inst
 .bdi_aux_in_vld    (bdi_aux_in_vld),
 .bdi_timer_reset   (bdi_timer_reset),
 .phy_start_stop    (phy_start_stop),
+.aux_start_stop    (aux_start_stop),
 .aux_in_out        (aux_in_out)
 );
 // Instantiate the timeout_timer module
@@ -330,10 +333,10 @@ reply_decoder reply_decoder_inst
 .reply_data_vld    (reply_data_vld),
 .reply_ack         (reply_ack),
 .reply_ack_vld     (reply_ack_vld),
-.reply_i2c_native  (reply_i2c_native),
+.reply_dec_i2c_native  (reply_i2c_native),
 .bdi_aux_in        (bdi_aux_in),
 .bdi_aux_in_vld    (bdi_aux_in_vld),
-.ctrl_i2c_native   (ctrl_i2c_native)
+.aux_ctrl_i2c_native(ctrl_i2c_native)
 );
 
 cr_eq_lt_top link_trainning_inst
@@ -385,7 +388,9 @@ cr_eq_lt_top link_trainning_inst
 .eq_adj_bw          (mux_eq_adj_bw),
 .eq_phy_instruct_vld(mux_eq_phy_instruct_vld),
 .ctrl_ack_flag      (ctrl_ack_flag),
-.ctrl_native_failed (ctrl_native_failed)
+.ctrl_native_failed (ctrl_native_failed),
+.lpm_cr_apply_new_driving_param (lpm_cr_apply_new_driving_param),  
+.lpm_cr_apply_new_bw_lc         (lpm_cr_apply_new_bw_lc)
 );
 
 hpd hpd_inst

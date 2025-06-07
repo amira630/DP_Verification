@@ -16,6 +16,7 @@ module link_trainning_ctr
     input  wire        eq_ctr_start, 
     input  wire [7:0]  eq_rd_value,  
     input  wire        cr_ctr_start,
+    input  wire        config_param_vld, // this signal is valid signal used to load the waiting value according to eq_rd_value
     //=================================================================================================
     // Output signals
     //=================================================================================================
@@ -39,10 +40,33 @@ state_t    current_state, next_state;
 reg [7:0]  loop_count;
 reg [7:0]  loop_count_reg;
 reg [31:0] value; // waiting value according to eq_rd_value recieved
+reg [7:0]  eq_rd_value_reg; // register to hold the value of eq_rd_value
+reg        eq_rd_value_saving_flag; // flag to indicate that eq_rd_value is saved
 reg        cr_ctr_prev;
 reg        eq_ctr_prev;
 reg        loaded_value;
 wire       cr_ctr_rise, eq_ctr_rise;
+
+
+//=================================================================================================
+// saving the value of eq_rd_value to be used in the waiting value logic
+//=================================================================================================
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) 
+    begin
+        eq_rd_value_reg         <= 8'd0;
+        eq_rd_value_saving_flag <= 1'b0;
+    end 
+    else
+    begin
+        if (config_param_vld) 
+        begin
+            eq_rd_value_reg         <= eq_rd_value;
+            eq_rd_value_saving_flag <= 1'b1; // indicate that the value is saved
+        end 
+    end
+end
+
 //=================================================================================================
 // Edge detection logic 
 //=================================================================================================
@@ -84,20 +108,20 @@ end
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) 
     begin
-        value <= 32'd0;
+        value        <= 32'd0;
         loaded_value <= 1'b0;
     end 
     else 
     begin
         if(cr_ctr_rise)
         begin
-            value <= 8'd10;
+            value        <= 32'd10;
             loaded_value <= 1'b1;
         end
         else 
-        if(eq_ctr_rise)
+        if(eq_ctr_rise && eq_rd_value_saving_flag) // check if eq_rd_value is saved
         begin 
-            case(eq_rd_value)
+            case(eq_rd_value_reg) // eq_rd_value_reg is used to hold the value of eq_rd_value
                 8'h00:
                 begin
                 value <= 32'd40; // calculated number of clock cycles given clk period = 10us
@@ -133,7 +157,7 @@ always @(posedge clk or negedge rst_n) begin
         else
         if(next_state == IDLE)
         begin
-            value <= 32'd0;
+            value        <= 32'd0;
             loaded_value <= 1'b0;
         end
     end
@@ -182,8 +206,7 @@ always_comb begin
             end
             else 
             begin
-                next_state = EQ_CTR;
-               
+                next_state = EQ_CTR;    
             end
         end
         default: 

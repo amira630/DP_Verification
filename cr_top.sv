@@ -47,7 +47,10 @@ module cr_top
   output wire [1:0]  cr_phy_instruct,
   output wire        cr_phy_instruct_vld,
   output wire [1:0]  cr_adj_lc, 
-  output wire [7:0]  cr_adj_bw     
+  output wire [7:0]  cr_adj_bw,   
+  // CR ERR CHK
+  output wire        lpm_cr_apply_new_driving_param,
+  output wire        lpm_cr_apply_new_bw_lc   
 );
 
 
@@ -154,7 +157,10 @@ cr_err_chk cr_err_chk0
 .err_cr_failed(err_chk_err_cr_failed),
 .drive_setting_flag(err_chk_drive_setting_flag),
 .bw_flag(err_chk_bw_flag),
-.lc_flag(err_chk_lc_flag)
+.lc_flag(err_chk_lc_flag),
+// LPM 
+.lpm_cr_apply_new_driving_param(lpm_cr_apply_new_driving_param),
+.lpm_cr_apply_new_bw_lc(lpm_cr_apply_new_bw_lc)
 );
 
 endmodule
