@@ -412,11 +412,20 @@ task FLOW_FSM();
         seq_item.EQ_RD_Value.rand_mode(0); // Do not Randomize the EQ_RD_Value
 
         while (!seq_item.CR_Completed && !seq_item.FSM_CR_Failed && !seq_item.CTRL_Native_Failed) begin
+
+            if(seq_item.LPM_CR_Apply_New_BW_LC) begin
+                start_item(seq_item);
+                    seq_item.Driving_Param_VLD = 1'b1;   // Driving parameters are valid
+                    seq_item.VTG = 0;                    // Set the voltage swing to 0 initially
+                    seq_item.PRE = 0;                    // Set the pre-emphasis to 0 initially
+                finish_item(seq_item);
+                get_response(seq_item);
+            end
             // Link Training (CR) 2-3 Test Scenario
-            // Waiting for Native Write Reply ACK for DPCD regs 00100h (BW_SET), 00101h (LC_SET) and 00102h (TPS)
+            // Waiting for Native Write Reply ACK for DPCD regs 00100h (BW_SET), 00101h (LC_SET) and 00102h (TPS) clearing
             
             // Link Training (CR) 4-5 Test Scenario
-            // Waiting for Native Write Reply ACK for DPCD reg 00102h (TPS1)
+            // Waiting for Native Write Reply ACK for DPCD reg 00102h (TPS1) and 103-106h 
             repeat (2) begin // Repeat 2 times for 2-3 Test Scenario and 4-5 Test Scenario
                 do begin
                     if (seq_item.FSM_CR_Failed) begin // If the FSM CR failed while obtaining reply, exit the loop
