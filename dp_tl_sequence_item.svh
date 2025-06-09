@@ -41,8 +41,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     
     // input Data to DUT
     rand logic [AUX_DATA_WIDTH-1:0] Lane_Align, EQ_RD_Value;
-    rand logic [AUX_DATA_WIDTH-1:0] PRE, VTG;
-    rand link_bw_cr_e Link_BW_CR;
+    rand logic [AUX_DATA_WIDTH-1:0] PRE, VTG, Link_BW_CR;
     rand logic [3:0]                EQ_CR_DN, Channel_EQ, Symbol_Lock;
     rand logic [3:0]                CR_DONE;
     rand training_pattern_t         MAX_TPS_SUPPORTED;
@@ -96,18 +95,16 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
     op_code operation;
     
-    bit     link_values_locked = 0; // State variable to lock values after first randomization
-    bit [AUX_DATA_WIDTH-1:0] prev_vtg;
-    bit [AUX_DATA_WIDTH-1:0] prev_pre;
+    bit link_values_locked = 0; // State variable to lock values after first randomization
+    bit [AUX_DATA_WIDTH-1:0] prev_vtg, prev_pre;
     bit [1:0] ISO_LC;
     bit [AUX_DATA_WIDTH-1:0] ISO_BW;
     rand logic [AUX_DATA_WIDTH-1:0]    LPM_Data_queue[$];
 
     bit LT_Failed, LT_Pass, isflow;
     rand bit error_flag;
-    link_bw_cr_e prev_Link_BW_CR; // Store previous Link_BW_CR for locking
+    logic [AUX_DATA_WIDTH-1:0] prev_Link_BW_CR; // Store previous Link_BW_CR for locking
     logic [1:0] prev_Link_LC_CR; // Store previous Link_LC_CR for locking
-    bit [1:0] allowed_pre[];
 
     real CLOCK_PERIOD; // Clock period in ns
 
@@ -266,7 +263,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     }
 
     constraint link_bw_cr_constraint {
-        Link_BW_CR inside {BW_RBR, BW_HBR, BW_HBR2, BW_HBR3}; // Allowed values for Link_BW_CR
+        Link_BW_CR inside {8'h06, 8'h0A, 8'h14, 8'h1E}; // Allowed values for Link_BW_CR
     }
 
     constraint link_lc_cr_constraint {
@@ -274,9 +271,9 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     }
 
     constraint max_tps_supported_c {
-        ((Link_BW_CR == BW_RBR) || (Link_BW_CR == BW_HBR)) -> (MAX_TPS_SUPPORTED inside {TPS2, TPS3, TPS4});
-        (Link_BW_CR == BW_HBR2) -> (MAX_TPS_SUPPORTED inside {TPS3, TPS4});
-        (Link_BW_CR == BW_HBR3) -> (MAX_TPS_SUPPORTED == TPS4);
+        ((Link_BW_CR == 8'h06) || (Link_BW_CR == 8'h0A)) -> (MAX_TPS_SUPPORTED inside {TPS2, TPS3, TPS4});
+        (Link_BW_CR == 8'h14) -> (MAX_TPS_SUPPORTED inside {TPS3, TPS4});
+        (Link_BW_CR == 8'h1E) -> (MAX_TPS_SUPPORTED == TPS4);
     }
 
     // EQ-related value alignment control
@@ -442,16 +439,15 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         if (LPM_Start_CR == 1) begin
             prev_vtg = '0; // Reset prev_vtg when LPM_Start_CR is 1
             prev_pre = '0; // Reset prev_pre when LPM_Start_CR is 1
+            prev_Link_BW_CR = 8'h06; // Store current Link_BW_CR for next randomization
+            prev_Link_LC_CR = '0; // Store current Link_LC_CR for next randomization
+            prev_MAX_VTG = '0; // Store current MAX_VTG for next randomization
+            prev_MAX_PRE = '0; // Store current MAX_PRE for next randomization
         end
-        Lane_Align = 8'h80;
-          if (Link_LC_CR === 2'bx) begin
-            Link_LC_CR = 2'b00; // or some valid default state
-        end
-
     endfunction
 
     function void post_randomize();
-        if (!link_values_locked && LPM_Start_CR == 1 && rst_n) begin
+        if (!link_values_locked && LPM_Start_CR && rst_n) begin
             link_values_locked = 1; // Lock the values after the first randomization
         end
         else if (!rst_n) begin
@@ -460,8 +456,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         prev_vtg = VTG; // Store current VTG for next randomization
         prev_pre = PRE; // Store current PRE for next randomization
 
-        prev_Link_BW_CR = Link_BW_CR; // Store current PRE for next randomization
-        prev_Link_LC_CR = Link_LC_CR; // Store current PRE for next randomization
+        prev_Link_BW_CR = Link_BW_CR; // Store current Link_BW_CR for next randomization
+        prev_Link_LC_CR = Link_LC_CR; // Store current Link_LC_CR for next randomization
         prev_MAX_VTG = MAX_VTG; // Store current PRE for next randomization
         prev_MAX_PRE = MAX_PRE; // Store current PRE for next randomization
         

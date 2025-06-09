@@ -403,6 +403,8 @@ task FLOW_FSM();
                 seq_item.Driving_Param_VLD = 1'b1;   // Driving parameters are valid
                 seq_item.Config_Param_VLD = 1'b1;    // Config parameters are valid
                 seq_item.MAX_TPS_SUPPORTED_VLD = 1'b1;         // Indicate change of max TPS
+                seq_item.VTG.rand_mode(0);     // Do not Randomize voltage swing level
+                seq_item.PRE.rand_mode(0);     // Do not Randomize pre-emphasis swing level
                 seq_item.VTG = 0;                    // Set the voltage swing to 0 initially
                 seq_item.PRE = 0;                    // Set the pre-emphasis to 0 initially
                 seq_item.LPM_Start_CR = 1;           // Start the link training (Clock recovery Stage)
@@ -420,6 +422,10 @@ task FLOW_FSM();
         finish_item(seq_item);
         get_response(seq_item);
 
+        if(!in_CR_EQ) begin
+            seq_item.VTG.rand_mode(1);     // Do not Randomize voltage swing level
+            seq_item.PRE.rand_mode(1);     // Do not Randomize pre-emphasis swing level
+        end
         // seq_item.Link_BW_CR.rand_mode(0);  // Do not Randomize max Link rate
         // seq_item.Link_LC_CR.rand_mode(0);  // Do not Randomize max Lane count
         // seq_item.MAX_VTG.rand_mode(0);     // Do not Randomize max voltage swing level

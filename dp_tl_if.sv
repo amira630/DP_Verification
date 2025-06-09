@@ -279,7 +279,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
 
       // Clock Recovery Link Training task
       // This task is used to set the parameters for the Clock Recovery Link Training phase
-      task LT_CT (input bit config_vld, driving_vld, start_cr, done_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, eq_rd_value, link_bw_cr_e link_bw_cr, [3:0] cr_done, [1:0] link_lc_cr, max_vtg, max_pre, training_pattern_t max_tps_supported, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, cr_completed, timer_timeout, lpm_cr_apply_new_bw_lc, lpm_cr_apply_new_driving_param, reply_ack_vld, [1:0] reply_ack, [AUX_DATA_WIDTH-1:0] reply_data);
+      task LT_CT (input bit config_vld, driving_vld, start_cr, done_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, eq_rd_value, link_bw_cr, logic [3:0] cr_done, [1:0] link_lc_cr, max_vtg, max_pre, training_pattern_t max_tps_supported, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, cr_completed, timer_timeout, lpm_cr_apply_new_bw_lc, lpm_cr_apply_new_driving_param, reply_ack_vld, [1:0] reply_ack, [AUX_DATA_WIDTH-1:0] reply_data);
             // Set LPM-related signals for Clock Recovery Link Training
             // wait(HPD_Detect == 1'b1); // Wait for HPD detection
             // @(negedge clk_AUX)
@@ -289,7 +289,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             CR_DONE_VLD  = done_vld;
             CR_DONE      = cr_done;
             Link_LC_CR   = link_lc_cr;
-            Link_BW_CR   = logic'(link_bw_cr);
+            Link_BW_CR   = link_bw_cr;
             PRE          = pre;
             VTG          = vtg;
             MAX_VTG      = max_vtg;
