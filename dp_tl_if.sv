@@ -279,7 +279,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
 
       // Clock Recovery Link Training task
       // This task is used to set the parameters for the Clock Recovery Link Training phase
-      task LT_CT (input bit config_vld, driving_vld, start_cr, done_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, link_bw_cr, eq_rd_value, [3:0] cr_done, [1:0] link_lc_cr, max_vtg, max_pre, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, timer_timeout, lpm_cr_apply_new_bw_lc, lpm_cr_apply_new_driving_param, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
+      task LT_CT (input bit config_vld, driving_vld, start_cr, done_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, eq_rd_value, link_bw_cr_e link_bw_cr, [3:0] cr_done, [1:0] link_lc_cr, max_vtg, max_pre, training_pattern_t max_tps_supported, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, cr_completed, timer_timeout, lpm_cr_apply_new_bw_lc, lpm_cr_apply_new_driving_param, reply_ack_vld, [1:0] reply_ack, [AUX_DATA_WIDTH-1:0] reply_data);
             // Set LPM-related signals for Clock Recovery Link Training
             // wait(HPD_Detect == 1'b1); // Wait for HPD detection
             // @(negedge clk_AUX)
@@ -289,7 +289,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             CR_DONE_VLD  = done_vld;
             CR_DONE      = cr_done;
             Link_LC_CR   = link_lc_cr;
-            Link_BW_CR   = link_bw_cr;
+            Link_BW_CR   = logic'(link_bw_cr);
             PRE          = pre;
             VTG          = vtg;
             MAX_VTG      = max_vtg;
@@ -297,6 +297,45 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             Driving_Param_VLD = driving_vld;
             Config_Param_VLD = config_vld;
             EQ_RD_Value  = eq_rd_value;
+
+            MAX_TPS_SUPPORTED = logic'(max_tps_supported);
+            MAX_TPS_SUPPORTED_VLD = max_tps_supported_vld;
+
+            hpd_detect = HPD_Detect;
+            hpd_irq = HPD_IRQ;
+            reply_data = LPM_Reply_Data;
+            reply_data_vld = LPM_Reply_Data_VLD;
+            reply_ack = LPM_Reply_ACK;
+            reply_ack_vld = LPM_Reply_ACK_VLD;
+            lpm_vld = LPM_NATIVE_I2C;
+            native_failed = CTRL_Native_Failed; 
+
+            fsm_cr_failed = FSM_CR_Failed;
+            cr_completed = CR_Completed;
+            lpm_cr_apply_new_bw_lc = LPM_CR_Apply_New_BW_LC;
+            lpm_cr_apply_new_driving_param = LPM_CR_Apply_New_Driving_Param;
+            timer_timeout = Timer_Timeout;
+      endtask
+
+      // Channel Equalization Link Training task
+      // This task is used to set the parameters for the Channel Equalization Link Training phase
+      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, timer_timeout, lpm_cr_apply_new_bw_lc, lpm_cr_apply_new_driving_param, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
+            // @(negedge clk_AUX)
+            LPM_Transaction_VLD = 1'b0;
+            SPM_Transaction_VLD = 1'b0;
+            CR_DONE_VLD  = done_vld;
+            CR_DONE      = cr_done;
+            PRE          = pre;
+            VTG          = vtg;
+            Driving_Param_VLD = driving_vld;
+            Config_Param_VLD = 1'b0;
+            LPM_Start_CR = 1'b0;
+
+            EQ_CR_DN     = eq_cr_dn;
+            Channel_EQ   = channel_eq;
+            Symbol_Lock  = symbol_lock;
+            Lane_Align   = lane_align;
+            EQ_Data_VLD  = eq_data_vld;
 
             hpd_detect = HPD_Detect;
             hpd_irq = HPD_IRQ;
@@ -316,49 +355,6 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             eq_fsm_cr_failed = EQ_FSM_CR_Failed;
             lpm_cr_apply_new_bw_lc = LPM_CR_Apply_New_BW_LC;
             lpm_cr_apply_new_driving_param = LPM_CR_Apply_New_Driving_Param;
-            timer_timeout = Timer_Timeout;
-      endtask
-
-      // Channel Equalization Link Training task
-      // This task is used to set the parameters for the Channel Equalization Link Training phase
-      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, max_pre_in, max_vtg_in, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, training_pattern_t max_tps_supported, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, timer_timeout, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
-            // @(negedge clk_AUX)
-            LPM_Transaction_VLD = 1'b0;
-            SPM_Transaction_VLD = 1'b0;
-            CR_DONE_VLD  = done_vld;
-            CR_DONE      = cr_done;
-            MAX_VTG      = max_vtg_in;
-            MAX_PRE      = max_pre_in;
-            PRE          = pre;
-            VTG          = vtg;
-            Driving_Param_VLD = driving_vld;
-            Config_Param_VLD = 1'b0;
-
-            EQ_CR_DN     = eq_cr_dn;
-            Channel_EQ   = channel_eq;
-            Symbol_Lock  = symbol_lock;
-            Lane_Align   = lane_align;
-            EQ_Data_VLD  = eq_data_vld;
-
-            MAX_TPS_SUPPORTED = max_tps_supported;
-            MAX_TPS_SUPPORTED_VLD = logic'(max_tps_supported_vld);
-
-            hpd_detect = HPD_Detect;
-            hpd_irq = HPD_IRQ;
-            reply_data = LPM_Reply_Data;
-            reply_data_vld = LPM_Reply_Data_VLD;
-            reply_ack = LPM_Reply_ACK;
-            reply_ack_vld = LPM_Reply_ACK_VLD;
-            lpm_vld = LPM_NATIVE_I2C;
-            native_failed = CTRL_Native_Failed; 
-
-            fsm_cr_failed = FSM_CR_Failed;
-            eq_failed = EQ_Failed;
-            eq_lt_pass = EQ_LT_Pass;
-            eq_final_adj_bw = EQ_Final_ADJ_BW;
-            eq_final_adj_lc = EQ_Final_ADJ_LC;
-            cr_completed = CR_Completed;
-            eq_fsm_cr_failed = EQ_FSM_CR_Failed;
             timer_timeout = Timer_Timeout;
       endtask
 

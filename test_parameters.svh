@@ -67,6 +67,13 @@
         TPS4 = 2'b11
     } training_pattern_t;
 
+    typedef enum bit [7:0] {
+        BW_RBR  = 8'h06,
+        BW_HBR  = 8'h0A,
+        BW_HBR2 = 8'h14,
+        BW_HBR3 = 8'h1E
+    } link_bw_cr_e;
+
 // Voltage Swing Levels
     typedef enum bit [1:0] {
         VTG_LVL_0 = 2'b00,

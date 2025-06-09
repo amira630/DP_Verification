@@ -9,6 +9,8 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
 
     dp_source_config seq_cfg; 
 
+    bit in_CR_EQ; // flag to know if we came back to CR from EQ or not
+
     function new(string name = "dp_tl_base_sequence");
         super.new(name);
     endfunction //new()
@@ -36,10 +38,10 @@ task FLOW_FSM();
                         DETECTING:begin
                             detect_wait(seq_item.HPD_Detect);
                             if(seq_item.HPD_Detect) begin
-                                // cs = CR_STAGE;
-                                // `uvm_info("TL_BASE_SEQ", $sformatf("HPD detected, moving to CR stage"), UVM_MEDIUM)
-                                cs = ISO_STAGE;
-                                `uvm_info("TL_BASE_SEQ", $sformatf("HPD detected, moving to ISO stage"), UVM_MEDIUM)
+                                cs = CR_STAGE;
+                                `uvm_info("TL_BASE_SEQ", $sformatf("HPD detected, moving to CR stage"), UVM_MEDIUM)
+                                // cs = ISO_STAGE;
+                                // `uvm_info("TL_BASE_SEQ", $sformatf("HPD detected, moving to ISO stage"), UVM_MEDIUM)
                             end
                             else begin
                                 cs = DETECTING;
@@ -381,35 +383,49 @@ task FLOW_FSM();
             seq_item = dp_tl_sequence_item::type_id::create("seq_item");
         end
 
+        seq_item.operation = CR_LT_op;
+
         // Link Training (CR) 1 Test Scenario
-        seq_item.rand_mode(0);
-        seq_item.Link_BW_CR.rand_mode(1);  // Randomize max Link rate
-        seq_item.Link_LC_CR.rand_mode(1);  // Randomize max Lane count
-        seq_item.MAX_VTG.rand_mode(1);     // Randomize max voltage swing level
-        seq_item.MAX_PRE.rand_mode(1);     // Randomize max pre-emphasis swing level
-        seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
+        
+        // seq_item.rand_mode(0);
+
+        // if(!in_CR_EQ) begin
+        //     seq_item.Link_BW_CR.rand_mode(1);  // Randomize max Link rate
+        //     seq_item.Link_LC_CR.rand_mode(1);  // Randomize max Lane count
+        //     seq_item.MAX_VTG.rand_mode(1);     // Randomize max voltage swing level
+        //     seq_item.MAX_PRE.rand_mode(1);     // Randomize max pre-emphasis swing level
+        //     seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
+        //     seq_item.MAX_TPS_SUPPORTED.rand_mode(1);    // Randomize the max TPS value
+        // end
         
         start_item(seq_item);
-            seq_item.Driving_Param_VLD = 1'b1;   // Driving parameters are valid
-            seq_item.Config_Param_VLD = 1'b1;    // Config parameters are valid
+            if(!in_CR_EQ) begin
+                seq_item.Driving_Param_VLD = 1'b1;   // Driving parameters are valid
+                seq_item.Config_Param_VLD = 1'b1;    // Config parameters are valid
+                seq_item.MAX_TPS_SUPPORTED_VLD = 1'b1;         // Indicate change of max TPS
+                seq_item.VTG = 0;                    // Set the voltage swing to 0 initially
+                seq_item.PRE = 0;                    // Set the pre-emphasis to 0 initially
+                seq_item.LPM_Start_CR = 1;           // Start the link training (Clock recovery Stage)
+            end
+            else begin
+                seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+                seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
+                seq_item.MAX_TPS_SUPPORTED_VLD = 1'b0; // Indicate  no change of max TPS
+                seq_item.LPM_Start_CR = 0;           // Start the link training (Clock recovery Stage)
+            end
             seq_item.LPM_Transaction_VLD = 1'b0; // LPM is on
             seq_item.SPM_Transaction_VLD = 1'b0; // SPM is off
             seq_item.CR_DONE_VLD = 0;            // CR_DONE is not valid
-            seq_item.LPM_Start_CR = 1;           // Start the link training (Clock recovery Stage)
-            seq_item.VTG = 0;                    // Set the voltage swing to 0 initially
-            seq_item.PRE = 0;                    // Set the pre-emphasis to 0 initially
             assert(seq_item.randomize());
         finish_item(seq_item);
         get_response(seq_item);
 
-        seq_item.MAX_PRE_in = seq_item.MAX_PRE; // Store the max PRE value for later use
-        seq_item.MAX_VTG_in = seq_item.MAX_VTG; // Store the max VTG value for later use
-
-        seq_item.Link_BW_CR.rand_mode(0);  // Do not Randomize max Link rate
-        seq_item.Link_LC_CR.rand_mode(0);  // Do not Randomize max Lane count
-        seq_item.MAX_VTG.rand_mode(0);     // Do not Randomize max voltage swing level
-        seq_item.MAX_PRE.rand_mode(0);     // Do not Randomize max pre-emphasis swing level
-        seq_item.EQ_RD_Value.rand_mode(0); // Do not Randomize the EQ_RD_Value
+        // seq_item.Link_BW_CR.rand_mode(0);  // Do not Randomize max Link rate
+        // seq_item.Link_LC_CR.rand_mode(0);  // Do not Randomize max Lane count
+        // seq_item.MAX_VTG.rand_mode(0);     // Do not Randomize max voltage swing level
+        // seq_item.MAX_PRE.rand_mode(0);     // Do not Randomize max pre-emphasis swing level
+        // seq_item.EQ_RD_Value.rand_mode(0); // Do not Randomize the EQ_RD_Value
+        // seq_item.MAX_TPS_SUPPORTED.rand_mode(0);    // Do not Randomize the max TPS value
 
         while (!seq_item.CR_Completed && !seq_item.FSM_CR_Failed && !seq_item.CTRL_Native_Failed) begin
 
@@ -523,8 +539,8 @@ task FLOW_FSM();
                 // Link Training (CR) 8 Test Scenario
                 // Inputting to the Link layer (DUT) the received CR_DONE bits from the Sink
                 
-                seq_item.rand_mode(0);
-                seq_item.CR_DONE.rand_mode(1);
+                // seq_item.rand_mode(0);
+                // seq_item.CR_DONE.rand_mode(1);
                 
                 start_item(seq_item);
                     seq_item.CR_DONE_VLD = 1'b1; // CR_DONE is valid
@@ -592,9 +608,9 @@ task FLOW_FSM();
                     // Link Training (CR) 12-13 Test Scenario
                     // Waiting for Native Write Reply ACK for DPCD reg 00103h to 00106h
                     else if (seq_item.LPM_CR_Apply_New_Driving_Param) begin
-                        seq_item.rand_mode(0);
-                        seq_item.VTG.rand_mode(1);
-                        seq_item.PRE.rand_mode(1);
+                        // seq_item.rand_mode(0);
+                        // seq_item.VTG.rand_mode(1);
+                        // seq_item.PRE.rand_mode(1);
                         start_item(seq_item);
                             seq_item.Driving_Param_VLD = 1'b1;   // Driving parameters are valid
                             assert(seq_item.randomize());
@@ -678,419 +694,238 @@ task FLOW_FSM();
             done = 1'b0;     
         end
         if (!seq_item.FSM_CR_Failed && !seq_item.CTRL_Native_Failed && seq_item.CR_Completed) begin
-            seq_item.LT_Pass = 1'b1; // Set the LT_Pass flag to indicate that the link training has passed
-            `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training CR transaction Successful: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+            `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training CR Stage is Successful: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
         end
         else begin
             seq_item.LT_Failed = 1'b1; // Set the LT_Failed flag to indicate that the link training has failed
-            `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training CR transaction Failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+            `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training CR Stage has Failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
         end
-    endtask
-
-/////////////////////////////////////////// LINK TRAINING EQ /////////////////////////////////////////
-
-    task CR_LT_eq();
-        int ack_count = 0;
-        bit done = 0;
-        // We go in the first cycle, give the LL all the max allowed values and minimum VTG and PRE
-        start_item(seq_item);
-        seq_item.rand_mode(0);
-        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is on
-        seq_item.LPM_Start_CR = 1;           // Start the link training (Clock recovery Stage)
-        seq_item.VTG = 0;                    // Set the voltage swing to 0 initially
-        seq_item.PRE = 0;                    // Set the pre-emphasis to 0 initially
-        seq_item.CR_DONE_VLD = 0;    
-        seq_item.Driving_Param_VLD = 1'b1;   // Driving parameters are valid
-        seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
-        assert(seq_item.randomize());
-        finish_item(seq_item);
-        // Now LL is supposed to native write all the configurations to the Sink (3 writes and 1 read)
-            // Wait for the response from the DUT
-        while(~done) begin
-            get_response(seq_item);
-            if (seq_item.EQ_FSM_CR_Failed) begin 
-                `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                break;
-            end
-            while(seq_item.LPM_NATIVE_I2C) begin
-                start_item(seq_item);
-                    seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                finish_item(seq_item);
-                get_response(seq_item);
-            end
-            if (seq_item.EQ_FSM_CR_Failed || seq_item.CTRL_Native_Failed) begin
-                `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                break;
-            end
-            else if(seq_item.LPM_Reply_ACK_VLD) begin
-                if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
-                    ack_count++;
-                end
-                if(ack_count == 3) begin
-                    done = 1; 
-                end
-                else begin
-                    start_item(seq_item);
-                        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                        seq_item.LPM_Start_CR = 0; 
-                        seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                        seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid     
-                    finish_item(seq_item);
-                end
-            end
-            else begin
-                start_item(seq_item);
-                    seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                    seq_item.LPM_Start_CR = 0; 
-                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                    seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
-                finish_item(seq_item);  
-            end
+        if (seq_item.CR_Completed && in_CR_EQ) begin
+            EQ_LT();
         end
-        done = 0;
-        if(~seq_item.EQ_FSM_CR_Failed) begin
-            start_item(seq_item);
-            // seq_item.rand_mode(0);
-            // // seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
-            // seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-            // seq_item.Driving_Param_VLD = 1'b0;  // Driving parameters are not valid
-            // seq_item.LPM_Start_CR = 1'b0; 
-            // seq_item.CR_DONE_VLD = 1'b0; 
-            // seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
-            // assert(seq_item.randomize());
-            // finish_item(seq_item);
-            // get_response(seq_item);
-            ack_count = 0;
-            // Waiting for DPCD reg 0000E (no) to be read and value be returned
-            while (~seq_item.CR_Completed) begin
-                // Wait for 202 to 207 to be read
-                while(~done) begin
-                    do begin
-                        start_item(seq_item);
-                            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                        finish_item(seq_item);
-                        get_response(seq_item);
-                    end while(seq_item.LPM_NATIVE_I2C);
-                    if (seq_item.EQ_FSM_CR_Failed) begin
-                        `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                        break;
-                    end
-                    else if(seq_item.LPM_Reply_ACK_VLD) begin
-                        if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
-                            ack_count++;
-                        end
-                    end
-                    else if(ack_count==1 && seq_item.LPM_Reply_Data_VLD)
-                        done = 0; 
-                    else if(ack_count==1 && !seq_item.LPM_Reply_Data_VLD) 
-                        done = 1; 
-                end
-                ack_count = 0;
-                done = 0;
-                if(seq_item.EQ_FSM_CR_Failed) begin
-                    seq_item.LT_Failed = 1'b1;
-                    break; // Exit the loop if CR is failed
-                end
-                start_item(seq_item);
-                seq_item.rand_mode(0);
-                seq_item.VTG.rand_mode(1);
-                seq_item.PRE.rand_mode(1);
-                seq_item.CR_DONE.rand_mode(1);
-                seq_item.CR_DONE_VLD = 1'b1; // CR_DONE is valid
-                seq_item.LPM_Transaction_VLD = 1'b0;
-                seq_item.Driving_Param_VLD = 1'b1;
-                seq_item.LPM_Start_CR = 0;
-                seq_item.Config_Param_VLD= 1'b0;    // Config parameters are not valid
-                assert(seq_item.randomize());
-                finish_item(seq_item);
-                // Wait for 103 to 106 to be written
-                while(ack_count<1) begin
-                    get_response(seq_item);
-                    while(seq_item.LPM_NATIVE_I2C) begin
-                        start_item(seq_item);
-                            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                            seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                        finish_item(seq_item);
-                        get_response(seq_item);
-                    end
-                    if (seq_item.EQ_FSM_CR_Failed) begin
-                        `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training CR transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                        break;
-                    end
-                    else if(seq_item.CR_Completed) begin
-                        `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training CR transaction Successful: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                        break; // Exit the loop if CR is completed
-                    end
-                    else if(seq_item.LPM_Reply_ACK_VLD) begin
-                        if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
-                            ack_count++;
-                        end
-                        else begin
-                            start_item(seq_item);
-                                seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                                seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                            finish_item(seq_item);
-                        end
-                    end
-                    else begin
-                        start_item(seq_item);
-                            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                            seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                        finish_item(seq_item);  
-                    end
-                end
-                ack_count = 0;
-                if(seq_item.EQ_FSM_CR_Failed) begin
-                    seq_item.LT_Failed = 1'b1;
-                    break; // Exit the loop if CR is failed
-                end
-            end
-        end
-        ack_count = 0;
     endtask
 
 //////////////////////////////////////////////// LINK TRAINING EQ_LT /////////////////////////////////////////
 
     task EQ_LT();
-        int ack_count = 0; // Counter to track acknowledgment responses
-        bit restart= 1; // Flag to indicate if a restart is needed
-        bit done = 0; 
-        // Create a sequence item for link policy maker (LPM) communication
-       // seq_item = dp_tl_sequence_item::type_id::create("seq_item");
-       seq_item.operation = EQ_LT_op;
-        
-        // Loop until equalization succeeds
-        while (restart) begin
-            // Start sending the initial equalization sequence
-            restart = 0;
-            start_item(seq_item);
-            seq_item.rand_mode(0);                      // Disable randomization for all fields
-            seq_item.LPM_Transaction_VLD = 1'b0;        
-            seq_item.EQ_Data_VLD = 0;                   // Indicate that EQ data is not valid
-            seq_item.MAX_TPS_SUPPORTED_VLD = 1;         // Indicate change of max TPS
-            seq_item.MAX_TPS_SUPPORTED.rand_mode(1);    // Randomize the max TPS value
-            seq_item.VTG.rand_mode(1);
-            seq_item.PRE.rand_mode(1);
-            seq_item.Driving_Param_VLD = 1'b1;   // Driving parameters are valid
+        bit ack_done, data_start, done; 
 
-            assert(seq_item.randomize()); // Randomize enabled fields
-            finish_item(seq_item); // Finish transaction
-            // Wait for acknowledgment from the DUT for 2 writes and 1 read transactions
-            while(~done) begin
+        if(seq_item == null) begin
+            seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        end
+
+        seq_item.operation = EQ_LT_op;
+
+        // Link Training (EQ) 1-2 Test Scenario
+        // Waiting for Native Write Reply ACK for DPCD regs 00102h (TPS2/3/4), 00103h-00106h (VTG/PRE)
+        do begin
+            if (seq_item.EQ_Failed) begin // If the FSM CR failed while obtaining reply, exit the loop
+                `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+                break; // Exit the loop and finish the task
+            end 
+            while(seq_item.LPM_NATIVE_I2C) begin // wait for LPM_NATIVE_I2C to de-assert to receive the LPM transaction reply
+                start_item(seq_item);
+                    seq_item.LPM_Start_CR = 0;           // Stop the link training (Clock recovery Stage)
+                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+                    seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
+                finish_item(seq_item);
                 get_response(seq_item);
-                if (seq_item.EQ_Failed) begin
-                    `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                    break;
+            end           
+            if (seq_item.EQ_Failed || seq_item.CTRL_Native_Failed) begin // If the FSM CR failed while obtaining reply or if failed to obtain the reply itself, exit the loop
+                `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+                break; // Exit the loop and finish the task
+            end
+            else if(seq_item.LPM_Reply_ACK_VLD) begin // wait till ACK is valid
+                if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin // if it is ACK we are done
+                    done = 1'b1;
                 end
-                while(seq_item.LPM_NATIVE_I2C) begin
+                else begin // if it is not ACK, we are not done we start again
                     start_item(seq_item);
-                        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                        seq_item.LPM_Start_CR = 0; 
                         seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                    finish_item(seq_item);
+                        seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
+                    finish_item(seq_item);  
                     get_response(seq_item);
                 end
-                if (seq_item.EQ_Failed) begin
+            end
+            else begin
+                start_item(seq_item);
+                    seq_item.LPM_Start_CR = 0; 
+                    seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
+                    seq_item.Config_Param_VLD = 1'b0;    // Config parameters are not valid
+                finish_item(seq_item);  
+                get_response(seq_item);
+            end
+        end while (!done);
+        done = 1'b0;
+        while (!seq_item.EQ_LT_Pass && !seq_item.EQ_FSM_CR_Failed && !seq_item.EQ_Failed) begin
+            // Link Training (EQ) 3-4 Test Scenario
+            // Waiting for Native Read Reply ACK for DPCD regs 00202h-00207h (CR_done, EQ_done, Symbol_Lock, Lane_Align, ,VTG_PRE)
+            do begin
+                if (seq_item.EQ_Failed) begin // If the FSM CR failed while obtaining reply, exit the loop
                     `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                    break;
+                    break; // Exit the loop and finish the task
+                end 
+                while(seq_item.LPM_NATIVE_I2C) begin // wait for LPM_NATIVE_I2C to de-assert to receive the LPM transaction reply
+                    start_item(seq_item);
+                    finish_item(seq_item);
+                    get_response(seq_item);
+                end           
+                if (seq_item.EQ_Failed || seq_item.CTRL_Native_Failed) begin // If the FSM CR failed while obtaining reply or if failed to obtain the reply itself, exit the loop
+                    `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+                    break; // Exit the loop and finish the task
                 end
-                else if(seq_item.LPM_Reply_ACK_VLD) begin
-                    if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
-                        ack_count++;
+                else if(seq_item.LPM_Reply_ACK_VLD) begin // wait till ACK is valid
+                    if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin // if it is ACK we received the ack reply
+                        ack_done = 1'b1;
                     end
-                    start_item(seq_item);
-                        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                        seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                    finish_item(seq_item);
+                    else begin // if it is not ACK, we are not done we start again
+                        start_item(seq_item);
+                        finish_item(seq_item);  
+                        get_response(seq_item);
+                    end
                 end
-                else if(ack_count==2 && seq_item.LPM_Reply_Data_VLD) begin
-                    done = 0; 
+                else if (ack_done && seq_item.LPM_Reply_Data_VLD) begin // if ack reply is received and data reply is starting
+                    data_start = 1'b1;
                     start_item(seq_item);
-                        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                        seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                    finish_item(seq_item);
+                    finish_item(seq_item);  
+                    get_response(seq_item);
                 end
-                else if(ack_count==2 && !seq_item.LPM_Reply_Data_VLD) begin
-                    done = 1; 
+                else if (ack_done && !seq_item.LPM_Reply_Data_VLD && data_start) begin // if ack reply is received and data reply is done
+                    done = 1'b1;
                 end
                 else begin
                     start_item(seq_item);
-                        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                        seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
                     finish_item(seq_item);  
+                    get_response(seq_item);
                 end
-            end
-            done = 0;
-            if (seq_item.EQ_Failed) begin
-                seq_item.LT_Failed = 1'b1; 
-                break;
-            end 
-            // start_item(seq_item);
+            end while (!done);
+            done = 1'b0;
+            ack_done = 1'b0;
+            data_start = 1'b0;
+
+            // Link Training (EQ) 5.1 Test Scenario
+            // Input the (CR_done, EQ_done, Symbol_Lock, Lane_Align, ,VTG_PRE)
+            
             // seq_item.rand_mode(0);
-            // seq_item.EQ_RD_Value.rand_mode(1);  // Randomize the EQ_RD_Value
-            // seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate change of max TPS
-            // seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-            // seq_item.EQ_Data_VLD = 0; // Indicate that EQ data is not valid
-            // seq_item.Driving_Param_VLD = 1'b0;
-            // assert(seq_item.randomize());
-            // finish_item(seq_item);
-            // get_response(seq_item);
-            ack_count = 0;
-            // wait for dut to receive EQ_RD_Value
-            
-            // Check Link Status registers until all conditions are met
-            while (~seq_item.EQ_Failed) begin
-                // Wait for 202 to 207 to be read
-                while(~done) begin
-                    do begin
-                        start_item(seq_item);
-                            seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate change of max TPS
-                            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                            seq_item.EQ_Data_VLD = 0; // Indicate that EQ data is not valid
-                            seq_item.Driving_Param_VLD = 1'b0;
-                        finish_item(seq_item);
-                        get_response(seq_item);
-                    end while(seq_item.LPM_NATIVE_I2C);
-                    if (seq_item.EQ_Failed) begin
-                            `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                            break;
-                    end 
-                    else if(seq_item.LPM_Reply_ACK_VLD) begin
-                        if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
-                            ack_count++;
-                        end
-                    end
-                    else if(ack_count==1 && seq_item.LPM_Reply_Data_VLD)
-                        done = 0; 
-                    else if(ack_count==1 && !seq_item.LPM_Reply_Data_VLD)
-                        done = 1; 
-                end
-                done = 0;
-                ack_count = 0; // Reset acknowledgment count
-                if (seq_item.EQ_Failed) begin
-                    seq_item.LT_Failed = 1'b1; 
-                    break;
-                end 
-                // Step 4: Check EQ completion status
-                start_item(seq_item);
-                seq_item.rand_mode(0);
-                seq_item.Lane_Align.rand_mode(1);
-                seq_item.Channel_EQ.rand_mode(1);
-                seq_item.Symbol_Lock.rand_mode(1);
-                seq_item.EQ_CR_DN.rand_mode(1);
-                seq_item.CR_DONE.rand_mode(1);
-                seq_item.CR_DONE_VLD = 1'b1; // CR_DONE is valid
-                seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate change of max TPS
-                seq_item.LPM_Transaction_VLD = 1'b0;
-                seq_item.EQ_Data_VLD = 1;
-                seq_item.Driving_Param_VLD = 1'b1;
-                seq_item.VTG.rand_mode(1);
-                seq_item.PRE.rand_mode(1);
-                assert(seq_item.randomize());
-                finish_item(seq_item);
-                
-                get_response(seq_item);
-                while(seq_item.LPM_NATIVE_I2C) begin
-                    start_item(seq_item);
-                        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                        seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                    finish_item(seq_item);
-                    get_response(seq_item);
-                end
-                if (seq_item.EQ_Failed) begin
-                        `uvm_info("TL_EQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                        break;
-                end
-                else if(seq_item.EQ_LT_Pass) begin
-                    `uvm_info("TL_EQ_SEQ", $sformatf("Link Training EQ transaction Successful: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                    break; // Exit the loop if EQ is completed
-                end
-                // Step 5: Check if CR is done
-                else if(seq_item.EQ_FSM_CR_Failed) begin
-                    CR_LT_eq(); // Call the CR_LT task to perform clock recovery
-                    if(!seq_item.LT_Failed)
-                        restart = 1; // Set the restart flag to indicate a restart is needed
-                    break;
-                end
-                while(ack_count < 1) begin
-                    do begin
-                        start_item(seq_item);
-                            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                            seq_item.Driving_Param_VLD = 1'b0;   // Driving parameters are not valid
-                        finish_item(seq_item);
-                        get_response(seq_item);
-                    end while(seq_item.LPM_NATIVE_I2C);
-                    if (seq_item.EQ_Failed) begin
-                            `uvm_info("TL_EQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                            break;
-                    end 
-                    else if(seq_item.LPM_Reply_ACK_VLD) begin
-                        if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
-                            ack_count++;
-                        end
-                    end
-                end
-                done = 0;
-                ack_count = 0; // Reset acknowledgment count
-            end
-            if (seq_item.EQ_Failed || seq_item.LT_Failed) begin
-                seq_item.LT_Failed = 1'b1; 
-                break;
-            end 
-            else if (restart) begin 
-                continue; // Restart the loop if needed
-            end
-            else if(seq_item.EQ_LT_Pass) begin
-                seq_item.ISO_LC = seq_item.EQ_Final_ADJ_LC;
-                seq_item.ISO_BW = seq_item.EQ_Final_ADJ_BW; 
-                seq_item.LT_Pass = 1'b1;
-            end
-            ack_count = 0;
-        end
-        if(~seq_item.LT_Failed && seq_item.LT_Pass) begin   
-            // Step 6: Write 00h to offset 0x00102 to disable Link Training
+            // seq_item.EQ_CR_DN.rand_mode(1);
+            // seq_item.Channel_EQ.rand_mode(1);
+            // seq_item.Symbol_Lock.rand_mode(1);
+            // seq_item.Lane_Align.rand_mode(1);
+            // seq_item.VTG.rand_mode(1);
+            // seq_item.PRE.rand_mode(1);
             start_item(seq_item);
-            seq_item.rand_mode(0);
-            seq_item.MAX_TPS_SUPPORTED_VLD = 0; // Indicate no TPS
-            seq_item.LPM_Transaction_VLD = 1'b0;
-            seq_item.Driving_Param_VLD = 1'b0;
-            seq_item.EQ_Data_VLD = 1'b0; // Indicate that EQ data is not valid
-            assert(seq_item.randomize());
-            finish_item(seq_item);
-            
-            // Wait for acknowledgment from the DUT for write transaction
-            while(ack_count<1) begin
-                get_response(seq_item);
-                while(seq_item.LPM_NATIVE_I2C) begin
-                    start_item(seq_item);
-                        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                    finish_item(seq_item);
-                    get_response(seq_item);
-                end
-                if (seq_item.CTRL_Native_Failed) begin
-                    `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
-                    break;
-                end
-                else if(seq_item.LPM_Reply_ACK_VLD) begin
-                    if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin
-                        ack_count++;
+                seq_item.EQ_Data_VLD = 1'b1; // EQ data is valid
+                assert(seq_item.randomize());
+            finish_item(seq_item); 
+            get_response(seq_item);
+            // Link Training (EQ) 5.1 (continue) Test Scenario
+            // If equalization is successful i.e. link training is successful
+            if(seq_item.EQ_LT_Pass) begin
+                in_CR_EQ = 1'b0;
+                break; // Exit the loop and finish the task
+            end
+            // Link Training (EQ) 5.2 Test Scenario
+            // If CR_Done bits failed so we need to go back to CR stage
+            else if (seq_item.EQ_FSM_CR_Failed) begin
+                break;
+            end
+            // Link Training (EQ) 5.3 Test Scenario
+            // If CR_Done bits successful, but EQ_done, Symbol_Lock or Lane_Align are not
+            else if (!seq_item.EQ_LT_Pass && !seq_item.EQ_FSM_CR_Failed && !seq_item.EQ_Failed) begin
+                // Waiting for Native Write Reply ACK for DPCD regs 00103h-00106h (vtg_pre)
+                do begin
+                    while(seq_item.LPM_NATIVE_I2C) begin // wait for LPM_NATIVE_I2C to de-assert to receive the LPM transaction reply
+                        start_item(seq_item);
+                            seq_item.EQ_Data_VLD = 1'b0; // EQ data is not valid
+                        finish_item(seq_item);
+                        get_response(seq_item);
+                    end           
+                    if (seq_item.EQ_Failed || seq_item.CTRL_Native_Failed) begin // If the FSM CR failed while obtaining reply or if failed to obtain the reply itself, exit the loop
+                        `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+                        break; // Exit the loop and finish the task
+                    end
+                    else if(seq_item.LPM_Reply_ACK_VLD) begin // wait till ACK is valid
+                        if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin // if it is ACK we are done
+                            done = 1'b1;
+                        end
+                        else begin // if it is not ACK, we are not done we start again
+                            start_item(seq_item);
+                                seq_item.EQ_Data_VLD = 1'b0; // EQ data is not valid
+                            finish_item(seq_item);  
+                            get_response(seq_item);
+                        end
                     end
                     else begin
                         start_item(seq_item);
-                            seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
-                        finish_item(seq_item);
+                            seq_item.EQ_Data_VLD = 1'b0; // EQ data is not valid
+                        finish_item(seq_item);  
+                        get_response(seq_item);
+                    end
+                end while (!done);
+                done = 1'b0;
+            end
+            else if (seq_item.EQ_Failed) begin
+                in_CR_EQ = 1'b0;
+                break;
+            end
+        end
+
+        if (!seq_item.EQ_FSM_CR_Failed && !seq_item.CTRL_Native_Failed && seq_item.EQ_LT_Pass) begin
+             seq_item.LT_Pass = 1'b1; // Set the LT_Pass flag to indicate that the link training has passed
+                seq_item.ISO_LC = seq_item.EQ_Final_ADJ_LC;
+                seq_item.ISO_BW = seq_item.EQ_Final_ADJ_BW; 
+            `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training is Successful: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+        end
+        else begin
+            seq_item.LT_Failed = 1'b1; // Set the LT_Failed flag to indicate that the link training has failed
+            `uvm_info("TL_CR_LT_SEQ", $sformatf("Link Training has Failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+        end
+
+        // Link Training (EQ) 6-7 Test Scenario
+        // Waiting for Native Write Reply ACK for DPCD regs 00102h clear
+        if (seq_item.EQ_Failed || seq_item.EQ_LT_Pass) begin
+            do begin
+                while(seq_item.LPM_NATIVE_I2C) begin // wait for LPM_NATIVE_I2C to de-assert to receive the LPM transaction reply
+                    start_item(seq_item);
+                        seq_item.EQ_Data_VLD = 1'b0; // EQ data is not valid
+                    finish_item(seq_item);
+                    get_response(seq_item);
+                end           
+                // QUESTION HEEEEEEEEEEREEEEEEEEEE!!!!!!!!!!!!!!!
+                if (seq_item.EQ_Failed || seq_item.CTRL_Native_Failed) begin // If the FSM CR failed while obtaining reply or if failed to obtain the reply itself, exit the loop
+                    `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
+                    break; // Exit the loop and finish the task
+                end
+                else if(seq_item.LPM_Reply_ACK_VLD) begin // wait till ACK is valid
+                    if(seq_item.LPM_Reply_ACK == AUX_ACK[1:0]) begin // if it is ACK we are done
+                        done = 1'b1;
+                    end
+                    else begin // if it is not ACK, we are not done we start again
+                        start_item(seq_item);
+                            seq_item.EQ_Data_VLD = 1'b0; // EQ data is not valid
+                        finish_item(seq_item);  
+                        get_response(seq_item);
                     end
                 end
                 else begin
                     start_item(seq_item);
-                        seq_item.LPM_Transaction_VLD = 1'b0; // LPM is off
+                        seq_item.EQ_Data_VLD = 1'b0; // EQ data is not valid
                     finish_item(seq_item);  
+                    get_response(seq_item);
                 end
-            end
+            end while (!done);
+            done = 1'b0;
         end
+        else if (seq_item.EQ_FSM_CR_Failed) begin
+            in_CR_EQ = 1'b1;
+            CR_LT();
+        end
+
     endtask
 
-    task ISO_INIT();
+    //////////////////////////////////////////////// ISOCHRONOUS /////////////////////////////////////////
+       task ISO_INIT();
         if(!seq_item.isflow)
             seq_item = dp_tl_sequence_item::type_id::create("seq_item");
         start_item(seq_item);

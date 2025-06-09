@@ -52,7 +52,7 @@ class dp_tl_monitor extends uvm_monitor;
     rsp_seq_item.EQ_RD_Value = dp_tl_vif.EQ_RD_Value;
     rsp_seq_item.PRE = dp_tl_vif.PRE;
     rsp_seq_item.VTG = dp_tl_vif.VTG;
-    rsp_seq_item.Link_BW_CR = dp_tl_vif.Link_BW_CR;
+    rsp_seq_item.Link_BW_CR = link_bw_cr_e'(dp_tl_vif.Link_BW_CR);
     rsp_seq_item.CR_DONE = dp_tl_vif.CR_DONE;
     rsp_seq_item.CR_DONE_VLD = dp_tl_vif.CR_DONE_VLD;
     rsp_seq_item.EQ_CR_DN = dp_tl_vif.EQ_CR_DN;

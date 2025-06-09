@@ -61,7 +61,7 @@
 | TPS_VLD       | input     | 1 bit |TL     |Active high valid signal for the TPS bus, MAX_PRE and MAX_VTG.|
 | TPS       | input     | 2 bits |TL     |This signal indicates the maximum supported TPS Pattern Sequence.|
 | EQ_RD_Value       | input     | 8 bits |TL     |This signal indicates the time the source waits during the EQ phase before checking the status update registers.|
-| EQ_Data_VLD       | input     | 1 bit |TL     |Active high valid signal for the arrival of Channel_EQ, Symbol_Lock and Lane_Align.|
+| EQ_Data_VLD       | input     | 1 bit |TL     |Active high valid signal for the arrival of EQ_CR_DN, Channel_EQ, Symbol_Lock, Lane_Align, VTG and PRE.|
 | Channel_EQ       | input     | 4 bits |TL     |Indicates whether EQ has been completed for the four lanes.|
 | Symbol_Lock       | input     | 4 bits |TL     |Indicates whether Symbol Locking has been completed for the four lanes.|
 | Lane_Align       | input     | 8 bits |TL     |Indicates whether lane alignment has been completed.|
@@ -107,8 +107,8 @@
 | AUX_START_STOP      | output    | 1 bit  |PL    | Indicates the beginning and end of the request transaction.|
 | PHY_Instruct_VLD      | output    | 1 bit  |PL    | Active high valid signal for the PHY_Instruct bus.|
 | PHY_Instruct      | output    | 2 bits  |PL    | Instructs the PHY layer to begin sending a specific training pattern sequence (TPS1, 2, 3, 4).|
-| PHY_ADJ_BW      | output    | 8 bits  |PL    | Adjusted BW after successful LT.|
-| PHY_ADJ_LC      | output    | 2 bits  |PL    | Adjusted lane count after successful LT.|
+| PHY_ADJ_BW      | output    | 8 bits  |PL    | Adjusted Bandwidth.|
+| PHY_ADJ_LC      | output    | 2 bits  |PL    | Adjusted lane count.|
 | ISO_symbols_lanex      | output    | 8 bits  |PL    | Carry the processed main video stream data and control symbols.|
 | Control_sym_flag_lanex      | output    | 1 bit  |PL    | Asserted when the block outputs control symbols.|
 ___
