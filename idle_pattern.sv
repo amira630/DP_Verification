@@ -169,13 +169,13 @@ module idle_pattern
    begin
     idle_symbols_comb           = 8'd0;
     idle_control_sym_flag_comb  = 1'b0;
-    idle_activate_en_comb = 1'b0;
+    idle_activate_en_comb       = 1'b0;
     case (current_state)
     IDLE_STATE:
           begin 
             idle_symbols_comb           = 8'd0;
             idle_control_sym_flag_comb  = 1'b0;
-            idle_activate_en_comb = 1'b0;  // Deasserted during BS symbols
+            idle_activate_en_comb       = 1'b1;
           end
     BS1:
           begin 

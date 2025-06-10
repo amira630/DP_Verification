@@ -34,8 +34,8 @@ module iso_scheduler (
     input    wire            td_hsync_polarity,
     input    wire            td_vsync_polarity,
     input    wire            td_de,
-    input    wire    [3:0]   td_tu_alternate_up,
-    input    wire    [3:0]   td_tu_alternate_down,
+    input    wire    [15:0]   td_tu_alternate_up,
+    input    wire    [15:0]   td_tu_alternate_down,
     input    wire    [15:0]  td_h_total_ctr,    
     //===============================================================//
     //                    idle_pattern interface                     //
@@ -43,7 +43,9 @@ module iso_scheduler (
     input    wire            idle_activate_en_lane0,
     input    wire            idle_activate_en_lane1,
     input    wire            idle_activate_en_lane2,
-    input    wire            idle_activate_en_lane3,    
+    input    wire            idle_activate_en_lane3, 
+
+    input    wire    [15:0]  total_stuffing_req, 
     //===============================================================//
     //                 main_bus_steering interface                   //
     //===============================================================//
@@ -96,8 +98,9 @@ reg     [15:0]    h_total_ctr;
 //-------------------------------------------------------------------//                 
 reg     [6:0]     tu_vld_data_ctr;
 reg     [6:0]     tu_stuffed_data_ctr;
-reg     [3:0]     alternate_up_ctr;
-reg     [3:0]     alternate_down_ctr;
+reg     [15:0]    total_stuffing_ctr;
+reg     [15:0]    alternate_up_ctr;
+reg     [15:0]    alternate_down_ctr;
 //-------------------------------------------------------------------//                 
 reg     [13:0]    h_blank_ctr_reg;
 reg     [15:0]    h_active_ctr_reg;
@@ -107,8 +110,9 @@ reg     [15:0]    h_total_ctr_reg;
 //-------------------------------------------------------------------//                 
 reg     [6:0]     tu_vld_data_ctr_reg;
 reg     [6:0]     tu_stuffed_data_ctr_reg;
-reg     [3:0]     alternate_up_ctr_reg;
-reg     [3:0]     alternate_down_ctr_reg;
+reg     [15:0]    total_stuffing_ctr_reg;
+reg     [15:0]     alternate_up_ctr_reg;
+reg     [15:0]     alternate_down_ctr_reg;
 //-------------------------------------------------------------------//                 
 reg               td_scheduler_start_reg;
 reg     [1:0]     td_lane_count_reg;
@@ -120,8 +124,8 @@ reg     [6:0]     td_tu_vld_data_size_min;
 reg     [6:0]     td_tu_stuffed_data_size_max;
 reg               td_hsync_polarity_reg;
 reg               td_vsync_polarity_reg;
-reg     [3:0]     td_tu_alternate_up_reg;
-reg     [3:0]     td_tu_alternate_down_reg;
+reg     [15:0]     td_tu_alternate_up_reg;
+reg     [15:0]     td_tu_alternate_down_reg;
 reg     [15:0]    td_h_total_ctr_max;
 //-------------------------------------------------------------------//
 reg     [5:0]     max_stuffing_reg;
@@ -140,6 +144,7 @@ reg    [1:0]   sched_stream_idle_sel_lane1_comb;
 reg    [1:0]   sched_stream_idle_sel_lane2_comb;
 reg    [1:0]   sched_stream_idle_sel_lane3_comb;
 
+reg    [15:0]  total_stuffing_req_reg;
 
 //===================================================================//
 //                          FSM states                               //
@@ -186,14 +191,16 @@ always @(posedge clk or negedge rst_n)
             td_tu_stuffed_data_size_max <= 7'b0;
             td_hsync_polarity_reg       <= 1'b0;
             td_vsync_polarity_reg       <= 1'b0;
-            td_tu_alternate_up_reg      <= 4'b0;
-            td_tu_alternate_down_reg    <= 4'b0;
+            td_tu_alternate_up_reg      <= 'b0;
+            td_tu_alternate_down_reg    <= 'b0;
             td_h_total_ctr_max          <= 16'b0;
 
             sched_stream_idle_sel_lane0 <= 2'b0;
             sched_stream_idle_sel_lane1 <= 2'b0;
             sched_stream_idle_sel_lane2 <= 2'b0;
-            sched_stream_idle_sel_lane3 <= 2'b0;           
+            sched_stream_idle_sel_lane3 <= 2'b0; 
+
+            total_stuffing_req_reg      <= 'b0;        
         end
     else if(td_vld_data == 1'b1)
         begin
@@ -214,7 +221,9 @@ always @(posedge clk or negedge rst_n)
             sched_stream_idle_sel_lane0 <= sched_stream_idle_sel_lane0_comb;
             sched_stream_idle_sel_lane1 <= sched_stream_idle_sel_lane1_comb;
             sched_stream_idle_sel_lane2 <= sched_stream_idle_sel_lane2_comb;
-            sched_stream_idle_sel_lane3 <= sched_stream_idle_sel_lane3_comb;              
+            sched_stream_idle_sel_lane3 <= sched_stream_idle_sel_lane3_comb;  
+
+            total_stuffing_req_reg      <= total_stuffing_req;            
         end
       else
         begin
@@ -241,6 +250,7 @@ begin
 
       tu_vld_data_ctr_reg       <= 'b0;
       tu_stuffed_data_ctr_reg   <= 'b0;
+      total_stuffing_ctr        <= 'b0;
       alternate_up_ctr_reg      <= 'b0;
       alternate_down_ctr_reg    <= 'b0;
     end
@@ -254,6 +264,7 @@ begin
 
       tu_vld_data_ctr_reg       <= tu_vld_data_ctr;
       tu_stuffed_data_ctr_reg   <= tu_stuffed_data_ctr;
+      total_stuffing_ctr_reg    <= total_stuffing_ctr;
       alternate_up_ctr_reg      <= alternate_up_ctr;
       alternate_down_ctr_reg    <= alternate_down_ctr;    
     end
@@ -410,7 +421,7 @@ always @ (*)
                     end
                     
     HBLANK:         begin
-                      if(h_blank_ctr_reg == td_h_blank_ctr_max - 'b101) // max -4(for BE symbols) -1
+                      if(h_blank_ctr_reg == td_h_blank_ctr_max - 'b110) // max -4(for BE symbols) -1
                         begin
                           next_state = BE;
                         end
@@ -421,7 +432,7 @@ always @ (*)
                     end
                     
     BE:             begin
-                      if((h_blank_ctr_reg == td_h_blank_ctr_max - 'b1)||(h_total_ctr_reg == td_h_blank_ctr_max - 'b1))
+                      if((h_blank_ctr_reg == td_h_blank_ctr_max - 'd2)||(h_total_ctr_reg == td_h_blank_ctr_max - 'b1))
                         begin
                           next_state = ACTIVE_VLD;
                         end
@@ -432,41 +443,48 @@ always @ (*)
                     end 
                     
     ACTIVE_VLD:     begin
-                      if (!(max_stuffing_reg == 'b00 || max_stuffing_reg == 'b01 || max_stuffing_reg == 'b10) &&
-                          (((tu_vld_data_ctr_reg == td_tu_vld_data_size_min - 'b1) && !alternate_up_flag) ||
-                          ((tu_vld_data_ctr_reg == td_tu_vld_data_size_min) && alternate_up_flag)) &&
-                          h_active_ctr_reg != td_h_active_ctr_max - 'b1) 
+
+                      if((h_active_ctr_reg != td_h_active_ctr_max-1)&&(total_stuffing_ctr_reg == total_stuffing_req_reg)&&(h_active_ctr_reg != td_h_active_ctr_max))
+                      begin
+                        next_state = ACTIVE_VLD;
+                      end
+                      else if (
+                          (!(max_stuffing_reg == 'b00 || max_stuffing_reg == 'b01 || max_stuffing_reg == 'b10)&&(((tu_vld_data_ctr_reg == td_tu_vld_data_size_min - 'b1) && !alternate_up_flag) ||((tu_vld_data_ctr_reg == td_tu_vld_data_size_min) && alternate_up_flag)) && h_active_ctr_reg != td_h_active_ctr_max - 'b1)
+                          || ((h_active_ctr_reg == td_h_active_ctr_max-1)&&(total_stuffing_ctr_reg != total_stuffing_req_reg - 1)&&(total_stuffing_ctr_reg != total_stuffing_req_reg))
+                         )
                         begin
                           next_state = FS;
                         end
-                      else if (max_stuffing_reg == 'b1 && 
-                               (((tu_vld_data_ctr_reg == td_tu_vld_data_size_min - 'b1) && !alternate_up_flag)||
-                               ((tu_vld_data_ctr_reg == td_tu_vld_data_size_min ) && alternate_up_flag))&&
-                               h_active_ctr_reg != td_h_active_ctr_max - 'b1) 
+                      else if (
+                               ((max_stuffing_reg == 'b1)&& (((tu_vld_data_ctr_reg == td_tu_vld_data_size_min - 'b1) && !alternate_up_flag)||((tu_vld_data_ctr_reg == td_tu_vld_data_size_min ) && alternate_up_flag))&& h_active_ctr_reg != td_h_active_ctr_max - 'b1)
+                               || ((h_active_ctr_reg == td_h_active_ctr_max-1)&&(total_stuffing_ctr_reg == total_stuffing_req_reg - 1))
+                              ) 
                         begin
                           next_state = FE;
                         end
-                      else if ((h_active_ctr_reg == td_h_active_ctr_max - 'b1)&& 
+                      else if ((((h_active_ctr_reg == td_h_active_ctr_max-1)&&(total_stuffing_ctr == total_stuffing_req_reg))||(((h_active_ctr_reg == td_h_active_ctr_max)&&(total_stuffing_ctr_reg == total_stuffing_req_reg-1))))&& 
                                !((v_active_ctr_reg == td_v_active_ctr_max)&&(td_scheduler_start_reg == 'b0)))
                         begin
                           next_state = BS;
                         end                        
-                      else if((h_active_ctr_reg == td_h_active_ctr_max - 'b1)&& 
-                               (v_active_ctr_reg == td_v_active_ctr_max)&&(td_scheduler_start_reg == 'b0))
+                      else if(((h_active_ctr_reg == td_h_active_ctr_max-1)&&(total_stuffing_ctr == total_stuffing_req_reg))||(((h_active_ctr_reg == td_h_active_ctr_max)&&(total_stuffing_ctr_reg == total_stuffing_req_reg-1))) 
+                               &&(v_active_ctr_reg == td_v_active_ctr_max)&&(td_scheduler_start_reg == 'b0))
                         begin
                           next_state = IDLE;
                         end
                       else
                         begin
                           next_state = ACTIVE_VLD;
-                        end                        
+                        end 
+  //*/                      
+
                     end
                     
     FS:             begin
-                      if(max_stuffing_reg == 'b10)
+                      if((total_stuffing_ctr_reg == total_stuffing_req_reg - 2) || (max_stuffing_reg == 'b10))
                         begin
                           next_state = FE;
-                        end    
+                        end   
                       else
                         begin
                           next_state = ACTIVE_STUFFING;
@@ -475,7 +493,7 @@ always @ (*)
                     
     ACTIVE_STUFFING:   
                     begin
-                      if(tu_stuffed_data_ctr_reg == max_stuffing_reg - 'b10)// 1 for reg & 1 for FE
+                      if((total_stuffing_ctr_reg == total_stuffing_req_reg - 2)||((tu_stuffed_data_ctr_reg == max_stuffing_reg - 'b10)&&(h_active_ctr_reg != td_h_active_ctr_max)))// 1 for reg & 1 for FE
                         begin
                           next_state = FE;
                         end
@@ -486,7 +504,14 @@ always @ (*)
                     end
                     
     FE:             begin
-                      next_state = ACTIVE_VLD;
+                      if((total_stuffing_ctr_reg == total_stuffing_req_reg - 1)&&(h_active_ctr_reg == td_h_active_ctr_max))
+                        begin
+                          next_state = BS;
+                        end
+                      else
+                        begin
+                           next_state = ACTIVE_VLD;                         
+                        end
                     end
                     
     default:        begin
@@ -555,17 +580,18 @@ always @ (*)
                       sched_blank_en_lane2        = 'b0;
                       sched_blank_en_lane3        = 'b0;
     //-------------------------------------------------------------------//                    
-                      sched_idle_en_lane0         = 'b1;
-                      sched_idle_en_lane1         = 'b1;
-                      sched_idle_en_lane2         = 'b1;
-                      sched_idle_en_lane3         = 'b1;    
+                      sched_idle_en_lane0         = 'b0; 
+                      sched_idle_en_lane1         = 'b0;
+                      sched_idle_en_lane2         = 'b0;
+                      sched_idle_en_lane3         = 'b0;    
     //-------------------------------------------------------------------//
                       sched_stream_idle_sel_lane0_comb = 'b0;
                       sched_stream_idle_sel_lane1_comb = 'b0;
                       sched_stream_idle_sel_lane2_comb = 'b0;
                       sched_stream_idle_sel_lane3_comb = 'b0;
     //-------------------------------------------------------------------//                  
-                      tu_stuffed_data_ctr = 'b0;        
+                      tu_stuffed_data_ctr = 'b0;
+                      total_stuffing_ctr = 'b0;        
                       h_total_ctr = 'b0;
                       h_blank_ctr = 'b0;
                       v_blank_ctr = 'b0;
@@ -686,6 +712,7 @@ always @ (*)
                       v_blank_ctr = v_blank_ctr_reg;                       
                       tu_vld_data_ctr = 'b0;
                       tu_stuffed_data_ctr = 'b0;
+                      total_stuffing_ctr = 'b0;
                       alternate_up_ctr = alternate_up_ctr_reg;
                       alternate_down_ctr = alternate_down_ctr_reg;                
                       //bs_be_size_ctr = bs_be_size_ctr_reg + 'b1;                      
@@ -800,6 +827,7 @@ always @ (*)
                       v_blank_ctr = v_blank_ctr_reg;    
                       tu_vld_data_ctr = 'b0;
                       tu_stuffed_data_ctr = 'b0;
+                      total_stuffing_ctr = 'b0;
                       alternate_up_ctr = alternate_up_ctr_reg;
                       alternate_down_ctr = alternate_down_ctr_reg;                     
                     end
@@ -871,7 +899,7 @@ always @ (*)
     //-------------------------------------------------------------------//
                       h_blank_ctr = h_blank_ctr_reg;
     //-------------------------------------------------------------------//                  
-                      if((h_total_ctr_reg == td_h_total_ctr_max - 'b1)&& v_blank_ctr_reg != td_v_blank_ctr_max)// 1 for reg
+                      if((h_total_ctr_reg == td_h_total_ctr_max - 'b1)&& (v_blank_ctr_reg != td_v_blank_ctr_max))// 1 for reg
                         begin
                           v_blank_ctr = v_blank_ctr_reg + 'b1;
                           h_total_ctr = 'b0;
@@ -896,9 +924,11 @@ always @ (*)
                           v_active_ctr = v_active_ctr_reg;
                         end
     //-------------------------------------------------------------------//                    
-                      h_active_ctr = h_active_ctr_reg;                        
+                      //h_active_ctr = h_active_ctr_reg;  
+                      h_active_ctr = 'b0;                       
                       tu_vld_data_ctr = 'b0;
                       tu_stuffed_data_ctr = 'b0;
+                      total_stuffing_ctr = 'b0;
                       alternate_up_ctr = alternate_up_ctr_reg;
                       alternate_down_ctr = alternate_down_ctr_reg;                       
                     end
@@ -984,10 +1014,11 @@ always @ (*)
                       v_active_ctr = v_active_ctr_reg;
                       tu_vld_data_ctr = 'b0;
                       tu_stuffed_data_ctr = 'b0;
-                      alternate_up_ctr = alternate_up_ctr_reg;
-                      alternate_down_ctr = alternate_down_ctr_reg; 
-                      //alternate_up_ctr = 'b0;
-                      //alternate_down_ctr = 'b0;                                                                  
+                      total_stuffing_ctr = 'b0;
+                      //alternate_up_ctr = alternate_up_ctr_reg;
+                      //alternate_down_ctr = alternate_down_ctr_reg; 
+                      alternate_up_ctr = 'b0;
+                      alternate_down_ctr = 'b0;                                                                  
                     end 
     //===================================================================//					
                     
@@ -1104,14 +1135,15 @@ always @ (*)
     //-------------------------------------------------------------------//                    
                       tu_vld_data_ctr = 'b0;
                       tu_stuffed_data_ctr = 'b0;
+                      total_stuffing_ctr = 'b0;
                       alternate_up_ctr = alternate_up_ctr_reg;
                       alternate_down_ctr = alternate_down_ctr_reg;                     
                     end
     //===================================================================//					
                     
     ACTIVE_VLD:     begin
-                      if(  (tu_vld_data_ctr_reg == td_tu_vld_data_size_min - 'b1 && !alternate_up_flag) 
-                        || (tu_vld_data_ctr_reg == td_tu_vld_data_size_min && alternate_up_flag)
+                      if(  ((tu_vld_data_ctr_reg == td_tu_vld_data_size_min - 'b1 && !alternate_up_flag)&&(total_stuffing_ctr_reg!=total_stuffing_req_reg)) 
+                        || ((tu_vld_data_ctr_reg == td_tu_vld_data_size_min && alternate_up_flag)&&(total_stuffing_ctr_reg!=total_stuffing_req_reg))
 						            || (h_active_ctr_reg == td_h_active_ctr_max - 'b1))
                         begin
                           sched_steering_en       = 'b0;
@@ -1220,7 +1252,8 @@ always @ (*)
     //-------------------------------------------------------------------//
                       h_total_ctr = 'b0;
                       h_blank_ctr = 'b0;
-                      tu_stuffed_data_ctr = 'b0;                         
+                      tu_stuffed_data_ctr = 'b0; 
+                      total_stuffing_ctr = total_stuffing_ctr_reg;                        
                     end 
     //===================================================================//					
                     
@@ -1292,7 +1325,8 @@ always @ (*)
                         end 
     //-------------------------------------------------------------------//
                       tu_vld_data_ctr = 'b0;	
-                      tu_stuffed_data_ctr = tu_stuffed_data_ctr_reg + 'b1;    
+                      tu_stuffed_data_ctr = tu_stuffed_data_ctr_reg + 'b1;
+                      total_stuffing_ctr = total_stuffing_ctr_reg + 'b1;    
     //-------------------------------------------------------------------//
                       h_total_ctr = 'b0;
                       h_blank_ctr = 'b0;
@@ -1374,7 +1408,8 @@ always @ (*)
                         end
     //-------------------------------------------------------------------//  
                       tu_vld_data_ctr = 'b0;	
-                      tu_stuffed_data_ctr = tu_stuffed_data_ctr_reg + 'b1;        
+                      tu_stuffed_data_ctr = tu_stuffed_data_ctr_reg + 'b1; 
+                      total_stuffing_ctr = total_stuffing_ctr_reg + 'b1;       
     //-------------------------------------------------------------------//
                       h_total_ctr = 'b0;
                       h_blank_ctr = 'b0;
@@ -1455,6 +1490,7 @@ always @ (*)
                       //------------------------------------------------//  
                       tu_vld_data_ctr = 'b0;					  
                       tu_stuffed_data_ctr = tu_stuffed_data_ctr_reg + 'b1;
+                      total_stuffing_ctr = total_stuffing_ctr_reg + 'b1;
                       //------------------------------------------------//					  
                       h_total_ctr = 'b0;
                       h_blank_ctr = 'b0;
@@ -1508,6 +1544,7 @@ always @ (*)
                       //------------------------------//
                       tu_vld_data_ctr = 'b0;					  
                       tu_stuffed_data_ctr = 'b0; 
+                      total_stuffing_ctr = 'b0;
                       //------------------------------//					  
                       h_total_ctr = 'b0;
                       h_blank_ctr = 'b0;
@@ -1525,3 +1562,9 @@ always @ (*)
 endmodule
 
 `resetall
+
+
+
+
+
+
