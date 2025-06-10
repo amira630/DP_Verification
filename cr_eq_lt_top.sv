@@ -81,7 +81,11 @@ module cr_eq_lt_top
     output wire  [19:0] eq_address,
     output wire  [7:0]  eq_len,
     output wire  [1:0]  eq_cmd,
-    output wire         eq_transaction_vld
+    output wire         eq_transaction_vld,
+
+    // CR ERR CHK
+    output wire         lpm_cr_apply_new_driving_param,
+    output wire         lpm_cr_apply_new_bw_lc    
 );
 
 //===========================================================
@@ -143,7 +147,9 @@ cr_top clock_recovery_inst
    .link_lc_cr         (lpm_link_lc),
    .new_bw_eq          (new_bw),
    .new_lc_eq          (new_lc),
-   .err_chk_cr_start   (eq_err_chk_cr_start)  
+   .err_chk_cr_start   (eq_err_chk_cr_start),
+   .lpm_cr_apply_new_driving_param (lpm_cr_apply_new_driving_param),  
+   .lpm_cr_apply_new_bw_lc         (lpm_cr_apply_new_bw_lc)
 );
 
 eq_top channell_eq_top 

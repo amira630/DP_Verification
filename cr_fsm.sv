@@ -130,7 +130,9 @@ reg  [1:0]  new_lc_comb;
 reg  [1:0]  cr_phy_instruct_comb;
 reg         cr_phy_instruct_vld_comb;
 reg  [1:0]  cr_adj_lc_comb;
-reg  [7:0]  cr_adj_bw_comb;      
+reg  [7:0]  cr_adj_bw_comb;     
+
+reg         driving_param_change;     
 
 
 //state transiton 
@@ -199,9 +201,10 @@ always @ (*)
         end
   PHY_CONFIGURATION: 
         begin
-          next_state = WAIT_REPLY_ACK_PHY_CONFIGURATION;
+//          next_state = WAIT_REPLY_ACK_PHY_CONFIGURATION;
+            next_state = DRIVING_PARAMETERS_SET_LANE0;
         end
-  WAIT_REPLY_ACK_PHY_CONFIGURATION:
+/*  WAIT_REPLY_ACK_PHY_CONFIGURATION:
         begin
 				 if(ctrl_ack_flag)
 			      begin
@@ -215,7 +218,7 @@ always @ (*)
 			      begin
               next_state = WAIT_REPLY_ACK_PHY_CONFIGURATION; 	
             end	          
-        end
+        end */
   DRIVING_PARAMETERS_SET_LANE0: 
         begin
           if (link_lc_cr_reg == 'b00)
@@ -458,17 +461,33 @@ always @ (*)
           cr_transaction_vld_comb   = 1'b1; 
           cr_cmd_comb               = 2'b00;
           cr_address_comb           =  'h00102;
-          cr_len_comb               =  'b0000_0000;
-          cr_data_comb              =  'h21;                           
+//          cr_len_comb               =  'b0000_0000;
+          cr_data_comb              =  'h21;    
+          ///////////////////////////////   
+          if (link_lc_cr_reg == 'b11)
+           begin
+            cr_len_comb             =  8'b0000_0100;
+           end
+          else if (link_lc_cr_reg == 'b01)
+           begin
+            cr_len_comb             =  8'b0000_0010;
+           end
+          else
+           begin
+            cr_len_comb             =  8'b0000_0001;
+           end                    
 				end	
-  WAIT_REPLY_ACK_PHY_CONFIGURATION: 
+/*  WAIT_REPLY_ACK_PHY_CONFIGURATION: 
         begin
           cr_phy_instruct_vld_comb  = 1'b0;
           cr_transaction_vld_comb   = 1'b0;            
-				end
+				end */
   DRIVING_PARAMETERS_SET_LANE0: 
         begin
           cr_transaction_vld_comb   = 1'b1; 
+
+          if (driving_param_change) /////////////////////////
+          begin
           cr_cmd_comb               = 2'b00;
           cr_address_comb           =  'h00103;
           if (link_lc_cr_reg == 'b11)
@@ -483,6 +502,14 @@ always @ (*)
            begin
             cr_len_comb             =  'b0000_0000;
            end
+          end
+          else
+          begin
+          cr_cmd_comb               = 2'b00;
+          cr_address_comb           =  'h00000;
+          cr_len_comb               =  'b0000_0000;  
+          end
+
           if ((vtg_reg[1:0] == max_vtg_reg) && (pre_reg[1:0] == max_pre_reg))
            begin
             cr_data_comb            = {2'b00, 1'b1, pre_reg[1:0], 1'b1, vtg_reg[1:0]};
@@ -718,6 +745,29 @@ always @ (posedge clk or negedge rst_n)
 	   end
    end
  end
+
+
+
+/////////////////////////////////////////////////////////////////////////
+always @ (posedge clk or negedge rst_n)
+ begin
+  if(!rst_n)
+   begin
+      driving_param_change <= 1'b0;
+   end
+  else
+   begin
+    if (drive_setting_flag)
+	   begin	
+      driving_param_change <= 1'b1;
+	   end 
+     else if (cr_ctr_fire)
+	   begin	
+      driving_param_change <= 1'b0;
+	   end
+   end
+ end
+
 
  // **************** Make the output signals sequential **************** //
  always @ (posedge clk or negedge rst_n)

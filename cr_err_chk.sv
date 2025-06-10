@@ -31,7 +31,10 @@ module cr_err_chk
   output reg         err_cr_failed, 
   output reg         drive_setting_flag,
   output reg         bw_flag, 
-  output reg         lc_flag 
+  output reg         lc_flag,
+  // LPM
+  output reg         lpm_cr_apply_new_driving_param,
+  output reg         lpm_cr_apply_new_bw_lc
 );
   
 // State encoding (Gray Code)
@@ -70,8 +73,9 @@ reg  [1:0]  new_lc_cr_comb;
 reg         err_cr_failed_comb;
 reg         drive_setting_flag_comb;
 reg         bw_flag_comb; 
-reg         lc_flag_comb;       
-
+reg         lc_flag_comb;   
+reg         lpm_cr_apply_new_driving_param_comb;    
+reg         lpm_cr_apply_new_bw_lc_comb;   
 
 //state transiton 
 always @ (posedge clk or negedge rst_n)
@@ -187,106 +191,115 @@ always @ (*)
 // output logic
 always @ (*)
  begin
-   new_bw_cr_comb          <=  'b0;
-   new_lc_cr_comb          <=  'b0;
-   err_cr_failed_comb      <= 1'b0;
-   drive_setting_flag_comb <= 1'b0;
-   bw_flag_comb            <= 1'b0; 
-   lc_flag_comb            <= 1'b0;
-   current_bw_comb         <=  'b0;
-   current_lc_comb         <=  'b0;
+   new_bw_cr_comb          =  'b0;
+   new_lc_cr_comb          =  'b0;
+   err_cr_failed_comb      = 1'b0;
+   drive_setting_flag_comb = 1'b0;
+   bw_flag_comb            = 1'b0; 
+   lc_flag_comb            = 1'b0;
+   current_bw_comb         =  'b0;
+   current_lc_comb         =  'b0;
+   lpm_cr_apply_new_driving_param_comb = 1'b0;
+   lpm_cr_apply_new_bw_lc_comb         = 1'b0;
   case(current_state)
   IDLE_STATE:
         begin
-          new_bw_cr_comb          <=  'b0;
-          new_lc_cr_comb          <=  'b0;
-          err_cr_failed_comb      <= 1'b0;
-          drive_setting_flag_comb <= 1'b0;
-          bw_flag_comb            <= 1'b0; 
-          lc_flag_comb            <= 1'b0;
-          current_bw_comb         <=  'b0;
-          current_lc_comb         <=  'b0;
+          new_bw_cr_comb          =  'b0;
+          new_lc_cr_comb          =  'b0;
+          err_cr_failed_comb      = 1'b0;
+          drive_setting_flag_comb = 1'b0;
+          bw_flag_comb            = 1'b0; 
+          lc_flag_comb            = 1'b0;
+          current_bw_comb         =  'b0;
+          current_lc_comb         =  'b0;
+          lpm_cr_apply_new_driving_param_comb = 1'b0;
+          lpm_cr_apply_new_bw_lc_comb         = 1'b0;
 				end			  							  			
   CHK_VTG: 
         begin
-          err_cr_failed_comb      <= 1'b0;
-          drive_setting_flag_comb <= 1'b0;
-          bw_flag_comb            <= 1'b0; 
-          lc_flag_comb            <= 1'b0;     					   	  
+          err_cr_failed_comb      = 1'b0;
+          drive_setting_flag_comb = 1'b0;
+          bw_flag_comb            = 1'b0; 
+          lc_flag_comb            = 1'b0;     					   	  
         end
   ADJUST_DRIVING_PARAMETERS: 
         begin  
-          drive_setting_flag_comb <= 1'b1; 
+          drive_setting_flag_comb = 1'b1; 
+          lpm_cr_apply_new_driving_param_comb = 1'b1;
         end		
   CHK_RBR: 
         begin
-          err_cr_failed_comb      <= 1'b0;
-          drive_setting_flag_comb <= 1'b0;
-          bw_flag_comb            <= 1'b0; 
-          lc_flag_comb            <= 1'b0;    					   	  
+          err_cr_failed_comb      = 1'b0;
+          drive_setting_flag_comb = 1'b0;
+          bw_flag_comb            = 1'b0; 
+          lc_flag_comb            = 1'b0;    					   	  
         end				
   REDUCE_BW: 
         begin
-          bw_flag_comb            <= 1'b1; 
+          bw_flag_comb            = 1'b1; 
+          lpm_cr_apply_new_bw_lc_comb         = 1'b1;
           if (current_bw_reg == 8'h1E)               // HBR3
            begin
-             new_bw_cr_comb       <= 8'h14;
-             current_bw_comb      <= 8'h14;
+             new_bw_cr_comb       = 8'h14;
+             current_bw_comb      = 8'h14;
            end
           else if (current_bw_reg == 8'h14)          // HBR2
            begin
-             new_bw_cr_comb       <= 8'h0A;
-             current_bw_comb      <= 8'h0A;
+             new_bw_cr_comb       = 8'h0A;
+             current_bw_comb      = 8'h0A;
            end
           else if (current_bw_reg == 8'h0A)          // HBR
            begin
-             new_bw_cr_comb       <= 8'h06;
-             current_bw_comb      <= 8'h06;
+             new_bw_cr_comb       = 8'h06;
+             current_bw_comb      = 8'h06;
            end
           else                                       // Default
            begin
-             new_bw_cr_comb       <= 8'h06;          // RBR
-             current_bw_comb      <= 8'h06;
+             new_bw_cr_comb       = 8'h06;          // RBR
+             current_bw_comb      = 8'h06;
            end 	        
 				end
   CHK_LC: 
         begin
-          err_cr_failed_comb      <= 1'b0;
-          drive_setting_flag_comb <= 1'b0;
-          bw_flag_comb            <= 1'b0; 
-          lc_flag_comb            <= 1'b0;                          
+          err_cr_failed_comb      = 1'b0;
+          drive_setting_flag_comb = 1'b0;
+          bw_flag_comb            = 1'b0; 
+          lc_flag_comb            = 1'b0;                          
 				end	
   REDUCE_LC: 
         begin
-          bw_flag_comb            <= 1'b1;
-          lc_flag_comb            <= 1'b1; 
-          new_bw_cr_comb          <= max_bw_reg;
-          current_bw_comb         <= max_bw_reg;
+          bw_flag_comb            = 1'b1;
+          lc_flag_comb            = 1'b1; 
+          lpm_cr_apply_new_bw_lc_comb         = 1'b1;
+          new_bw_cr_comb          = max_bw_reg;
+          current_bw_comb         = max_bw_reg;
           if (current_lc_reg == 2'b11)
           begin
-            new_lc_cr_comb        <= 2'b01;
-            current_lc_comb       <= 2'b01;
+            new_lc_cr_comb        = 2'b01;
+            current_lc_comb       = 2'b01;
           end
           else
           begin
-            new_lc_cr_comb        <= 2'b00;
-            current_lc_comb       <= 2'b00;            
+            new_lc_cr_comb        = 2'b00;
+            current_lc_comb       = 2'b00;            
           end
 				end
   CR_FAILED: 
         begin
-          err_cr_failed_comb      <= 1'b1; 
+          err_cr_failed_comb      = 1'b1; 
 				end
   default: 
         begin
-          new_bw_cr_comb          <=  'b0;
-          new_lc_cr_comb          <=  'b0;
-          err_cr_failed_comb      <= 1'b0;
-          drive_setting_flag_comb <= 1'b0;
-          bw_flag_comb            <= 1'b0; 
-          lc_flag_comb            <= 1'b0;
-          current_bw_comb         <=  'b0;
-          current_lc_comb         <=  'b0;
+          new_bw_cr_comb          =  'b0;
+          new_lc_cr_comb          =  'b0;
+          err_cr_failed_comb      = 1'b0;
+          drive_setting_flag_comb = 1'b0;
+          bw_flag_comb            = 1'b0; 
+          lc_flag_comb            = 1'b0;
+          current_bw_comb         =  'b0;
+          current_lc_comb         =  'b0;
+          lpm_cr_apply_new_driving_param_comb = 1'b0;
+          lpm_cr_apply_new_bw_lc_comb         = 1'b0;
         end	
   endcase                 	   
  end 
@@ -419,6 +432,8 @@ always @ (posedge clk or negedge rst_n)
     drive_setting_flag <= 'b0;
     bw_flag            <= 'b0; 
     lc_flag            <= 'b0;
+    lpm_cr_apply_new_driving_param <= 1'b0;
+    lpm_cr_apply_new_bw_lc         <= 1'b0;
    end
   else
    begin	
@@ -428,6 +443,8 @@ always @ (posedge clk or negedge rst_n)
     drive_setting_flag <= drive_setting_flag_comb;
     bw_flag            <= bw_flag_comb; 
     lc_flag            <= lc_flag_comb;
+    lpm_cr_apply_new_driving_param <= lpm_cr_apply_new_driving_param_comb;
+    lpm_cr_apply_new_bw_lc         <= lpm_cr_apply_new_bw_lc_comb;
    end 
   end 
 

@@ -48,6 +48,10 @@ module main_stream_bus_steering
 reg test;
 reg test2;
 
+reg tt;
+reg tf;
+reg tw;
+
   reg         read_enable;
   reg  [2:0]  read_index;
   reg  [1:0]  read_counter;
@@ -55,6 +59,13 @@ reg test2;
   // Pulse generation registers
   wire       [3:0] empty_count;
   reg        [2:0] pulse_counter;
+  reg        [2:0] pulse_counter_comb;  
+  reg        [2:0] next_pulse_counter;
+  reg        [2:0] old_pulse_counter;
+  reg              eigth_regs_empty;
+  reg              four_regs_empty;
+  reg              two_regs_empty;
+ // reg              one_reg_empty;
   reg  [3:0] write_index;
   reg  [3:0] write_index_stored;  
 
@@ -1675,13 +1686,17 @@ typedef enum reg [6:0]
     read_enable             = 1'b0;
     read_index              = 3'd0;
     read_counter            = 2'b0;
+    four_regs_empty         = 0;
+    two_regs_empty          = 0;
     case (current_state)
     IDLE_STATE:
           begin 
             main_steered_lane0_comb = 8'b0;
             main_steered_lane1_comb = 8'b0;
             main_steered_lane2_comb = 8'b0;
-            main_steered_lane3_comb = 8'b0;          
+            main_steered_lane3_comb = 8'b0;  
+            four_regs_empty         = 1;
+            two_regs_empty          = 1;        
           end
     // 8-bpc (4 Lanes) - (6 states) 
     FIRST_LEVEL_RED_8BPC_4LANES:
@@ -1729,6 +1744,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd0;
             read_counter            = 2'b11;
+
+            four_regs_empty         = 1;
 //            empty_regs              = 8'b0000_1111; 
             end 
             else 
@@ -1784,6 +1801,7 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd4;
             read_counter            = 2'b11;
+            four_regs_empty         = 1;
 //            empty_regs              = 8'b1111_0000;
             end 
             else 
@@ -1891,6 +1909,7 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd0;
             read_counter            = 2'b11;
+            four_regs_empty         = 1;
 //            empty_regs              = 8'b0000_1111; 
             end 
             else 
@@ -1997,6 +2016,7 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd4;
             read_counter            = 2'b11;
+            four_regs_empty         = 1;
 //            empty_regs              = 8'b1111_0000; 
             end 
             else 
@@ -2053,6 +2073,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd0;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b0000_0011; 
             end 
             else 
@@ -2108,6 +2130,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd2;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b0000_1100; 
             end 
             else 
@@ -2163,6 +2187,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd4;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b0011_0000;  
             end 
             else 
@@ -2218,6 +2244,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd6;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b1100_0000;  
             end 
             else 
@@ -2325,6 +2353,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd0;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b0000_0011; 
             end 
             else 
@@ -2431,6 +2461,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd2;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b0000_1100; 
             end 
             else 
@@ -2537,6 +2569,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd4;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b0011_0000;  
             end 
             else 
@@ -2643,6 +2677,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd6;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b1100_0000; 
             end 
             else 
@@ -2750,6 +2786,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd0;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b0000_0011; 
             end 
             else 
@@ -2856,6 +2894,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd2;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b0000_1100; 
             end 
             else 
@@ -2962,6 +3002,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd4;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b0011_0000; 
             end 
             else 
@@ -3068,6 +3110,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd6;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b1100_0000;  
             end 
             else 
@@ -3277,6 +3321,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd0;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b0000_0011;  
             end 
             else 
@@ -3485,6 +3531,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd2;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b0000_1100; 
             end 
             else 
@@ -3693,6 +3741,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd4;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b0011_0000; 
             end 
             else 
@@ -3901,6 +3951,8 @@ typedef enum reg [6:0]
             read_enable             = 1'b1;
             read_index              = 3'd6;
             read_counter            = 2'b01;
+
+            two_regs_empty          = 1;
 //            empty_regs              = 8'b1100_0000; 
             end 
             else 
@@ -4051,7 +4103,7 @@ typedef enum reg [6:0]
     end
 */
 
-
+/*
     always @(*) 
      begin
       mbs_empty_regs = 0;
@@ -4069,14 +4121,14 @@ typedef enum reg [6:0]
           if ((empty_count == 2) && (pulse_counter != 0))
           begin
             mbs_empty_regs  = 1;
-            pulse_counter   = 0;
+            pulse_counter   = 1;
           end
-          else if ((empty_count == 2) && (pulse_counter == 0))
+   /*       else if ((empty_count == 2) && (pulse_counter == 0))
           begin
             mbs_empty_regs  = 0;
             pulse_counter   = 0;    //////////////
-          end
-          else
+          end */
+/*          else
           begin
             mbs_empty_regs  = 1;
             pulse_counter   = 1;
@@ -4089,6 +4141,225 @@ typedef enum reg [6:0]
          end
         end
     end
+*/
+
+
+/////////////////////////////////////////////////////////////////////////
+  always @(posedge clk or negedge rst_n) 
+     begin
+      if (!rst_n) 
+       begin
+        eigth_regs_empty  <= 0;
+       end 
+      else 
+       begin
+        if (empty_count == 4'd8)
+        begin
+          eigth_regs_empty  <= 1;
+        end
+        else
+        begin
+          eigth_regs_empty  <= 0;
+        end
+       end
+     end
+
+
+  always @(posedge clk or negedge rst_n) 
+     begin
+      if (!rst_n) 
+       begin
+        pulse_counter  <= 0;
+       end 
+      else 
+       begin
+        if ((!fifo_almost_empty) && (pulse_counter != 0)) 
+         begin
+          pulse_counter  <= pulse_counter - 1;
+         end 
+        else 
+         begin
+          if (eigth_regs_empty)
+          begin
+            pulse_counter   = 3'd4;
+          end
+/*          else if ((empty_count == 6))
+          begin
+            pulse_counter   = 3'd3;
+          end */
+          else if (four_regs_empty)
+          begin
+            pulse_counter   = 3'd2;
+          end
+          else if (two_regs_empty)
+          begin
+            pulse_counter   = 3'd1;
+          end
+/*          else /*if ((empty_count == 0))*/
+       /*   begin
+            pulse_counter   = 3'd0;            
+          end*/
+        end
+    end
+  end 
+////////////////////////////////////////////////////////////////////////
+
+/*
+  always @(posedge clk or negedge rst_n) 
+    begin
+      if (!rst_n) 
+       begin
+        next_pulse_counter  <= 0;
+       end 
+      else 
+       begin
+        if ((!fifo_almost_empty) && (next_pulse_counter != 0) /*&& (next_pulse_counter != 0)*/   /*) 
+     begin
+          next_pulse_counter  <= next_pulse_counter - 1;
+         end 
+        else if (pulse_counter == 3'd4)
+        begin
+          next_pulse_counter  <= 3'd4;
+        end
+        else if (pulse_counter == 3'd3)
+        begin
+          next_pulse_counter  <= 3'd3;
+        end
+        else if (pulse_counter == 3'd2)
+        begin
+          next_pulse_counter  <= 3'd2;
+        end
+        else if (pulse_counter == 3'd1)
+        begin
+          next_pulse_counter  <= 3'd1;
+        end
+       end
+    end
+*/
+/*
+  always @(*) 
+     begin
+//      pulse_counter = 0;
+      tt = 0;
+      tf = 0;
+      tw = 0;
+      if (!rst_n) 
+       begin
+        pulse_counter = 0;
+       end 
+      else 
+       begin
+        old_pulse_counter = pulse_counter;
+        tf = 1;
+        if ((!fifo_almost_empty) && ((old_pulse_counter == 3'd4) || (old_pulse_counter == 3'd3) || (old_pulse_counter == 3'd2) || (old_pulse_counter == 3'd1))) 
+         begin
+            pulse_counter = next_pulse_counter;
+            tt = 1;          
+         end 
+         else if (next_pulse_counter != 3'd0)
+         begin
+            pulse_counter = next_pulse_counter;          
+         end
+        else 
+         begin
+          tw = 1;
+          if ((empty_count == 8))
+          begin
+            pulse_counter   = 3'd4;
+          end
+          else if ((empty_count == 6))
+          begin
+            pulse_counter   = 3'd3;
+          end
+          else if ((empty_count == 4))
+          begin
+            pulse_counter   = 3'd2;
+          end
+          else if ((empty_count == 2))
+          begin
+            pulse_counter   = 3'd1;
+          end
+          else if ((empty_count == 0))
+          begin
+            pulse_counter   = 3'd0;            
+          end
+        end
+    end
+  end
+*/
+
+/*
+  always @(posedge clk or negedge rst_n) 
+     begin
+      if (!rst_n) 
+       begin
+        pulse_counter  <= 0;
+       end 
+      else 
+       begin
+        if ((!fifo_almost_empty) && (pulse_counter != 0)) 
+         begin
+          pulse_counter  <= pulse_counter - 1;
+         end 
+        else 
+         begin
+          if (pulse_counter_comb == 3'd0)
+          begin
+            pulse_counter  <= 3'd0;
+          end
+          else
+          begin
+            pulse_counter  <= pulse_counter_comb - 1;
+          end
+        end
+    end
+  end
+
+  always @(*)
+  begin
+    if (!((!fifo_almost_empty) && (pulse_counter != 0)))
+    begin
+           if ((empty_count == 8))
+          begin
+            pulse_counter_comb   = 3'd4;
+          end
+/*          else if ((empty_count == 6))
+          begin
+            pulse_counter_comb   = 3'd3;
+          end */
+/*          else if (four_regs_empty)
+          begin
+            pulse_counter_comb   = 3'd2;
+          end
+          else if (two_regs_empty)
+          begin
+            pulse_counter_comb   = 3'd1;
+          end
+          else /*if ((empty_count == 0))*/
+/*          begin
+            pulse_counter_comb   = 3'd0;            
+          end
+    end
+    else 
+    begin
+            pulse_counter_comb   = pulse_counter;        
+    end
+  end */
+
+  always @(*)
+  begin
+    if ((!fifo_almost_empty) && (empty_count != 0) && ((pulse_counter != 0) || (pulse_counter_comb != 0)))
+    begin
+      mbs_empty_regs  = 1;
+    end
+    else
+    begin
+      mbs_empty_regs  = 0;
+    end
+  end
+
+
+
 
 
  /*

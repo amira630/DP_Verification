@@ -79,11 +79,11 @@ always @(posedge clk or negedge rst_n)
               blank_steering_state <= 'b00; //Mvid
               if(sched_blank_id) // HBlank
                 begin
-                  blank_symbols <= 8'b00001000; //VBID
+                  blank_symbols <= 8'b00000000; //VBID
                 end
               else
                 begin
-                  blank_symbols <= 8'b10001000; //VBID                      
+                  blank_symbols <= 8'b00000001; //VBID                      
                 end					  
 					  end
 				  else if ((start_symbols_ctr == 'b1 || start_symbols_ctr == 'b100 || start_symbols_ctr == 'b111|| start_symbols_ctr == 'b1010))

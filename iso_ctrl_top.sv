@@ -64,12 +64,12 @@ wire	[5:0]    td_tu_stuffed_data_size;
 wire	         td_hsync;
 wire	         td_vsync;
 wire	         td_de;
-wire	[3:0]    td_tu_alternate_up;
-wire	[3:0]    td_tu_alternate_down;
+wire	[15:0]    td_tu_alternate_up;
+wire	[15:0]    td_tu_alternate_down;
 wire	[15:0]   td_h_total_ctr;
 wire	         td_hsync_polarity;
 wire	         td_vsync_polarity;
-
+wire    [15:0]   total_stuffing_req_reg;
 ////////////////////////////////////////////////////////////////							
 
 assign td_lane_count = td_lane_count_internal;
@@ -115,7 +115,8 @@ timing_decision_block timing_decision_block_0 (
 .td_tu_alternate_down(td_tu_alternate_down),
 .td_h_total_ctr(td_h_total_ctr),
 .td_hsync_polarity(td_hsync_polarity),
-.td_vsync_polarity(td_vsync_polarity)
+.td_vsync_polarity(td_vsync_polarity),
+.total_stuffing_req_reg(total_stuffing_req_reg)
 );
 
 ////////////////////////////////////////////////////////////////
@@ -163,7 +164,8 @@ iso_scheduler iso_scheduler_0(
 .sched_stream_idle_sel_lane0(sched_stream_idle_sel_lane0),
 .sched_stream_idle_sel_lane1(sched_stream_idle_sel_lane1),
 .sched_stream_idle_sel_lane2(sched_stream_idle_sel_lane2),
-.sched_stream_idle_sel_lane3(sched_stream_idle_sel_lane3)
+.sched_stream_idle_sel_lane3(sched_stream_idle_sel_lane3),
+.total_stuffing_req(total_stuffing_req_reg)
 );
 
 endmodule

@@ -269,7 +269,7 @@ sec_bus_steering sec_bus_steering_0(
 ////////////////////////////////////////////////////////////////
 
 
-ASYNC_FIFO_TOP #(.DATA_WIDTH(48), .FIFO_DEPTH(128), .WPTR_WIDTH(8), .RPTR_WIDTH(8), .NUM_STAGES(2), .ADDR_WIDTH(7)) ASYNC_FIFO_TOP_0 (
+ASYNC_FIFO_TOP #(.DATA_WIDTH(48), .FIFO_DEPTH(256), .WPTR_WIDTH(9), .RPTR_WIDTH(9), .NUM_STAGES(2), .ADDR_WIDTH(8)) ASYNC_FIFO_TOP_0 (
 .wr_data(ms_pixel_data),
 .winc(ms_de),
 .rinc(mbs_empty_regs),

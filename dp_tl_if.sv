@@ -25,7 +25,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
     logic [AUX_ADDRESS_WIDTH-1:0] LPM_Address;
     logic [AUX_DATA_WIDTH-1:0]    LPM_Data, LPM_LEN, LPM_Reply_Data;
     logic [1:0]                   LPM_CMD, LPM_Reply_ACK;
-    logic                         LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD,LPM_Transaction_VLD;
+    logic                         LPM_Reply_ACK_VLD, LPM_Reply_Data_VLD, LPM_Transaction_VLD;
     logic                         HPD_Detect, HPD_IRQ, CTRL_Native_Failed;
     logic                         LPM_NATIVE_I2C;            
 
@@ -35,7 +35,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
     logic [3:0] CR_DONE, EQ_CR_DN, Channel_EQ, Symbol_Lock;
     logic [1:0] Link_LC_CR, EQ_Final_ADJ_LC, MAX_TPS_SUPPORTED, MAX_VTG, MAX_PRE;
     logic       LPM_Start_CR, Driving_Param_VLD, EQ_Data_VLD, FSM_CR_Failed, EQ_FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, Config_Param_VLD, CR_DONE_VLD;
-    logic       CR_Completed, MAX_TPS_SUPPORTED_VLD, Timer_Timeout;
+    logic       CR_Completed, MAX_TPS_SUPPORTED_VLD, Timer_Timeout, LPM_CR_Apply_New_BW_LC, LPM_CR_Apply_New_Driving_Param;
 
     ///////////////////////////////////////////////////////////////
     ////////////////// ISOCHRONOUS TRANSPORT //////////////////////
@@ -139,6 +139,8 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
                  CR_Completed,            // Signal indicating the completion of the Clock Recovery phase during link training.   
                  EQ_FSM_CR_Failed,        // Signal indicating the failure of the Clock Recovery phase during EQ phase of link training.  
                  Timer_Timeout,           // Signal indicating the timeout of the timer during link training process.
+                 LPM_CR_Apply_New_BW_LC,  // Signals indicating the application of new bandwidth or lane count.
+                 LPM_CR_Apply_New_Driving_Param, // Signals indicating the application of new vtg and pre.
           // ISO
                  WFULL                    // Signal indicating that FIFO is full
     );
@@ -148,46 +150,28 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
       task Reset();
             rst_n = 1'b0;                       // Assert reset
             MS_rst_n = 1'b0;                    // Assert Main Stream reset
-            SPM_Address = 20'b0;                // Reset SPM Address
-            SPM_Data = 8'b0;                    // Reset SPM Data
-            SPM_LEN = 8'b0;                     // Reset SPM Length
-            SPM_CMD = 2'b0;                     // Reset SPM Command
-            SPM_Transaction_VLD = 1'b0;         // Reset SPM Transaction Valid
-            LPM_Data = 8'b0;                    // Reset LPM Data
-            LPM_Address = 20'b0;                // Reset LPM Address
-            LPM_LEN = 8'b0;                     // Reset LPM Length
-            LPM_CMD = 2'b0;                     // Reset LPM Command
-            LPM_Transaction_VLD = 1'b0;         // Reset LPM Transaction Valid
-            LPM_Start_CR = 1'b0;                // Reset LPM Start Clock Recovery                
-            CR_DONE = 4'b0;                     // Reset CR_DONE
-            Link_LC_CR = 2'b0;                  // Reset Link Lane Count Clock Recovery
-            Link_BW_CR = 8'b0;                  // Reset Link Bandwidth Clock Recovery
-            PRE = 8'b0;                         // Reset PRE
-            VTG = 8'b0;                         // Reset VTG
-            Driving_Param_VLD = 1'b0;           // Reset Driving Parameter Valid
-            EQ_RD_Value = 8'b0;                 // Reset EQ_RD_Value
-            EQ_CR_DN = 4'b0;                    // Reset EQ_CR_DN
-            Channel_EQ = 4'b0;                  // Reset Channel_EQ
-            Symbol_Lock = 4'b0;                 // Reset Symbol_Lock
-            Lane_Align = 4'b0;                  // Reset Lane_Align
-            EQ_Data_VLD = 1'b0;                 // Reset EQ_Data Valid
-            MAX_VTG = 8'b0;                     // Reset MAX_VTG
-            MAX_PRE = 8'b0;                     // Reset MAX_PRE
-            MAX_TPS_SUPPORTED = 2'b0;           // Reset MAX_TPS_SUPPORTED
-            MAX_TPS_SUPPORTED_VLD = 1'b0;       // Reset MAX_TPS_SUPPORTED Valid
-            Config_Param_VLD = 1'b0;            // Reset Config Parameter Valid
-            CR_DONE_VLD = 1'b0;                 // Reset CR_DONE Valid     
-            SPM_ISO_start = 1'b0;                // Reset SPM ISO Start
-            MS_DE = 1'b0;                       // Reset Main Stream DE   
-            MS_Pixel_Data = 48'b0;              // Reset Main Stream Pixel Data
-            MS_Stm_BW = 10'b0;                  // Reset Main Stream Bandwidth
-            MS_Stm_BW_VLD = 1'b0;               // Reset Main Stream Bandwidth Valid
-            MS_VSYNC = 1'b0;                    // Reset Main Stream Vsync
-            MS_HSYNC = 1'b0;                    // Reset Main Stream Hsync
+            SPM_Transaction_VLD = 1'b1;         // Assert SPM Transaction Valid
+            LPM_Transaction_VLD = 1'b1;         // Assert LPM Transaction Valid
+            LPM_Start_CR = 1'b1;                // Assert LPM Start Clock Recovery
+            Driving_Param_VLD = 1'b1;           // Assert Driving Parameter Valid
+            MAX_TPS_SUPPORTED_VLD = 1'b1;       // Assert MAX_TPS_SUPPORTED Valid
+            Config_Param_VLD = 1'b1;            // Assert Config Parameter Valid
+            CR_DONE_VLD = 1'b1;                 // Assert CR_DONE Valid     
+            SPM_ISO_start = 1'b1;               // Assert SPM ISO Start 
+            MS_Stm_BW_VLD = 1'b1;               // Assert Main Stream Bandwidth Valid
 
             @(negedge clk_AUX);         // Wait for clock edge
             rst_n = 1'b1;           // Deassert reset
             MS_rst_n = 1'b1;        // Deassert Main Stream reset
+            SPM_Transaction_VLD = 1'b0;         // Reset SPM Transaction Valid
+            LPM_Transaction_VLD = 1'b0;         // Reset LPM Transaction Valid
+            LPM_Start_CR = 1'b0;                // Reset LPM Start Clock Recovery
+            Driving_Param_VLD = 1'b0;           // Reset Driving Parameter Valid
+            MAX_TPS_SUPPORTED_VLD = 1'b0;       // Reset MAX_TPS_SUPPORTED Valid
+            Config_Param_VLD = 1'b0;            // Reset Config Parameter Valid
+            CR_DONE_VLD = 1'b0;                 // Reset CR_DONE Valid     
+            SPM_ISO_start = 1'b0;               // Reset SPM ISO Start 
+            MS_Stm_BW_VLD = 1'b0;               // Reset Main Stream Bandwidth Valid
       endtask
 
       // I2C_READ task
@@ -295,7 +279,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
 
       // Clock Recovery Link Training task
       // This task is used to set the parameters for the Clock Recovery Link Training phase
-      task LT_CT (input bit config_vld, driving_vld, start_cr, done_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, link_bw_cr, eq_rd_value, [3:0] cr_done, [1:0] link_lc_cr, max_vtg, max_pre, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, timer_timeout, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
+      task LT_CT (input bit config_vld, driving_vld, start_cr, done_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, eq_rd_value, link_bw_cr, logic [3:0] cr_done, [1:0] link_lc_cr, max_vtg, max_pre, training_pattern_t max_tps_supported, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, cr_completed, timer_timeout, lpm_cr_apply_new_bw_lc, lpm_cr_apply_new_driving_param, reply_ack_vld, [1:0] reply_ack, [AUX_DATA_WIDTH-1:0] reply_data);
             // Set LPM-related signals for Clock Recovery Link Training
             // wait(HPD_Detect == 1'b1); // Wait for HPD detection
             // @(negedge clk_AUX)
@@ -314,6 +298,9 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             Config_Param_VLD = config_vld;
             EQ_RD_Value  = eq_rd_value;
 
+            MAX_TPS_SUPPORTED = logic'(max_tps_supported);
+            MAX_TPS_SUPPORTED_VLD = max_tps_supported_vld;
+
             hpd_detect = HPD_Detect;
             hpd_irq = HPD_IRQ;
             reply_data = LPM_Reply_Data;
@@ -324,29 +311,25 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             native_failed = CTRL_Native_Failed; 
 
             fsm_cr_failed = FSM_CR_Failed;
-            eq_failed = EQ_Failed;
-            eq_lt_pass = EQ_LT_Pass;
-            eq_final_adj_bw = EQ_Final_ADJ_BW;
-            eq_final_adj_lc = EQ_Final_ADJ_LC;
             cr_completed = CR_Completed;
-            eq_fsm_cr_failed = EQ_FSM_CR_Failed;
+            lpm_cr_apply_new_bw_lc = LPM_CR_Apply_New_BW_LC;
+            lpm_cr_apply_new_driving_param = LPM_CR_Apply_New_Driving_Param;
             timer_timeout = Timer_Timeout;
       endtask
 
       // Channel Equalization Link Training task
       // This task is used to set the parameters for the Channel Equalization Link Training phase
-      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, max_pre_in, max_vtg_in, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, training_pattern_t max_tps_supported, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, timer_timeout, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
+      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, timer_timeout, lpm_cr_apply_new_bw_lc, lpm_cr_apply_new_driving_param, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
             // @(negedge clk_AUX)
             LPM_Transaction_VLD = 1'b0;
             SPM_Transaction_VLD = 1'b0;
             CR_DONE_VLD  = done_vld;
             CR_DONE      = cr_done;
-            MAX_VTG      = max_vtg_in;
-            MAX_PRE      = max_pre_in;
             PRE          = pre;
             VTG          = vtg;
             Driving_Param_VLD = driving_vld;
             Config_Param_VLD = 1'b0;
+            LPM_Start_CR = 1'b0;
 
             EQ_CR_DN     = eq_cr_dn;
             Channel_EQ   = channel_eq;
@@ -354,9 +337,6 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             Lane_Align   = lane_align;
             EQ_Data_VLD  = eq_data_vld;
 
-            MAX_TPS_SUPPORTED = max_tps_supported;
-            MAX_TPS_SUPPORTED_VLD = logic'(max_tps_supported_vld);
-
             hpd_detect = HPD_Detect;
             hpd_irq = HPD_IRQ;
             reply_data = LPM_Reply_Data;
@@ -373,6 +353,8 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             eq_final_adj_lc = EQ_Final_ADJ_LC;
             cr_completed = CR_Completed;
             eq_fsm_cr_failed = EQ_FSM_CR_Failed;
+            lpm_cr_apply_new_bw_lc = LPM_CR_Apply_New_BW_LC;
+            lpm_cr_apply_new_driving_param = LPM_CR_Apply_New_Driving_Param;
             timer_timeout = Timer_Timeout;
       endtask
 
@@ -399,6 +381,42 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
 
       task DETECT(output logic hpd_detect);
             hpd_detect = HPD_Detect;
+            SPM_Address = 20'b0;                // Reset SPM Address
+            SPM_Data = 8'b0;                    // Reset SPM Data
+            SPM_LEN = 8'b0;                     // Reset SPM Length
+            SPM_CMD = 2'b0;                     // Reset SPM Command
+            SPM_Transaction_VLD = 1'b0;         // Reset SPM Transaction Valid
+            LPM_Data = 8'b0;                    // Reset LPM Data
+            LPM_Address = 20'b0;                // Reset LPM Address
+            LPM_LEN = 8'b0;                     // Reset LPM Length
+            LPM_CMD = 2'b0;                     // Reset LPM Command
+            LPM_Transaction_VLD = 1'b0;         // Reset LPM Transaction Valid
+            LPM_Start_CR = 1'b0;                // Reset LPM Start Clock Recovery                
+            CR_DONE = 4'b0;                     // Reset CR_DONE
+            Link_LC_CR = 2'b0;                  // Reset Link Lane Count Clock Recovery
+            Link_BW_CR = 8'b0;                  // Reset Link Bandwidth Clock Recovery
+            PRE = 8'b0;                         // Reset PRE
+            VTG = 8'b0;                         // Reset VTG
+            Driving_Param_VLD = 1'b0;           // Reset Driving Parameter Valid
+            EQ_RD_Value = 8'b0;                 // Reset EQ_RD_Value
+            EQ_CR_DN = 4'b0;                    // Reset EQ_CR_DN
+            Channel_EQ = 4'b0;                  // Reset Channel_EQ
+            Symbol_Lock = 4'b0;                 // Reset Symbol_Lock
+            Lane_Align = 4'b0;                  // Reset Lane_Align
+            EQ_Data_VLD = 1'b0;                 // Reset EQ_Data Valid
+            MAX_VTG = 8'b0;                     // Reset MAX_VTG
+            MAX_PRE = 8'b0;                     // Reset MAX_PRE
+            MAX_TPS_SUPPORTED = 2'b0;           // Reset MAX_TPS_SUPPORTED
+            MAX_TPS_SUPPORTED_VLD = 1'b0;       // Reset MAX_TPS_SUPPORTED Valid
+            Config_Param_VLD = 1'b0;            // Reset Config Parameter Valid
+            CR_DONE_VLD = 1'b0;                 // Reset CR_DONE Valid     
+            SPM_ISO_start = 1'b0;                // Reset SPM ISO Start
+            MS_DE = 1'b0;                       // Reset Main Stream DE   
+            MS_Pixel_Data = 48'b0;              // Reset Main Stream Pixel Data
+            MS_Stm_BW = 10'b0;                  // Reset Main Stream Bandwidth
+            MS_Stm_BW_VLD = 1'b0;               // Reset Main Stream Bandwidth Valid
+            MS_VSYNC = 1'b0;                    // Reset Main Stream Vsync
+            MS_HSYNC = 1'b0;                    // Reset Main Stream Hsync
       endtask
       
 endinterface
