@@ -278,38 +278,38 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     }
 
     // EQ-related value alignment control
-    // rand bit eq_align_enable;
+    rand bit eq_align_enable;
 
-    // constraint eq_align_weight {
-    //     eq_align_enable dist {1 := 80, 0 := 20}; // Prefer alignment 80% of the time
-    // }
+    constraint eq_align_weight {
+        eq_align_enable dist {1 := 80, 0 := 20}; // Prefer alignment 80% of the time
+    }
 
-    // constraint correlated_eq_fields {
-    //     if (eq_align_enable) {
-    //         if (Link_LC_CR == 2'b11) {
-    //             EQ_CR_DN    == 4'b1111;
-    //             Channel_EQ  == 4'b1111;
-    //             Symbol_Lock == 4'b1111;
-    //         } else if (Link_LC_CR == 2'b01) {
-    //             EQ_CR_DN    == 4'b0011;
-    //             Channel_EQ  == 4'b0011;
-    //             Symbol_Lock == 4'b0011;
-    //         } else if (Link_LC_CR == 2'b00) {
-    //             EQ_CR_DN    == 4'b0001;
-    //             Channel_EQ  == 4'b0001;
-    //             Symbol_Lock == 4'b0001;
-    //         }
-    //         Lane_Align == 8'h81; // Set Lane_Align to 0x81 when eq_align_enable is true
-    //     }
-    // }
+    constraint correlated_eq_fields {
+        if (eq_align_enable) {
+            if (Link_LC_CR == 2'b11) {
+                EQ_CR_DN    == 4'b1111;
+                Channel_EQ  == 4'b1111;
+                Symbol_Lock == 4'b1111;
+            } else if (Link_LC_CR == 2'b01) {
+                EQ_CR_DN    == 4'b0011;
+                Channel_EQ  == 4'b0011;
+                Symbol_Lock == 4'b0011;
+            } else if (Link_LC_CR == 2'b00) {
+                EQ_CR_DN    == 4'b0001;
+                Channel_EQ  == 4'b0001;
+                Symbol_Lock == 4'b0001;
+            }
+            Lane_Align == 8'h81; // Set Lane_Align to 0x81 when eq_align_enable is true
+        }
+    }
 
     // Default distributions (apply when eq_align_enable == 0)
     
     constraint lane_align_constraint {
-        // if (eq_align_enable == 0) {
+        if (eq_align_enable == 0) {
             // If eq_align_enable is false, apply the default distribution
-            Lane_Align dist {8'h80 := 30, 8'h81 := 70}; // 30% chance 0x80, 70% chance 0x81
-        // }
+            Lane_Align dist {8'h80 := 20, 8'h81 := 80}; // 30% chance 0x80, 70% chance 0x81
+        }
     }
 
     // Apply distribution to signal based on the Link_LC_CR value
@@ -410,17 +410,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         }
     }
 
-    constraint link_values_lock_constraint {
-        if (link_values_locked && rst_n) {
-            Link_BW_CR == prev_Link_BW_CR; // Lock Link_BW_CR
-            Link_LC_CR == prev_Link_LC_CR; // Lock Link_LC_CR
-            MAX_VTG == prev_MAX_VTG; // Lock MAX_VTG
-            MAX_PRE == prev_MAX_PRE; // Lock MAX_PRE
-        }
-    }
-
     constraint eq_rd_value_constraint {
-        EQ_RD_Value[7:0] inside {[0:4]}; // Allowed values for the EQ Read wait
+        EQ_RD_Value inside {[0:4]}; // Allowed values for the EQ Read wait
     }
 
     ///////////////////////////////////////////////////////////////
@@ -439,27 +430,12 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         if (LPM_Start_CR == 1) begin
             prev_vtg = '0; // Reset prev_vtg when LPM_Start_CR is 1
             prev_pre = '0; // Reset prev_pre when LPM_Start_CR is 1
-            prev_Link_BW_CR = BW_RBR; // Store current Link_BW_CR for next randomization
-            prev_Link_LC_CR = '0; // Store current Link_LC_CR for next randomization
-            prev_MAX_VTG = '0; // Store current MAX_VTG for next randomization
-            prev_MAX_PRE = '0; // Store current MAX_PRE for next randomization
         end
     endfunction
 
     function void post_randomize();
-        if (!link_values_locked && LPM_Start_CR && rst_n && HPD_Detect) begin
-            link_values_locked = 1; // Lock the values after the first randomization
-        end
-        else if (!rst_n || !HPD_Detect) begin
-            link_values_locked = 0; // Reset the lock if LPM_Start_CR is not 1
-        end
         prev_vtg = VTG; // Store current VTG for next randomization
         prev_pre = PRE; // Store current PRE for next randomization
-
-        prev_Link_BW_CR = Link_BW_CR; // Store current Link_BW_CR for next randomization
-        prev_Link_LC_CR = Link_LC_CR; // Store current Link_LC_CR for next randomization
-        prev_MAX_VTG = MAX_VTG; // Store current PRE for next randomization
-        prev_MAX_PRE = MAX_PRE; // Store current PRE for next randomization
         
         // HBack = HStart - HSW;
         // VBack = VStart - VSW;
@@ -495,6 +471,4 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         return $sformatf("Operation: %0s, LPM_TRANS_VALID = %0b, SPM_TRANS_VALID = %0b, LPM_Start_CR = %0b, CR_DONE = %0b, CR_DONE_VLD = %0b, Link_LC_CR = %0b, Link_BW_CR = %0b, MAX_VTG = %0b, MAX_PRE = %0b, Config_Param_VLD = %0b, VTG = %0b, PRE = %0b, Driving_Param_VLD = %0b, EQ_CR_DN = %0b, Channel_EQ = %0b, Symbol_Lock = %0b, Lane_Align = %0b, EQ_Data_VLD = %0b, MAX_TPS_SUPPORTED = %0b, MAX_TPS_SUPPORTED_VLD = %0b",
         operation, LPM_Transaction_VLD, SPM_Transaction_VLD, LPM_Start_CR, CR_DONE, CR_DONE_VLD, Link_LC_CR, Link_BW_CR, MAX_VTG, MAX_PRE, Config_Param_VLD, VTG, PRE, Driving_Param_VLD, EQ_CR_DN, Channel_EQ, Symbol_Lock, Lane_Align, EQ_Data_VLD, MAX_TPS_SUPPORTED, MAX_TPS_SUPPORTED_VLD);
     endfunction
-
-
 endclass
