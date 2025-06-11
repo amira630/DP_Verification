@@ -138,6 +138,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
                  EQ_Final_ADJ_LC,         // The adjusted number of lanes after successful link training, used for sending main video stream.
                  CR_Completed,            // Signal indicating the completion of the Clock Recovery phase during link training.   
                  EQ_FSM_CR_Failed,        // Signal indicating the failure of the Clock Recovery phase during EQ phase of link training.  
+                 EQ_FSM_Repeat,           // Signal indicating the repetition of the EQ FSM loop during link training.
                  Timer_Timeout,           // Signal indicating the timeout of the timer during link training process.
                  LPM_CR_Apply_New_BW_LC,  // Signals indicating the application of new bandwidth or lane count.
                  LPM_CR_Apply_New_Driving_Param, // Signals indicating the application of new vtg and pre.

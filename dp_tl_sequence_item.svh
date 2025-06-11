@@ -278,38 +278,38 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     }
 
     // EQ-related value alignment control
-    rand bit eq_align_enable;
+    // rand bit eq_align_enable;
 
-    constraint eq_align_weight {
-        eq_align_enable dist {1 := 80, 0 := 20}; // Prefer alignment 80% of the time
-    }
+    // constraint eq_align_weight {
+    //     eq_align_enable dist {1 := 80, 0 := 20}; // Prefer alignment 80% of the time
+    // }
 
-    constraint correlated_eq_fields {
-        if (eq_align_enable) {
-            if (Link_LC_CR == 2'b11) {
-                EQ_CR_DN    == 4'b1111;
-                Channel_EQ  == 4'b1111;
-                Symbol_Lock == 4'b1111;
-            } else if (Link_LC_CR == 2'b01) {
-                EQ_CR_DN    == 4'b0011;
-                Channel_EQ  == 4'b0011;
-                Symbol_Lock == 4'b0011;
-            } else if (Link_LC_CR == 2'b00) {
-                EQ_CR_DN    == 4'b0001;
-                Channel_EQ  == 4'b0001;
-                Symbol_Lock == 4'b0001;
-            }
-            Lane_Align == 8'h81; // Set Lane_Align to 0x81 when eq_align_enable is true
-        }
-    }
+    // constraint correlated_eq_fields {
+    //     if (eq_align_enable) {
+    //         if (Link_LC_CR == 2'b11) {
+    //             EQ_CR_DN    == 4'b1111;
+    //             Channel_EQ  == 4'b1111;
+    //             Symbol_Lock == 4'b1111;
+    //         } else if (Link_LC_CR == 2'b01) {
+    //             EQ_CR_DN    == 4'b0011;
+    //             Channel_EQ  == 4'b0011;
+    //             Symbol_Lock == 4'b0011;
+    //         } else if (Link_LC_CR == 2'b00) {
+    //             EQ_CR_DN    == 4'b0001;
+    //             Channel_EQ  == 4'b0001;
+    //             Symbol_Lock == 4'b0001;
+    //         }
+    //         Lane_Align == 8'h81; // Set Lane_Align to 0x81 when eq_align_enable is true
+    //     }
+    // }
 
     // Default distributions (apply when eq_align_enable == 0)
     
     constraint lane_align_constraint {
-        if (eq_align_enable == 0) {
+        // if (eq_align_enable == 0) {
             // If eq_align_enable is false, apply the default distribution
             Lane_Align dist {8'h80 := 20, 8'h81 := 80}; // 30% chance 0x80, 70% chance 0x81
-        }
+        // }
     }
 
     // Apply distribution to signal based on the Link_LC_CR value

@@ -290,6 +290,7 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     assign tl_if.EQ_Failed = eq_lt_failed;
     assign tl_if.EQ_LT_Pass = eq_lt_pass;
     assign tl_if.EQ_FSM_CR_Failed = eq_fsm_cr_failed;
+    assign tl_if.EQ_FSM_Repeat = eq_fsm_repeat;
 
     /////////////////////////////////////////////////////
     /////////////////////////////////////////////////////

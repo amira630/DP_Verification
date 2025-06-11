@@ -39,7 +39,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
     task Sink_FSM();
         sink_flow_stages_e current_state;
         int aux_stop_counter = 0;           // Counter for AUX_START_STOP being low
-        const int AUX_STOP_THRESHOLD = 5000; // Threshold for Stopping the FSM
+        const int AUX_STOP_THRESHOLD = 50000; // Threshold for Stopping the FSM
 
         // Randomize all registers once at the start
         if (!(randomize(EDID_registers) &&
