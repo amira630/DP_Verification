@@ -41,7 +41,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     
     // input Data to DUT
     rand logic [AUX_DATA_WIDTH-1:0] Lane_Align, EQ_RD_Value;
-    rand logic [AUX_DATA_WIDTH-1:0] PRE, VTG, Link_BW_CR;
+    rand logic [AUX_DATA_WIDTH-1:0] PRE, VTG;
+    rand link_bw_cr_e Link_BW_CR;
     rand logic [3:0]                EQ_CR_DN, Channel_EQ, Symbol_Lock;
     rand logic [3:0]                CR_DONE;
     rand training_pattern_t         MAX_TPS_SUPPORTED;
@@ -103,7 +104,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
     bit LT_Failed, LT_Pass, isflow;
     rand bit error_flag;
-    logic [AUX_DATA_WIDTH-1:0] prev_Link_BW_CR; // Store previous Link_BW_CR for locking
+    link_bw_cr_e prev_Link_BW_CR; // Store previous Link_BW_CR for locking
     logic [1:0] prev_Link_LC_CR; // Store previous Link_LC_CR for locking
 
     real CLOCK_PERIOD; // Clock period in ns
@@ -263,7 +264,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     }
 
     constraint link_bw_cr_constraint {
-        Link_BW_CR inside {8'h06, 8'h0A, 8'h14, 8'h1E}; // Allowed values for Link_BW_CR
+        Link_BW_CR inside {BW_RBR, BW_HBR, BW_HBR2, BW_HBR3}; // Allowed values for Link_BW_CR
     }
 
     constraint link_lc_cr_constraint {
@@ -271,44 +272,44 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     }
 
     constraint max_tps_supported_c {
-        ((Link_BW_CR == 8'h06) || (Link_BW_CR == 8'h0A)) -> (MAX_TPS_SUPPORTED inside {TPS2, TPS3, TPS4});
-        (Link_BW_CR == 8'h14) -> (MAX_TPS_SUPPORTED inside {TPS3, TPS4});
-        (Link_BW_CR == 8'h1E) -> (MAX_TPS_SUPPORTED == TPS4);
+        ((Link_BW_CR == BW_RBR) || (Link_BW_CR == BW_HBR)) -> (MAX_TPS_SUPPORTED inside {TPS2, TPS3, TPS4});
+        (Link_BW_CR == BW_HBR2) -> (MAX_TPS_SUPPORTED inside {TPS3, TPS4});
+        (Link_BW_CR == BW_HBR3) -> (MAX_TPS_SUPPORTED == TPS4);
     }
 
     // EQ-related value alignment control
-    rand bit eq_align_enable;
+    // rand bit eq_align_enable;
 
-    constraint eq_align_weight {
-        eq_align_enable dist {1 := 80, 0 := 20}; // Prefer alignment 80% of the time
-    }
+    // constraint eq_align_weight {
+    //     eq_align_enable dist {1 := 80, 0 := 20}; // Prefer alignment 80% of the time
+    // }
 
-    constraint correlated_eq_fields {
-        if (eq_align_enable) {
-            if (Link_LC_CR == 2'b11) {
-                EQ_CR_DN    == 4'b1111;
-                Channel_EQ  == 4'b1111;
-                Symbol_Lock == 4'b1111;
-            } else if (Link_LC_CR == 2'b01) {
-                EQ_CR_DN    == 4'b0011;
-                Channel_EQ  == 4'b0011;
-                Symbol_Lock == 4'b0011;
-            } else if (Link_LC_CR == 2'b00) {
-                EQ_CR_DN    == 4'b0001;
-                Channel_EQ  == 4'b0001;
-                Symbol_Lock == 4'b0001;
-            }
-            Lane_Align == 8'h81; // Set Lane_Align to 0x81 when eq_align_enable is true
-        }
-    }
+    // constraint correlated_eq_fields {
+    //     if (eq_align_enable) {
+    //         if (Link_LC_CR == 2'b11) {
+    //             EQ_CR_DN    == 4'b1111;
+    //             Channel_EQ  == 4'b1111;
+    //             Symbol_Lock == 4'b1111;
+    //         } else if (Link_LC_CR == 2'b01) {
+    //             EQ_CR_DN    == 4'b0011;
+    //             Channel_EQ  == 4'b0011;
+    //             Symbol_Lock == 4'b0011;
+    //         } else if (Link_LC_CR == 2'b00) {
+    //             EQ_CR_DN    == 4'b0001;
+    //             Channel_EQ  == 4'b0001;
+    //             Symbol_Lock == 4'b0001;
+    //         }
+    //         Lane_Align == 8'h81; // Set Lane_Align to 0x81 when eq_align_enable is true
+    //     }
+    // }
 
     // Default distributions (apply when eq_align_enable == 0)
     
     constraint lane_align_constraint {
-        if (eq_align_enable == 0) {
+        // if (eq_align_enable == 0) {
             // If eq_align_enable is false, apply the default distribution
             Lane_Align dist {8'h80 := 30, 8'h81 := 70}; // 30% chance 0x80, 70% chance 0x81
-        }
+        // }
     }
 
     // Apply distribution to signal based on the Link_LC_CR value
@@ -439,7 +440,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         if (LPM_Start_CR == 1) begin
             prev_vtg = '0; // Reset prev_vtg when LPM_Start_CR is 1
             prev_pre = '0; // Reset prev_pre when LPM_Start_CR is 1
-            prev_Link_BW_CR = 8'h06; // Store current Link_BW_CR for next randomization
+            prev_Link_BW_CR = BW_RBR; // Store current Link_BW_CR for next randomization
             prev_Link_LC_CR = '0; // Store current Link_LC_CR for next randomization
             prev_MAX_VTG = '0; // Store current MAX_VTG for next randomization
             prev_MAX_PRE = '0; // Store current MAX_PRE for next randomization
@@ -447,10 +448,10 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     endfunction
 
     function void post_randomize();
-        if (!link_values_locked && LPM_Start_CR && rst_n) begin
+        if (!link_values_locked && LPM_Start_CR && rst_n && HPD_Detect) begin
             link_values_locked = 1; // Lock the values after the first randomization
         end
-        else if (!rst_n) begin
+        else if (!rst_n || !HPD_Detect) begin
             link_values_locked = 0; // Reset the lock if LPM_Start_CR is not 1
         end
         prev_vtg = VTG; // Store current VTG for next randomization
