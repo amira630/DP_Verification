@@ -60,6 +60,8 @@ module eq_top
     output wire         eq_lt_failed,
     output wire         eq_lt_pass,
     output wire         eq_fsm_cr_failed, // flag signal asserted when channell eq failed and we will decrease LC or BW and start CR again
+    output wire         eq_fsm_loop_max,
+    output wire         eq_fsm_repeat,
 
     // CHANNELL EQ FSM INTERFACE WITH PHY LAYER
     output wire  [1:0]  eq_phy_instruct,
@@ -124,7 +126,8 @@ eq_fsm eq_fsm_inst
     .ctrl_native_failed (ctrl_native_failed),
     .max_vtg            (max_vtg),
     .max_pre            (max_pre),
-    .eq_fsm_cr_failed   (eq_fsm_cr_failed)
+    .eq_fsm_cr_failed   (eq_fsm_cr_failed),
+    .eq_fsm_loop_max    (eq_fsm_loop_max)
 );
 
 

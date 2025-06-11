@@ -52,7 +52,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     // output Data from DUT
     logic [AUX_DATA_WIDTH-1:0] EQ_Final_ADJ_BW;
     logic [1:0]                EQ_Final_ADJ_LC;
-    bit                        FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, CR_Completed, EQ_FSM_CR_Failed, LPM_CR_Apply_New_BW_LC, LPM_CR_Apply_New_Driving_Param;
+    bit                        FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, CR_Completed, EQ_FSM_CR_Failed, LPM_CR_Apply_New_BW_LC, LPM_CR_Apply_New_Driving_Param, EQ_FSM_Repeat;
 
     ///////////////////////////////////////////////////////////////
     ////////////////// ISOCHRONOUS TRANSPORT //////////////////////
@@ -420,8 +420,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     }
 
     constraint eq_rd_value_constraint {
-        EQ_RD_Value[7] == 1'b1; // Ensure the MSB is always 1
-        EQ_RD_Value[6:0] inside {7'h00, 7'h01, 7'h02, 7'h03, 7'h04}; // Allowed values for the lower 7 bits
+        EQ_RD_Value[7:0] inside {[0:4]}; // Allowed values for the EQ Read wait
     }
 
     ///////////////////////////////////////////////////////////////

@@ -796,7 +796,7 @@ task FLOW_FSM();
             seq_item.Symbol_Lock = 4'b1111;
             seq_item.MAX_VTG = 2'b10;                // Set the max voltage swing to 0 initially    
             seq_item.MAX_PRE = 2'b10;                // Set the max pre-emphasis to 0 initially
-            seq_item.EQ_RD_Value = 8'h80;            // Set the EQ_RD_Value to 0 initially
+            seq_item.EQ_RD_Value = 8'h00;            // Set the EQ_RD_Value to 0 initially
             seq_item.VTG = 0;                    // Set the voltage swing to 0 initially
             seq_item.PRE = 0;                    // Set the pre-emphasis to 0 initially
             seq_item.LPM_Start_CR = 1;           // Start the link training (Clock recovery Stage)
@@ -1343,7 +1343,6 @@ task FLOW_FSM();
                     finish_item(seq_item);
                     get_response(seq_item);
                 end           
-                // QUESTION HEEEEEEEEEEREEEEEEEEEE!!!!!!!!!!!!!!!
                 if (seq_item.EQ_Failed || seq_item.CTRL_Native_Failed) begin // If the FSM CR failed while obtaining reply or if failed to obtain the reply itself, exit the loop
                     `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
                     break; // Exit the loop and finish the task
@@ -1368,7 +1367,7 @@ task FLOW_FSM();
             end while (!done);
             done = 1'b0;
         end
-        `uvm_fatal("DEBUG", "FINISHED THE Link Training EQ_LT")
+        // `uvm_fatal("DEBUG", "FINISHED THE Link Training EQ_LT")
     endtask
 
     //////////////////////////////////////////////// ISOCHRONOUS /////////////////////////////////////////

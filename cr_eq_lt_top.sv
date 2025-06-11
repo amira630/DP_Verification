@@ -69,6 +69,8 @@ module cr_eq_lt_top
     output wire         eq_lt_failed,
     output wire         eq_lt_pass,
     output wire         eq_fsm_cr_failed,
+    output wire         eq_fsm_loop_max,
+    output wire         eq_fsm_repeat,
 
     // CHANNELL EQ FSM INTERFACE WITH PHY LAYER 
     output wire  [1:0]  eq_phy_instruct,
@@ -196,7 +198,9 @@ eq_top channell_eq_top
     .eq_phy_instruct    (eq_phy_instruct),
     .eq_transaction_vld (eq_transaction_vld),
     .eq_phy_instruct_vld(eq_phy_instruct_vld),
-    .eq_fsm_cr_failed   (eq_fsm_cr_failed)
+    .eq_fsm_cr_failed   (eq_fsm_cr_failed),
+    .eq_fsm_loop_max    (eq_fsm_loop_max),
+    .eq_fsm_repeat      (eq_fsm_repeat)
 );
 
 
