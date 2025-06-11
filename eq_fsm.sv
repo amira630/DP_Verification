@@ -62,7 +62,9 @@ module eq_fsm
     output reg  [7:0]  eq_len,
     output reg  [1:0]  eq_cmd,
     output reg         eq_transaction_vld,
-    output reg         eq_fsm_cr_failed // this signal flag is asserted to the link policy maker indicating that eq failed and i will begin cr again
+    output reg         eq_fsm_cr_failed, // this signal flag is asserted to the link policy maker indicating that eq failed and i will begin cr again
+    output reg         eq_fsm_loop_max, // this flag is asserted to the error checking FSM to indicate that i have reached max loop count
+    output reg         eq_fsm_repeat // this flag is asserted to indicate that i will repeat the write transaction
 );
 
 
@@ -96,8 +98,8 @@ localparam WIDTH = 128;
 reg [1:0]       tps_sync;
 reg [2:0]       shift_amount_reg;
 reg [2:0]       shift_counter;
-reg            eq_dn; 
-reg            cr_dn;
+reg             eq_dn; 
+reg             cr_dn;
 reg             max_loop_count;             // flag to indicate that i have reached maax itirations 
 reg [2:0]       loop_count; 
 reg [2:0]       loop_count_reg; // loop counter counts the number of times the channel equalization failed 
@@ -108,6 +110,7 @@ reg             saving_flag;
 wire            load_flag_reg;  // this flag is used to enter shifting register after loading data in data_shifter register 
 reg             load_flag_d;
 reg             load_flag;        // flag to indicate that the message buffer is ready to be loaded  in data_shifter
+reg             eq_fsm_repeat_comb; // this flag is asserted to indicate that i will repeat the write transaction
 
 //==============================================================
 // synchronized inputs 
@@ -145,7 +148,7 @@ reg             eq_transaction_vld_comb;
 reg     [2:0]   shift_amount;
 reg             eq_phy_instruct_vld_comb; // valid signal to indicate the validity of data on phy interface ports
 reg             eq_fsm_cr_failed_comb;// this signal flag is asserted to the link policy maker indicating that eq failed and i will begin cr again
-
+reg             eq_fsm_loop_max_comb; // this flag is asserted to the error checking FSM to indicate that i have reached max loop count
 
 
 //==============================================================
@@ -244,7 +247,7 @@ always_comb begin
         case (new_lc_sync)
             2'b00:
             begin
-                if ((lane_align_sync == 8'b11111111) && (channel_eq_sync[0] == 1'b1) && (symbol_lock_sync[0] == 1'b1)) 
+                if ((lane_align_sync[7] == 1'b1) && (lane_align_sync[0] == 1'b1) && (channel_eq_sync[0] == 1'b1) && (symbol_lock_sync[0] == 1'b1)) 
                 begin
                     eq_dn = 1'b1;
                 end 
@@ -255,7 +258,7 @@ always_comb begin
             end
             2'b01: 
             begin
-                if ((lane_align_sync == 8'b11111111) && (channel_eq_sync[1:0] == 2'b11) && (symbol_lock_sync[1:0] == 2'b11)) 
+                if ((lane_align_sync[7] == 1'b1) && (lane_align_sync[0] == 1'b1) && (channel_eq_sync[1:0] == 2'b11) && (symbol_lock_sync[1:0] == 2'b11)) 
                 begin
                     eq_dn = 1'b1;
                 end 
@@ -266,7 +269,7 @@ always_comb begin
             end
             2'b11: 
             begin
-                if ((lane_align_sync == 8'b11111111) && (channel_eq_sync == 4'b1111) && (symbol_lock_sync == 4'b1111)) 
+                if ((lane_align_sync[7] == 1'b1) && (lane_align_sync[0] == 1'b1) && (channel_eq_sync == 4'b1111) && (symbol_lock_sync == 4'b1111)) 
                 begin
                     eq_dn = 1'b1;
                 end 
@@ -521,6 +524,8 @@ always_comb begin
     shift_amount             = 3'd0;
     load_flag                = 1'b0;
     eq_fsm_cr_failed_comb    = 1'b0;
+    eq_fsm_loop_max_comb     = 1'b0; // this flag is asserted to the error checking FSM to indicate that i have reached max loop count
+    eq_fsm_repeat_comb       = 1'b0; // this flag is asserted to indicate that i will repeat the write transaction
     // Determine the next state and output signals based on the current state
     case(current_state)
         IDLE:
@@ -546,6 +551,8 @@ always_comb begin
             load_flag                = 1'b0;
             eq_phy_instruct_vld_comb = 1'b0;
             eq_fsm_cr_failed_comb    = 1'b0;
+            eq_fsm_loop_max_comb     = 1'b0; // this flag is asserted to the error checking FSM to indicate that i have reached max loop count
+            eq_fsm_repeat_comb       = 1'b0; // this flag is asserted to indicate that i will repeat the write transaction
         end
         TPS: // we can send tps2 first then check on tps3 and tps4 in another state  
         begin
@@ -695,11 +702,13 @@ always_comb begin
             begin
                 eq_fsm_start_eq_err_comb = 1'b1; // start error checking for channel equalization
                 eq_fsm_cr_failed_comb    = 1'b1; // report policy maker that we will decrease the lanecount or bw and start CR again 
+                eq_fsm_loop_max_comb     = 1'b1; // this flag is asserted to the error checking FSM to indicate that i have reached max loop count
             end
             else
             begin
                 eq_fsm_start_eq_err_comb = 1'b0;
                 eq_fsm_cr_failed_comb    = 1'b0;
+                eq_fsm_loop_max_comb     = 1'b0;
             end
         end
         WRITE_ADJ_SETTINGS:
@@ -709,6 +718,7 @@ always_comb begin
             eq_transaction_vld_comb = 1'b1;    
             data_buffer             = {config_103_reg, config_104_reg, config_105_reg, config_106_reg, 96'd0};        
             load_flag               = 1'b1;
+            eq_fsm_repeat_comb      = 1'b1;
             case (new_lc_sync)
                 2'b00:
                 begin
@@ -776,6 +786,9 @@ always_comb begin
             load_flag                = 1'b0;
             eq_phy_instruct_vld_comb = 1'b0;
             eq_fsm_cr_failed_comb    = 1'b0;
+            eq_fsm_loop_max_comb     = 1'b0; // this flag is asserted to the error checking FSM to indicate that i have reached max loop count
+            eq_fsm_repeat_comb       = 1'b0; // this flag is asserted to indicate that i will repeat the write transaction
+            // Default case to handle unexpected states
         end
     endcase
 end
@@ -812,7 +825,8 @@ always_ff @( posedge clk or negedge rst_n ) begin
         eq_len             <= 8'd0;
         eq_cmd             <= 2'b00;
         eq_lt_failed       <= 1'b0;
-        eq_lt_pass         <= 1'b0;        
+        eq_lt_pass         <= 1'b0; 
+        eq_fsm_repeat      <= 1'b0; // this flag is asserted to indicate that i will repeat the write transaction       
     end
     else
     begin
@@ -833,13 +847,15 @@ always_ff @( posedge clk or negedge rst_n ) begin
             eq_len             <= eq_len_comb;
             eq_cmd             <= eq_cmd_comb;
             eq_lt_failed       <= eq_lt_failed_comb;
-            eq_lt_pass         <= eq_lt_pass_comb;            
+            eq_lt_pass         <= eq_lt_pass_comb; 
+            eq_fsm_repeat      <= eq_fsm_repeat_comb; // this flag is asserted to indicate that i will repeat the write transaction           
         end
         else 
         begin   
             eq_transaction_vld <= 1'b0;
             eq_lt_failed       <= 1'b0;
-            eq_lt_pass         <= 1'b0;              
+            eq_lt_pass         <= 1'b0;
+            eq_fsm_repeat      <= 1'b0; // this flag is asserted to indicate that i will repeat the write transaction              
         end
     end
 end
@@ -862,6 +878,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         eq_fsm_start_eq_err <= 1'b0;
         eq_fsm_cr_dn        <= 4'b0000;
         eq_fsm_cr_failed    <= 1'b0;
+        eq_fsm_loop_max     <= 1'b0; // this flag is asserted to the error checking FSM to indicate that i have reached max loop count
     end 
     else 
     begin
@@ -877,6 +894,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         eq_fsm_start_eq_err <= eq_fsm_start_eq_err_comb;
         eq_fsm_cr_dn        <= eq_fsm_cr_dn_comb;
         eq_fsm_cr_failed    <= eq_fsm_cr_failed_comb;
+        eq_fsm_loop_max     <= eq_fsm_loop_max_comb; // this flag is asserted to the error checking FSM to indicate that i have reached max loop count
     end
 end
 endmodule

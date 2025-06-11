@@ -41,7 +41,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     
     // input Data to DUT
     rand logic [AUX_DATA_WIDTH-1:0] Lane_Align, EQ_RD_Value;
-    rand logic [AUX_DATA_WIDTH-1:0] PRE, VTG, Link_BW_CR;
+    rand logic [AUX_DATA_WIDTH-1:0] PRE, VTG;
+    rand link_bw_cr_e Link_BW_CR;
     rand logic [3:0]                EQ_CR_DN, Channel_EQ, Symbol_Lock;
     rand logic [3:0]                CR_DONE;
     rand training_pattern_t         MAX_TPS_SUPPORTED;
@@ -51,7 +52,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     // output Data from DUT
     logic [AUX_DATA_WIDTH-1:0] EQ_Final_ADJ_BW;
     logic [1:0]                EQ_Final_ADJ_LC;
-    bit                        FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, CR_Completed, EQ_FSM_CR_Failed, LPM_CR_Apply_New_BW_LC, LPM_CR_Apply_New_Driving_Param;
+    bit                        FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, CR_Completed, EQ_FSM_CR_Failed, LPM_CR_Apply_New_BW_LC, LPM_CR_Apply_New_Driving_Param, EQ_FSM_Repeat;
 
     ///////////////////////////////////////////////////////////////
     ////////////////// ISOCHRONOUS TRANSPORT //////////////////////
@@ -103,7 +104,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
     bit LT_Failed, LT_Pass, isflow;
     rand bit error_flag;
-    logic [AUX_DATA_WIDTH-1:0] prev_Link_BW_CR; // Store previous Link_BW_CR for locking
+    link_bw_cr_e prev_Link_BW_CR; // Store previous Link_BW_CR for locking
     logic [1:0] prev_Link_LC_CR; // Store previous Link_LC_CR for locking
 
     real CLOCK_PERIOD; // Clock period in ns
@@ -263,7 +264,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     }
 
     constraint link_bw_cr_constraint {
-        Link_BW_CR inside {8'h06, 8'h0A, 8'h14, 8'h1E}; // Allowed values for Link_BW_CR
+        Link_BW_CR inside {BW_RBR, BW_HBR, BW_HBR2, BW_HBR3}; // Allowed values for Link_BW_CR
     }
 
     constraint link_lc_cr_constraint {
@@ -271,9 +272,9 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     }
 
     constraint max_tps_supported_c {
-        ((Link_BW_CR == 8'h06) || (Link_BW_CR == 8'h0A)) -> (MAX_TPS_SUPPORTED inside {TPS2, TPS3, TPS4});
-        (Link_BW_CR == 8'h14) -> (MAX_TPS_SUPPORTED inside {TPS3, TPS4});
-        (Link_BW_CR == 8'h1E) -> (MAX_TPS_SUPPORTED == TPS4);
+        ((Link_BW_CR == BW_RBR) || (Link_BW_CR == BW_HBR)) -> (MAX_TPS_SUPPORTED inside {TPS2, TPS3, TPS4});
+        (Link_BW_CR == BW_HBR2) -> (MAX_TPS_SUPPORTED inside {TPS3, TPS4});
+        (Link_BW_CR == BW_HBR3) -> (MAX_TPS_SUPPORTED == TPS4);
     }
 
     // EQ-related value alignment control
@@ -307,7 +308,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     constraint lane_align_constraint {
         if (eq_align_enable == 0) {
             // If eq_align_enable is false, apply the default distribution
-            Lane_Align dist {8'h80 := 30, 8'h81 := 70}; // 30% chance 0x80, 70% chance 0x81
+            Lane_Align dist {8'h80 := 20, 8'h81 := 80}; // 30% chance 0x80, 70% chance 0x81
         }
     }
 
@@ -409,18 +410,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         }
     }
 
-    constraint link_values_lock_constraint {
-        if (link_values_locked && rst_n) {
-            Link_BW_CR == prev_Link_BW_CR; // Lock Link_BW_CR
-            Link_LC_CR == prev_Link_LC_CR; // Lock Link_LC_CR
-            MAX_VTG == prev_MAX_VTG; // Lock MAX_VTG
-            MAX_PRE == prev_MAX_PRE; // Lock MAX_PRE
-        }
-    }
-
     constraint eq_rd_value_constraint {
-        EQ_RD_Value[7] == 1'b1; // Ensure the MSB is always 1
-        EQ_RD_Value[6:0] inside {7'h00, 7'h01, 7'h02, 7'h03, 7'h04}; // Allowed values for the lower 7 bits
+        EQ_RD_Value inside {[0:4]}; // Allowed values for the EQ Read wait
     }
 
     ///////////////////////////////////////////////////////////////
@@ -439,27 +430,12 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         if (LPM_Start_CR == 1) begin
             prev_vtg = '0; // Reset prev_vtg when LPM_Start_CR is 1
             prev_pre = '0; // Reset prev_pre when LPM_Start_CR is 1
-            prev_Link_BW_CR = 8'h06; // Store current Link_BW_CR for next randomization
-            prev_Link_LC_CR = '0; // Store current Link_LC_CR for next randomization
-            prev_MAX_VTG = '0; // Store current MAX_VTG for next randomization
-            prev_MAX_PRE = '0; // Store current MAX_PRE for next randomization
         end
     endfunction
 
     function void post_randomize();
-        if (!link_values_locked && LPM_Start_CR && rst_n) begin
-            link_values_locked = 1; // Lock the values after the first randomization
-        end
-        else if (!rst_n) begin
-            link_values_locked = 0; // Reset the lock if LPM_Start_CR is not 1
-        end
         prev_vtg = VTG; // Store current VTG for next randomization
         prev_pre = PRE; // Store current PRE for next randomization
-
-        prev_Link_BW_CR = Link_BW_CR; // Store current Link_BW_CR for next randomization
-        prev_Link_LC_CR = Link_LC_CR; // Store current Link_LC_CR for next randomization
-        prev_MAX_VTG = MAX_VTG; // Store current PRE for next randomization
-        prev_MAX_PRE = MAX_PRE; // Store current PRE for next randomization
         
         // HBack = HStart - HSW;
         // VBack = VStart - VSW;
@@ -495,6 +471,4 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         return $sformatf("Operation: %0s, LPM_TRANS_VALID = %0b, SPM_TRANS_VALID = %0b, LPM_Start_CR = %0b, CR_DONE = %0b, CR_DONE_VLD = %0b, Link_LC_CR = %0b, Link_BW_CR = %0b, MAX_VTG = %0b, MAX_PRE = %0b, Config_Param_VLD = %0b, VTG = %0b, PRE = %0b, Driving_Param_VLD = %0b, EQ_CR_DN = %0b, Channel_EQ = %0b, Symbol_Lock = %0b, Lane_Align = %0b, EQ_Data_VLD = %0b, MAX_TPS_SUPPORTED = %0b, MAX_TPS_SUPPORTED_VLD = %0b",
         operation, LPM_Transaction_VLD, SPM_Transaction_VLD, LPM_Start_CR, CR_DONE, CR_DONE_VLD, Link_LC_CR, Link_BW_CR, MAX_VTG, MAX_PRE, Config_Param_VLD, VTG, PRE, Driving_Param_VLD, EQ_CR_DN, Channel_EQ, Symbol_Lock, Lane_Align, EQ_Data_VLD, MAX_TPS_SUPPORTED, MAX_TPS_SUPPORTED_VLD);
     endfunction
-
-
 endclass

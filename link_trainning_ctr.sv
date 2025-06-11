@@ -37,8 +37,8 @@ state_t    current_state, next_state;
 //=================================================================================================
 // Internal Registers
 //=================================================================================================
-reg [7:0]  loop_count;
-reg [7:0]  loop_count_reg;
+reg [15:0]  loop_count;
+reg [15:0]  loop_count_reg;
 reg [31:0] value; // waiting value according to eq_rd_value recieved
 reg [7:0]  eq_rd_value_reg; // register to hold the value of eq_rd_value
 reg        eq_rd_value_saving_flag; // flag to indicate that eq_rd_value is saved
@@ -170,7 +170,7 @@ always_comb begin
     case (current_state)
         IDLE:
         begin
-            loop_count = 8'd0;
+            loop_count = 16'd0;
             if (eq_ctr_rise) 
             begin
                 next_state = EQ_CTR;
@@ -187,7 +187,7 @@ always_comb begin
         end
         CR_CTR:
         begin
-            loop_count = loop_count_reg + 8'd1;   
+            loop_count = loop_count_reg + 16'd1;   
             if ( loop_count == value && loaded_value) // in clock ecovery we count 100us  
             begin
                 next_state = IDLE;
@@ -199,7 +199,7 @@ always_comb begin
         end   
         EQ_CTR:
         begin
-            loop_count = loop_count_reg + 8'd1; 
+            loop_count = loop_count_reg + 16'd1; 
             if ( loop_count == value && loaded_value) 
             begin
                 next_state = IDLE;

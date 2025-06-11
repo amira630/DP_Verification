@@ -102,6 +102,8 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     logic         eq_lt_failed;
     logic         eq_lt_pass;
     logic         eq_fsm_cr_failed;
+    logic         eq_fsm_loop_max;
+    logic         eq_fsm_repeat;
     
     // from cr err chk to lpm
     logic         lpm_cr_apply_new_driving_param;
@@ -698,7 +700,9 @@ cr_eq_lt_top link_trainning_inst
 .ctrl_ack_flag      (ctrl_ack_flag),
 .ctrl_native_failed (ctrl_native_failed),
 .lpm_cr_apply_new_driving_param (lpm_cr_apply_new_driving_param),  
-.lpm_cr_apply_new_bw_lc         (lpm_cr_apply_new_bw_lc)
+.lpm_cr_apply_new_bw_lc         (lpm_cr_apply_new_bw_lc),
+.eq_fsm_loop_max              (eq_fsm_loop_max),
+.eq_fsm_repeat                (eq_fsm_repeat)
 );
 
 hpd hpd_inst
