@@ -65,9 +65,9 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     constraint valid_native_aux_reply_cmd_c {
         // Strongly prefer ACK, but occasionally allow NACK or DEFER
         native_reply_cmd dist {
-            AUX_ACK      := 100,
+            AUX_ACK      := 70,
             AUX_NACK     := 0,
-            AUX_DEFER    := 0
+            AUX_DEFER    := 30
         };
     }
 
@@ -93,25 +93,27 @@ class dp_sink_sequence_item extends uvm_sequence_item;
         // Create a unique log filename for this test, persistent across randomizations
         filename1 = $sformatf("rand_log_%s.txt", test_name1);
         filename2 = $sformatf("rand_log_%s.txt", test_name2);
-
-        // Open the file in append mode ("a") to avoid overwriting
-        fh1 = $fopen(filename1, "a");
-        fh2 = $fopen(filename2, "a");
-
-        if (fh1 || fh2) begin
-            if (command[3]) begin
+        
+        if (command[3]) begin
+            fh2 = $fopen(filename2, "a");
+            if (fh2) begin
                 $fdisplay(fh2, "------\nTime: %0t", $time);
-                $fdisplay(fh2, " native_reply_cmd = %s\n", native_reply_cmd.name());
-                $fdisplay(fh2, "  RNG State: %0p\n", $get_randstate());
+                $fdisplay(fh2, " native_reply_cmd = %s", native_reply_cmd.name());
+                $fdisplay(fh2, " RNG State: %0p\n", $get_randstate());
                 $fclose(fh2);
             end else begin
-                $fdisplay(fh1, "------\nTime: %0t", $time);
-                $fdisplay(fh1, " i2c_reply_cmd = %s\n", i2c_reply_cmd.name());
-                $fdisplay(fh1, "  RNG State: %0p\n", $get_randstate());
-                $fclose(fh1);
+                `uvm_warning("FILE_IO", $sformatf("Could not open %s", filename2));
             end
         end else begin
-        `uvm_warning("FILE_IO", "Could not open randomization log file.")
+            fh1 = $fopen(filename1, "a");
+            if (fh1) begin
+                $fdisplay(fh1, "------\nTime: %0t", $time);
+                $fdisplay(fh1, " i2c_reply_cmd = %s", i2c_reply_cmd.name());
+                $fdisplay(fh1, " RNG State: %0p\n", $get_randstate());
+                $fclose(fh1);
+            end else begin
+                `uvm_warning("FILE_IO", $sformatf("Could not open %s", filename1));
+            end
         end
     endfunction
 

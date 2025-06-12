@@ -21,6 +21,8 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
 
     // Extra Flags and signals
     int i2c_count = 0;
+    int native_read_count = 0;
+    rand int M_write_count = 0;
 
     function new(string name = "dp_sink_base_sequence");
         super.new(name);
@@ -229,6 +231,8 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
             end
         end
         
+        reply_item.command = rsp_item.command;  // Copy the command from the response item
+
         //rsp_item.aux_in_out.delete();
 
         `uvm_info(get_type_name(), $sformatf("process_aux_data - Processed AUX: cmd=0x%h, addr=0x%h, len=0x%h, data_size=%0d", 
@@ -246,44 +250,93 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                 if (!reply_item.randomize()) begin
                     `uvm_error(get_type_name(), "Failed to randomize reply_item")
                 end
-                reply_item.aux_in_out[0] = {reply_item.native_reply_cmd, 4'b0000};      // ACK for Native Write
 
-                // Write the data into registers
-                foreach (rsp_item.data[i]) begin
-                    case (1)
-                        (full_address inside {[20'h00000:20'h000FF]}): DPCD_cap_registers[full_address[7:0]] = rsp_item.data[i];
-                        (full_address inside {[20'h02200:20'h022FF]}): DPCD_cap_ext_registers[full_address[7:0]] = rsp_item.data[i];
-                        (full_address inside {[20'h02000:20'h021FF]}): DPCD_event_status_indicator_registers[full_address[8:0]] = rsp_item.data[i];
-                        (full_address inside {[20'h00100:20'h001FF]}): Link_configuration_registers[full_address[7:0]] = rsp_item.data[i];
-                        (full_address inside {[20'h00200:20'h002FF]}): Link_status_registers[full_address[7:0]] = rsp_item.data[i];
-                        default: `uvm_warning(get_type_name(), $sformatf("Write to unsupported address 0x%h", full_address))
-                    endcase
-                    full_address++;  // Increment address for multi-byte writes
+                if (reply_item.native_reply_cmd == AUX_ACK) begin
+                    reply_item.aux_in_out[0] = {reply_item.native_reply_cmd, 4'b0000};      // ACK for Native write
+                    `uvm_info(get_type_name(), "Received AUX_ACK for Native Write", UVM_MEDIUM)
+                    
+                    // Write the data into registers
+                    foreach (rsp_item.data[i]) begin
+                        case (1)
+                            (full_address inside {[20'h00000:20'h000FF]}): DPCD_cap_registers[full_address[7:0]] = rsp_item.data[i];
+                            (full_address inside {[20'h02200:20'h022FF]}): DPCD_cap_ext_registers[full_address[7:0]] = rsp_item.data[i];
+                            (full_address inside {[20'h02000:20'h021FF]}): DPCD_event_status_indicator_registers[full_address[8:0]] = rsp_item.data[i];
+                            (full_address inside {[20'h00100:20'h001FF]}): Link_configuration_registers[full_address[7:0]] = rsp_item.data[i];
+                            (full_address inside {[20'h00200:20'h002FF]}): Link_status_registers[full_address[7:0]] = rsp_item.data[i];
+                            default: `uvm_warning(get_type_name(), $sformatf("Write to unsupported address 0x%h", full_address))
+                        endcase
+                        full_address++;  // Increment address for multi-byte writes
+                    end;  // Increment address for multi-byte reads
+                end
+                else if (reply_item.native_reply_cmd == AUX_NACK) begin
+                    reply_item.aux_in_out[0] = {reply_item.native_reply_cmd, 4'b0000};      // NACK for Native Write
+                    `uvm_info(get_type_name(), "Received AUX_NACK for Native Write", UVM_MEDIUM)
+                    // In case of NACK, send NACK then M which is the number of bytes written successfully
+                    // Randomize the number of bytes written successfully
+                    if (!(randomize(M_write_count))) begin
+                        `uvm_error(get_type_name(), "Failed to randomize M_write_count")
+                    end
+                    if (M_write_count < 0 || M_write_count > rsp_item.data.size()) begin
+                        `uvm_error(get_type_name(), "Invalid M_write_count value, resetting to 0")
+                        M_write_count = 0; // Reset to 0 if invalid
+                    end
+                    reply_item.aux_in_out.push_back(M_write_count); // Push the number of bytes written successfully
+
+                    `uvm_info(get_type_name(), $sformatf("M data bytes written successfully = %0d", M_write_count), UVM_MEDIUM)
+                end
+                else if (reply_item.native_reply_cmd == AUX_DEFER) begin
+                    `uvm_info(get_type_name(), "Received AUX_DEFER for Native Write", UVM_MEDIUM)
+                    // In case of DEFER, Data is not sent 
+                    reply_item.aux_in_out[0] = {reply_item.native_reply_cmd, 4'b0000};      // DEFER for Native Write
+                end
+                else begin
+                    `uvm_error(get_type_name(), "Invalid native_reply_cmd for Native Read")
                 end
             end 
             else if (rsp_item.command[2:0] == 001) begin    // Read Native
                 // According to Address and (value(Length[7:0])+1), we can Read the data from registers and push them to the aux_in_out array
 
                 // Randomize the native_reply_cmd before using it
-                if (!reply_item.randomize(native_reply_cmd)) begin
+                if (!reply_item.randomize()) begin
                     `uvm_error(get_type_name(), "Failed to randomize native_reply_cmd")
                 end
-                reply_item.aux_in_out[0] = {reply_item.native_reply_cmd, 4'b0000};      // ACK for Native Read
 
-                // Read (length + 1) bytes from registers
-                for (i = 0; i <= rsp_item.length; i++) begin
-                    case (1)
-                        (full_address inside {[20'h00000:20'h000FF]}): reply_item.aux_in_out.push_back(DPCD_cap_registers[full_address[7:0]]);
-                        (full_address inside {[20'h02200:20'h022FF]}): reply_item.aux_in_out.push_back(DPCD_cap_ext_registers[full_address[7:0]]);
-                        (full_address inside {[20'h02000:20'h021FF]}): reply_item.aux_in_out.push_back(DPCD_event_status_indicator_registers[full_address[8:0]]);
-                        (full_address inside {[20'h00100:20'h001FF]}): reply_item.aux_in_out.push_back(Link_configuration_registers[full_address[7:0]]);
-                        (full_address inside {[20'h00200:20'h002FF]}): reply_item.aux_in_out.push_back(Link_status_registers[full_address[7:0]]);
-                        default: begin
-                            `uvm_warning(get_type_name(), $sformatf("Read from unsupported address 0x%h", full_address))
-                            reply_item.aux_in_out.push_back(8'hFF); // push dummy data for invalid address
-                        end
-                    endcase
-                    full_address++;  // Increment address for multi-byte reads
+                if (reply_item.native_reply_cmd == AUX_ACK) begin
+                    reply_item.aux_in_out[0] = {reply_item.native_reply_cmd, 4'b0000};      // ACK for Native Read
+                    `uvm_info(get_type_name(), "Received AUX_ACK for Native Read", UVM_MEDIUM)
+                    native_read_count++; // Increment the native count for each read
+                    `uvm_info(get_type_name(), $sformatf("native_read_count = %0d", native_read_count), UVM_MEDIUM)
+                    // Read (length + 1) bytes from registers
+                    for (i = 0; i <= rsp_item.length; i++) begin
+                        case (1)
+                            (full_address inside {[20'h00000:20'h000FF]}): reply_item.aux_in_out.push_back(DPCD_cap_registers[full_address[7:0]]);
+                            (full_address inside {[20'h02200:20'h022FF]}): reply_item.aux_in_out.push_back(DPCD_cap_ext_registers[full_address[7:0]]);
+                            (full_address inside {[20'h02000:20'h021FF]}): reply_item.aux_in_out.push_back(DPCD_event_status_indicator_registers[full_address[8:0]]);
+                            (full_address inside {[20'h00100:20'h001FF]}): reply_item.aux_in_out.push_back(Link_configuration_registers[full_address[7:0]]);
+                            (full_address inside {[20'h00200:20'h002FF]}): reply_item.aux_in_out.push_back(Link_status_registers[full_address[7:0]]);
+                            default: begin
+                                `uvm_warning(get_type_name(), $sformatf("Read from unsupported address 0x%h", full_address))
+                                reply_item.aux_in_out.push_back(8'hFF); // push dummy data for invalid address
+                            end
+                        endcase
+                        full_address++;  // Increment address for multi-byte reads
+                    end
+                end
+                else if (reply_item.native_reply_cmd == AUX_NACK) begin                             
+                    `uvm_info(get_type_name(), "Received AUX_NACK for Native Read", UVM_MEDIUM)
+                    // In case of NACK, the acknowledgment is sent as ACK not NACK && Data == 0
+                    reply_item.aux_in_out[0] = {AUX_ACK, 4'b0000};                              // NACK for Native Read
+                    for (i = 0; i<= rsp_item.length ; i++) begin
+                        reply_item.aux_in_out.push_back(8'h00); // Push dummy data for NACK
+                    end
+                end
+                else if (reply_item.native_reply_cmd == AUX_DEFER) begin
+                    `uvm_info(get_type_name(), "Received AUX_DEFER for Native Read", UVM_MEDIUM)
+                    // In case of DEFER, Data is not sent 
+                    reply_item.aux_in_out[0] = {reply_item.native_reply_cmd, 4'b0000};      // DEFER for Native Read
+                end
+                else begin
+                    `uvm_error(get_type_name(), "Invalid native_reply_cmd for Native Read")
                 end
             end
             else begin
