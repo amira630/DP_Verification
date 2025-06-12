@@ -1,0 +1,675 @@
+------
+Time: 4255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4855000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5155000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5455000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5755000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6055000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6355000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6655000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6955000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7855000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8155000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8455000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8755000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4855000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5155000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5455000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5755000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6055000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6355000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6655000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6955000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7855000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8155000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8455000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8755000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4855000000
+ native_reply_cmd = AUX_NACK
+ RNG State: 0
+
+------
+Time: 5185000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5485000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5785000000
+ native_reply_cmd = AUX_NACK
+ RNG State: 0
+
+------
+Time: 6065000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4255000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 4835000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 4965000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 5095000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 5225000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 5355000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 5485000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 5615000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 4255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4855000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5155000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5455000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5755000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6055000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6355000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6655000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6955000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7855000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8155000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8455000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8755000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4855000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 5435000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5735000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6035000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 6615000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6915000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 7495000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7795000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 8375000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8675000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8975000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 9275000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 9575000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 9875000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 10175000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 10475000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 10775000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 11075000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 11655000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 11785000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4855000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 5435000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5735000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6035000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 6615000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 6745000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7045000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 7625000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7925000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 8505000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 8635000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8935000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 9235000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 9535000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 9835000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 10415000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 10715000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 11015000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 11315000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 11895000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 12195000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 12495000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 13075000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4855000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 5435000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5735000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6035000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 6615000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 6745000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7045000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 7625000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7925000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 8505000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 8635000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8935000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 9235000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 9535000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 9835000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 10415000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 10715000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 11015000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 11315000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 11895000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 12195000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 12495000000
+ native_reply_cmd = AUX_DEFER
+ RNG State: 0
+
+------
+Time: 13075000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
