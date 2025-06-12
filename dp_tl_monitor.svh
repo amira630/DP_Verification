@@ -79,7 +79,7 @@ class dp_tl_monitor extends uvm_monitor;
     rsp_seq_item.EQ_Final_ADJ_BW = dp_tl_vif.EQ_Final_ADJ_BW;
     rsp_seq_item.EQ_Final_ADJ_LC = dp_tl_vif.EQ_Final_ADJ_LC;
     rsp_seq_item.FSM_CR_Failed = dp_tl_vif.FSM_CR_Failed;
-    rsp_seq_item.EQ_Failed = dp_tl_vif.EQ_Failed;
+    rsp_seq_item.EQ_LT_Failed = dp_tl_vif.EQ_LT_Failed;
     rsp_seq_item.EQ_LT_Pass = dp_tl_vif.EQ_LT_Pass;
     rsp_seq_item.CR_Completed = dp_tl_vif.CR_Completed;
     rsp_seq_item.EQ_FSM_CR_Failed = dp_tl_vif.EQ_FSM_CR_Failed;

@@ -34,7 +34,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
     logic [AUX_DATA_WIDTH-1:0] Link_BW_CR, PRE, VTG, EQ_RD_Value, Lane_Align, EQ_Final_ADJ_BW;
     logic [3:0] CR_DONE, EQ_CR_DN, Channel_EQ, Symbol_Lock;
     logic [1:0] Link_LC_CR, EQ_Final_ADJ_LC, MAX_TPS_SUPPORTED, MAX_VTG, MAX_PRE;
-    logic       LPM_Start_CR, Driving_Param_VLD, EQ_Data_VLD, FSM_CR_Failed, EQ_FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, Config_Param_VLD, CR_DONE_VLD;
+    logic       LPM_Start_CR, Driving_Param_VLD, EQ_Data_VLD, FSM_CR_Failed, EQ_FSM_CR_Failed, EQ_LT_Failed, EQ_LT_Pass, Config_Param_VLD, CR_DONE_VLD;
     logic       CR_Completed, MAX_TPS_SUPPORTED_VLD, Timer_Timeout, LPM_CR_Apply_New_BW_LC, LPM_CR_Apply_New_Driving_Param, EQ_FSM_Repeat;
 
     ///////////////////////////////////////////////////////////////
@@ -132,7 +132,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
                  CTRL_Native_Failed,      // A signal indicating the failure of the Native transaction, which is set to one when the Native transaction fails.
           // LPM - Link Training
                  FSM_CR_Failed,           // A Signal indicating the failure of the Clock Recovery phase during link training, meaning the sink failed to acquire the clock frequency during the training process
-                 EQ_Failed,               // Signal indicating the failure of the Channel Equalization phase during link training.
+                 EQ_LT_Failed,               // Signal indicating the failure of the Channel Equalization phase during link training.
                  EQ_LT_Pass,              // This signal represents a successful channel equalization phase which indicates successful link training process
                  EQ_Final_ADJ_BW,         // The adjusted link BW after successful link training used for sending main video stream.
                  EQ_Final_ADJ_LC,         // The adjusted number of lanes after successful link training, used for sending main video stream.
@@ -280,7 +280,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
 
       // Clock Recovery Link Training task
       // This task is used to set the parameters for the Clock Recovery Link Training phase
-      task LT_CT (input bit config_vld, driving_vld, start_cr, done_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, eq_rd_value, link_bw_cr_e link_bw_cr, logic [3:0] cr_done, [1:0] link_lc_cr, max_vtg, max_pre, training_pattern_t max_tps_supported, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, cr_completed, timer_timeout, lpm_cr_apply_new_bw_lc, lpm_cr_apply_new_driving_param, reply_ack_vld, [1:0] reply_ack, [AUX_DATA_WIDTH-1:0] reply_data);
+      task LT_CT_EQ (input bit config_vld, driving_vld, start_cr, done_vld, eq_data_vld, max_tps_supported_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, lane_align, eq_rd_value, link_bw_cr_e link_bw_cr, logic [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, [1:0] link_lc_cr, max_vtg, max_pre, training_pattern_t max_tps_supported, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_lt_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, eq_fsm_repeat, timer_timeout, lpm_cr_apply_new_bw_lc, lpm_cr_apply_new_driving_param, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
             // Set LPM-related signals for Clock Recovery Link Training
             // wait(HPD_Detect == 1'b1); // Wait for HPD detection
             // @(negedge clk_AUX)
@@ -302,6 +302,12 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             MAX_TPS_SUPPORTED = max_tps_supported;
             MAX_TPS_SUPPORTED_VLD = max_tps_supported_vld;
 
+            EQ_CR_DN     = eq_cr_dn;
+            Channel_EQ   = channel_eq;
+            Symbol_Lock  = symbol_lock;
+            Lane_Align   = lane_align;
+            EQ_Data_VLD  = eq_data_vld;
+
             hpd_detect = HPD_Detect;
             hpd_irq = HPD_IRQ;
             reply_data = LPM_Reply_Data;
@@ -312,7 +318,13 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             native_failed = CTRL_Native_Failed; 
 
             fsm_cr_failed = FSM_CR_Failed;
+            eq_lt_failed = EQ_LT_Failed;
+            eq_lt_pass = EQ_LT_Pass;
+            eq_final_adj_bw = EQ_Final_ADJ_BW;
+            eq_final_adj_lc = EQ_Final_ADJ_LC;
             cr_completed = CR_Completed;
+            eq_fsm_cr_failed = EQ_FSM_CR_Failed;
+            eq_fsm_repeat = EQ_FSM_Repeat;
             lpm_cr_apply_new_bw_lc = LPM_CR_Apply_New_BW_LC;
             lpm_cr_apply_new_driving_param = LPM_CR_Apply_New_Driving_Param;
             timer_timeout = Timer_Timeout;
@@ -320,7 +332,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
 
       // Channel Equalization Link Training task
       // This task is used to set the parameters for the Channel Equalization Link Training phase
-      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, eq_fsm_repeat, timer_timeout, lpm_cr_apply_new_bw_lc, lpm_cr_apply_new_driving_param, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
+      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_lt_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, eq_fsm_repeat, timer_timeout, lpm_cr_apply_new_bw_lc, lpm_cr_apply_new_driving_param, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
             // @(negedge clk_AUX)
             LPM_Transaction_VLD = 1'b0;
             SPM_Transaction_VLD = 1'b0;
@@ -348,7 +360,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             native_failed = CTRL_Native_Failed; 
 
             fsm_cr_failed = FSM_CR_Failed;
-            eq_failed = EQ_Failed;
+            eq_lt_failed = EQ_LT_Failed;
             eq_lt_pass = EQ_LT_Pass;
             eq_final_adj_bw = EQ_Final_ADJ_BW;
             eq_final_adj_lc = EQ_Final_ADJ_LC;

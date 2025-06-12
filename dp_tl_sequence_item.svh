@@ -1,5 +1,7 @@
 class dp_tl_sequence_item extends uvm_sequence_item;
   `uvm_object_utils(dp_tl_sequence_item);
+
+    string filename1, filename2, filename3, test_name1, test_name2, test_name3;
   
     rand bit rst_n;   // Reset is asynchronous active low
 
@@ -52,7 +54,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     // output Data from DUT
     logic [AUX_DATA_WIDTH-1:0] EQ_Final_ADJ_BW;
     logic [1:0]                EQ_Final_ADJ_LC;
-    bit                        FSM_CR_Failed, EQ_Failed, EQ_LT_Pass, CR_Completed, EQ_FSM_CR_Failed, LPM_CR_Apply_New_BW_LC, LPM_CR_Apply_New_Driving_Param, EQ_FSM_Repeat;
+    bit                        FSM_CR_Failed, EQ_LT_Failed, EQ_LT_Pass, CR_Completed, EQ_FSM_CR_Failed, LPM_CR_Apply_New_BW_LC, LPM_CR_Apply_New_Driving_Param, EQ_FSM_Repeat;
 
     ///////////////////////////////////////////////////////////////
     ////////////////// ISOCHRONOUS TRANSPORT //////////////////////
@@ -434,11 +436,61 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     endfunction
 
     function void post_randomize();
+        int fh1, fh2, fh3;
+
         prev_vtg = VTG; // Store current VTG for next randomization
         prev_pre = PRE; // Store current PRE for next randomization
         
         HBack = HStart - HSW;
         VBack = VStart - VSW;
+
+        test_name1 = "tl_CR_test";
+        test_name2 = "tl_EQ_test";
+        test_name3 = "tl_ISO_test";
+
+        // Create a unique log filename for this test, persistent across randomizations
+        filename1 = $sformatf("rand_log_%s.txt", test_name1);
+        filename2 = $sformatf("rand_log_%s.txt", test_name2);
+        filename3 = $sformatf("rand_log_%s.txt", test_name3);
+
+        case (operation)
+            CR_LT_op: begin
+                fh1 = $fopen(filename1, "a");
+                if (fh1) begin
+                    $fdisplay(fh1, "------\nTime: %0t", $time);
+                    $fdisplay(fh1, " i2c_reply_cmd = %s", i2c_reply_cmd.name());
+                    $fdisplay(fh1, " RNG State: %0p\n", $get_randstate());
+                    $fclose(fh1);
+                end else begin
+                    `uvm_warning("FILE_IO", $sformatf("Could not open %s", filename1));
+                end
+            end
+            EQ_LT_op: begin
+                fh2 = $fopen(filename2, "a");
+                if (fh2) begin
+                    $fdisplay(fh2, "------\nTime: %0t", $time);
+                    $fdisplay(fh2, " native_reply_cmd = %s", native_reply_cmd.name());
+                    $fdisplay(fh2, " RNG State: %0p\n", $get_randstate());
+                    $fclose(fh2);
+                end else begin
+                    `uvm_warning("FILE_IO", $sformatf("Could not open %s", filename2));
+                end
+            end
+            ISO: begin
+                fh3 = $fopen(filename3, "a");
+                if (fh3) begin
+                    $fdisplay(fh3, "------\nTime: %0t", $time);
+                    $fdisplay(fh3, " native_reply_cmd = %s", native_reply_cmd.name());
+                    $fdisplay(fh3, " RNG State: %0p\n", $get_randstate());
+                    $fclose(fh3);
+                end else begin
+                    `uvm_warning("FILE_IO", $sformatf("Could not open %s", filename3));
+                end
+            end
+            default: begin
+                `uvm_info("DP_TL_SEQ_ITEM", $sformatf("Not randomized operation: %s", operation.name()));
+            end
+        endcase
     endfunction
 
     // Convert the sequence item to a string representation

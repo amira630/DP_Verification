@@ -228,8 +228,8 @@ class dp_scoreboard extends uvm_scoreboard;
             correct_count++;
         end
 
-        if (expected_transaction.EQ_Failed != tl_item.EQ_Failed) begin
-            `uvm_error(get_type_name(), $sformatf("Mismatch in EQ_Failed: expected=%b, actual=%b", expected_transaction.EQ_Failed, tl_item.EQ_Failed))
+        if (expected_transaction.EQ_LT_Failed != tl_item.EQ_LT_Failed) begin
+            `uvm_error(get_type_name(), $sformatf("Mismatch in EQ_LT_Failed: expected=%b, actual=%b", expected_transaction.EQ_LT_Failed, tl_item.EQ_LT_Failed))
             error_count++;
         end
         else begin

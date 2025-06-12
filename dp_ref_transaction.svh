@@ -29,7 +29,7 @@ class dp_ref_transaction extends uvm_sequence_item;
 
     bit [AUX_DATA_WIDTH-1:0] EQ_Final_ADJ_BW;
     bit [1:0] EQ_Final_ADJ_LC;
-    bit       FSM_CR_Failed, EQ_FSM_CR_Failed, EQ_Failed, EQ_LT_Pass;
+    bit       FSM_CR_Failed, EQ_FSM_CR_Failed, EQ_LT_Failed, EQ_LT_Pass;
     bit       CR_Completed;
     bit       Timer_Timeout;
 
