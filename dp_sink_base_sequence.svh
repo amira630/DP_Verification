@@ -303,24 +303,28 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                 // if counter = 0, this means that it is the address-only transaction
                 if (i2c_count == 0) begin
                     // Randomize the i2c_reply_cmd before using it
-                    if (!reply_item.randomize(i2c_reply_cmd)) begin
+                    if (!reply_item.randomize()) begin
                         `uvm_error(get_type_name(), "Failed to randomize i2c_reply_cmd")
                     end
                     reply_item.aux_in_out[0] = {reply_item.i2c_reply_cmd, 4'b0000};           // ACK for I2C read
                 end 
                 else begin          // form 1 to 128, this means that it is the data transaction
                     // Randomize the i2c_reply_cmd before using it
-                    if (!reply_item.randomize(i2c_reply_cmd)) begin
+                    if (!reply_item.randomize()) begin
                         `uvm_error(get_type_name(), "Failed to randomize i2c_reply_cmd")
                     end
                     reply_item.aux_in_out[0] = {reply_item.i2c_reply_cmd, 4'b0000};   // ACK for I2C read
-                    reply_item.aux_in_out[1] = EDID_registers[i2c_count-1];           // Data for I2C read
+                    if (reply_item.i2c_reply_cmd == I2C_ACK) begin
+                        reply_item.aux_in_out[1] = EDID_registers[i2c_count-1];           // Data for I2C read
+                    end
                 end
-                i2c_count++;
+                if (reply_item.i2c_reply_cmd == I2C_ACK) begin
+                    i2c_count++;
+                end
             end else begin                                  // I2C reading stop
                 if (rsp_item.command[1:0] == 01) begin      // I2C read
                     // Randomize the i2c_reply_cmd before using it
-                    if (!reply_item.randomize(i2c_reply_cmd)) begin
+                    if (!reply_item.randomize()) begin
                         `uvm_error(get_type_name(), "Failed to randomize i2c_reply_cmd")
                     end
                     reply_item.aux_in_out[0] = {reply_item.i2c_reply_cmd, 4'b0000};           // ACK for I2C read

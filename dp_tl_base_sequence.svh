@@ -218,8 +218,10 @@ task FLOW_FSM();
                 seq_item.SPM_LEN = 0;               // Length
                 seq_item.SPM_Data = 0;               // Data
             finish_item(seq_item);
+            get_response(seq_item);
 
-            while ((ack_count <= seq_item.SPM_LEN) || (data_count <= seq_item.SPM_LEN)) begin
+            while ((ack_count <= 130) && (data_count <= 128)) begin
+                `uvm_info(get_type_name(), $sformatf("ACK Counter = %0d, DATA Counter = %0d",ack_count, data_count), UVM_MEDIUM)
                 start_item(seq_item);
                 seq_item.SPM_Transaction_VLD = 1'b0; 
                 seq_item.operation = WAIT_REPLY;
@@ -232,17 +234,22 @@ task FLOW_FSM();
                 end
 
                 if(seq_item.SPM_NATIVE_I2C && seq_item.SPM_Reply_ACK_VLD) begin
-                    if (seq_item.SPM_Reply_ACK == I2C_ACK[3:2]) begin
+                    `uvm_info("I2C", "ACK Valid" , UVM_MEDIUM)
+                    if (seq_item.SPM_Reply_ACK == 2'b00) begin
                         ack_count++;
+                        `uvm_info(get_type_name(), $sformatf("ACK received: %0d", ack_count), UVM_MEDIUM)
                     end
                 end
                 else if (seq_item.SPM_NATIVE_I2C && seq_item.SPM_Reply_Data_VLD) begin
                     data_count++;
                 end
-                `uvm_info(get_type_name(), $sformatf("ACK Counter = %0d, DATA Counter = %0d",ack_count, data_count), UVM_MEDIUM)
                 if (ack_count == 130) begin
+                    seq_item.CTRL_I2C_Failed = 0;
                     break; // Exit the loop if ACK count reaches 130 (2 for address-only transaction + 128 for data)
                 end
+            end
+            if (ack_count == 130) begin
+                break; // Exit the while loop if ACK count reaches 130
             end          
         end
         // 
@@ -274,7 +281,7 @@ task FLOW_FSM();
             finish_item(seq_item);
             get_response(seq_item);
             // Wait for the response from the DUT
-            while ((ack_count <= seq_item.LPM_LEN) || (data_count <= seq_item.LPM_LEN)) begin
+            while ((ack_count <= seq_item.LPM_LEN) && (data_count <= seq_item.LPM_LEN)) begin
                 start_item(seq_item);
                 seq_item.LPM_Transaction_VLD = 1'b0; 
                 seq_item.operation = WAIT_REPLY;
@@ -285,7 +292,6 @@ task FLOW_FSM();
                     `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction failed: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b",  seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN +1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
                     break;
                 end
-
                 if(seq_item.LPM_NATIVE_I2C && seq_item.LPM_Reply_ACK_VLD) begin
                     if (seq_item.LPM_Reply_ACK == I2C_ACK[3:2]) begin
                         ack_count++;

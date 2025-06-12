@@ -1,0 +1,786 @@
+------
+Time: 4275000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 4405000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 4535000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 4665000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 4795000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 4925000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 5055000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 5185000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 5315000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 5445000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 5575000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 5705000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 5835000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 5965000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 6095000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 6225000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 6355000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 6485000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 6615000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 6745000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 6875000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 7005000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 7135000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 7265000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 7395000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 7525000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 7655000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 7785000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 7915000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 8045000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 8175000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 8305000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 8435000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 8565000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 8695000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 8825000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 8955000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 9085000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 9215000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 9345000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 9475000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 9605000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 9735000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 9865000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 9995000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 10125000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 10255000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 10385000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 10515000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 10645000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 10775000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 10905000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 11035000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 11165000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 11295000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 11425000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 11555000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 11685000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 11815000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 11945000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 12075000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 12205000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 12335000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 12465000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 12595000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 12725000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 12855000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 12985000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 13115000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 13245000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 13375000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 13505000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 13635000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 13765000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 13895000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 14025000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 14155000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 14285000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 14415000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 14545000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 14675000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 14805000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 14935000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 15065000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 15195000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 15325000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 15455000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 15585000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 15715000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 15845000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 15975000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 16105000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 16235000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 16365000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 16495000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 16625000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 16755000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 16885000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 17015000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 17145000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 17275000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 17405000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 17535000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 17665000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 17795000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 17925000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 18055000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 18185000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 18315000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 18445000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 18575000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 18705000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 18835000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 18965000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 19095000000
+ i2c_reply_cmd = I2C_DEFER
+
+  RNG State: 0
+
+------
+Time: 19225000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 19355000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 19485000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 19615000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 19745000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 19875000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 20005000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 20135000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 20265000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 20395000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 20525000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 20655000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 20785000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 20915000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 21045000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
+------
+Time: 21165000000
+ i2c_reply_cmd = I2C_ACK
+
+  RNG State: 0
+
