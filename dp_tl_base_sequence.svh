@@ -49,7 +49,7 @@ task FLOW_FSM();
                             end
                         end
                         CR_STAGE: begin
-                            CR_LT_success();
+                            CR_LT();
                             if(seq_item.HPD_Detect) begin
                                 if(seq_item.LT_Failed) begin
                                     cs = CR_STAGE;
@@ -68,7 +68,7 @@ task FLOW_FSM();
                             end
                         end
                         EQ_STAGE: begin
-                            EQ_LT_success();
+                            EQ_LT();
                             if(seq_item.HPD_Detect) begin
                                 if(seq_item.LT_Pass) begin
                                     `uvm_fatal("DEBUG", "LT SUCCEEDED")

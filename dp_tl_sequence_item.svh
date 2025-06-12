@@ -113,21 +113,21 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     /////////////////////// SPM CONSTRAINTS ///////////////////////
     ///////////////////////////////////////////////////////////////
     
-    // // constraint spm_data_write_constraint {
-    // //     // if (SPM_CMD == AUX_I2C_WRITE) {
-    // //         // SPM_Data inside {[0:255]}; // Full range of SPM_Data
-    // //     // } else {
-    // //         SPM_Data == 8'bx; // Default value when not AUX_I2C_WRITE
-    // //     // }
-    // // }
+    // constraint spm_data_write_constraint {
+    //     // if (SPM_CMD == AUX_I2C_WRITE) {
+    //         // SPM_Data inside {[0:255]}; // Full range of SPM_Data
+    //     // } else {
+    //         SPM_Data == 8'bx; // Default value when not AUX_I2C_WRITE
+    //     // }
+    // }
     
-    // // constraint spm_cmd_read_only_constraint {
-    // //     SPM_CMD == AUX_I2C_READ; // Force SPM_CMD to always be AUX_I2C_READ
-    // // }
+    // constraint spm_cmd_read_only_constraint {
+    //     SPM_CMD == AUX_I2C_READ; // Force SPM_CMD to always be AUX_I2C_READ
+    // }
 
-    // // constraint operation_type_dist {
-    // //    operation inside {[reset_op:EQ_LT_op]};
-    // // }
+    // constraint operation_type_dist {
+    //    operation inside {[reset_op:EQ_LT_op]};
+    // }
 
     // constraint hsp_vsp_constraint {
     //     HSP dist {1'b1 := 90, 1'b0 := 10}; // HSP is 1 90% of the time
@@ -254,28 +254,28 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     //     error_flag dist {1'b0 := 90, 1'b1 := 10}; // 90% chance of being 0, 10% chance of being 1
     // }
 
-    // ///////////////////////////////////////////////////////////////
-    // /////////////////////// LPM CONSTRAINTS ///////////////////////
-    // ///////////////////////////////////////////////////////////////
+    // // ///////////////////////////////////////////////////////////////
+    // // /////////////////////// LPM CONSTRAINTS ///////////////////////
+    // // ///////////////////////////////////////////////////////////////
 
-    constraint rst_n_constraint {
-        rst_n dist {1'b1 := 90, 1'b0 := 10}; // 90% chance of being 1, 10% chance of being 0
-        MS_rst_n == rst_n; // Ensure MS_rst_n follows the rst_n value.
-    }
+    // constraint rst_n_constraint {
+    //     rst_n dist {1'b1 := 90, 1'b0 := 10}; // 90% chance of being 1, 10% chance of being 0
+    //     MS_rst_n == rst_n; // Ensure MS_rst_n follows the rst_n value.
+    // }
 
-    constraint link_bw_cr_constraint {
-        Link_BW_CR inside {BW_RBR, BW_HBR, BW_HBR2, BW_HBR3}; // Allowed values for Link_BW_CR
-    }
+    // constraint link_bw_cr_constraint {
+    //     Link_BW_CR inside {BW_RBR, BW_HBR, BW_HBR2, BW_HBR3}; // Allowed values for Link_BW_CR
+    // }
 
-    constraint link_lc_cr_constraint {
-        Link_LC_CR != 2'b10; // Prevent Link_LC_CR from taking the value 10b
-    }
+    // constraint link_lc_cr_constraint {
+    //     Link_LC_CR != 2'b10; // Prevent Link_LC_CR from taking the value 10b
+    // }
 
-    constraint max_tps_supported_c {
-        ((Link_BW_CR == BW_RBR) || (Link_BW_CR == BW_HBR)) -> (MAX_TPS_SUPPORTED inside {TPS2, TPS3, TPS4});
-        (Link_BW_CR == BW_HBR2) -> (MAX_TPS_SUPPORTED inside {TPS3, TPS4});
-        (Link_BW_CR == BW_HBR3) -> (MAX_TPS_SUPPORTED == TPS4);
-    }
+    // constraint max_tps_supported_c {
+    //     ((Link_BW_CR == BW_RBR) || (Link_BW_CR == BW_HBR)) -> (MAX_TPS_SUPPORTED inside {TPS2, TPS3, TPS4});
+    //     (Link_BW_CR == BW_HBR2) -> (MAX_TPS_SUPPORTED inside {TPS3, TPS4});
+    //     (Link_BW_CR == BW_HBR3) -> (MAX_TPS_SUPPORTED == TPS4);
+    // }
 
     // EQ-related value alignment control
     // rand bit eq_align_enable;
@@ -427,7 +427,7 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     ///////////////////////////////////////////////////////////////
 
     function void pre_randomize();
-        if (LPM_Start_CR == 1) begin
+        if (LPM_Start_CR || LPM_CR_Apply_New_BW_LC) begin
             prev_vtg = '0; // Reset prev_vtg when LPM_Start_CR is 1
             prev_pre = '0; // Reset prev_pre when LPM_Start_CR is 1
         end
@@ -437,8 +437,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         prev_vtg = VTG; // Store current VTG for next randomization
         prev_pre = PRE; // Store current PRE for next randomization
         
-        // HBack = HStart - HSW;
-        // VBack = VStart - VSW;
+        HBack = HStart - HSW;
+        VBack = VStart - VSW;
     endfunction
 
     // Convert the sequence item to a string representation
