@@ -259,7 +259,7 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     // REPLY DECODER WITH SPM INTERFACE SIGNALS    
     assign tl_if.SPM_Reply_Data = spm_reply_data;
     assign tl_if.SPM_Reply_Data_VLD = spm_reply_data_vld;
-    assign tl_if.SPM_Reply_ACK = spm_reply_data_vld;
+    assign tl_if.SPM_Reply_ACK = spm_reply_ack;
     assign tl_if.SPM_Reply_ACK_VLD = spm_reply_ack_vld;
     assign tl_if.SPM_NATIVE_I2C = spm_native_i2c;
     assign tl_if.CTRL_I2C_Failed = ctrl_i2c_failed;
