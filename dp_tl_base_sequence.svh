@@ -49,7 +49,7 @@ task FLOW_FSM();
                             end
                         end
                         CR_STAGE: begin
-                            CR_LT();
+                            CR_LT_success();
                             if(seq_item.HPD_Detect) begin
                                 if(seq_item.LT_Failed) begin
                                     cs = CR_STAGE;
@@ -68,7 +68,7 @@ task FLOW_FSM();
                             end
                         end
                         EQ_STAGE: begin
-                            EQ_LT();
+                            EQ_LT_success();
                             if(seq_item.HPD_Detect) begin
                                 if(seq_item.LT_Pass) begin
                                     `uvm_fatal("DEBUG", "LT SUCCEEDED")
@@ -1270,9 +1270,10 @@ task FLOW_FSM();
     endtask
 
     //////////////////////////////////////////////// ISOCHRONOUS /////////////////////////////////////////
-       task ISO_INIT();
-        if(!seq_item.isflow)
+    task ISO_INIT();
+        if(seq_item == null) begin
             seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        end
         start_item(seq_item);
         // seq_item.rand_mode(1);
         // seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1); seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
@@ -1354,7 +1355,20 @@ task FLOW_FSM();
         `uvm_info("TL_ISO_INIT_SEQ", $sformatf("ISO_INIT_SPM: ISO_start=%0b, SPM_Lane_BW=0x%0h, SPM_Lane_Count=0x%0h, Mvid=0x%0h, Nvid=0x%0h, HTotal=0x%0h, VTotal=0x%0h, HStart=0x%0h, VStart=0x%0h, HSP=0x%0h, VSP=0x%0h, HSW=0x%0h, VSW=0x%0h, HWidth=0x%0h, VHeight=0x%0h, MISC0=0x%0h, MISC1=0x%0h", seq_item.SPM_ISO_start, seq_item.SPM_Lane_BW, seq_item.SPM_Lane_Count, seq_item.Mvid, seq_item.Nvid, seq_item.HTotal, seq_item.VTotal, seq_item.HStart, seq_item.VStart, seq_item.HSP, seq_item.VSP, seq_item.HSW, seq_item.VSW, seq_item.HWidth, seq_item.VHeight, seq_item.MISC0, seq_item.MISC1), UVM_MEDIUM); 
     endtask
 
-
+    task ISO_INIT_basic();
+        if(seq_item == null) begin
+            seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        end
+        start_item(seq_item);
+            seq_item.SPM_Transaction_VLD = 1'b0;
+            seq_item.LPM_Transaction_VLD = 1'b0;
+            seq_item.SPM_MSA_VLD = 1'b1;
+            seq_item.SPM_ISO_start = 1'b1;
+            seq_item.operation = ISO;
+        finish_item(seq_item);
+        get_response(seq_item);
+    endtask
+    
     task Main_Stream(input [15:0] frames);
         int countv = 1;
         int counth = 1;
