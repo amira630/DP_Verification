@@ -127,7 +127,8 @@ eq_fsm eq_fsm_inst
     .max_vtg            (max_vtg),
     .max_pre            (max_pre),
     .eq_fsm_cr_failed   (eq_fsm_cr_failed),
-    .eq_fsm_loop_max    (eq_fsm_loop_max)
+    .eq_fsm_loop_max    (eq_fsm_loop_max),
+    .eq_fsm_repeat      (eq_fsm_repeat)
 );
 
 

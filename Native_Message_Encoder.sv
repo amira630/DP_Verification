@@ -161,8 +161,8 @@ module     native_message_encoder
         end          
       else if (encoder_output_ctr == encoder_output_ctr_max && encoder_reset_ctr[4] != 1'b1) // Reset after transmission
         begin
-          native_msg_reg <= {native_msg_reg[151:0],8'b0};
-          encoder_reset_ctr <= encoder_reset_ctr + 5'b00001;
+          native_msg_reg <= (native_msg_reg << ((5'b10000 - encoder_reset_ctr) * 'd8));
+          encoder_reset_ctr <= 5'b10000;
           native_msg_vld <= 1'b0;
         end
       else

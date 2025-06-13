@@ -147,8 +147,8 @@ cr_top clock_recovery_inst
    .cr_phy_instruct_vld(cr_phy_instruct_vld),
    .link_bw_cr         (lpm_link_bw),
    .link_lc_cr         (lpm_link_lc),
-   .new_bw_eq          (new_bw),
-   .new_lc_eq          (new_lc),
+   .new_bw_eq          (eq_err_chk_bw),
+   .new_lc_eq          (eq_err_chk_lc),
    .err_chk_cr_start   (eq_err_chk_cr_start),
    .lpm_cr_apply_new_driving_param (lpm_cr_apply_new_driving_param),  
    .lpm_cr_apply_new_bw_lc         (lpm_cr_apply_new_bw_lc)

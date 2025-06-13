@@ -133,7 +133,7 @@ always @ (*)
 				end			  							  			
   NATIVE_TALK_MODE_ONE_DATA_BYTE: 
         begin
-          if (((lpm_transaction_vld || cr_transaction_vld || eq_transaction_vld) && (len_reg == 8'b00000000)) || ( cmd_reg == 2'b01))
+          if ((len_reg == 8'b00000000) || ( cmd_reg == 2'b01))
           begin
             next_state = NATIVE_LISTEN_MODE_WAIT_ACK;
           end

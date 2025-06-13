@@ -71,19 +71,42 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
 
     // TASK: Active
     // This task is used to assert the HPD_Signal
-    task Active(output logic aux_start_stop, output logic [7:0] value);
+    task Active(output logic aux_start_stop, output logic [7:0] value, output logic [1:0] phy_instruct, output logic [7:0] phy_adj_bw, output logic [1:0] phy_adj_lc, output logic phy_instruct_vld,
+                output logic [7:0] iso_symbols_lane0, output logic [7:0] iso_symbols_lane1, 
+                output logic [7:0] iso_symbols_lane2, output logic [7:0] iso_symbols_lane3,
+                output logic control_sym_flag_lane0, output logic control_sym_flag_lane1,
+                output logic control_sym_flag_lane2, output logic control_sym_flag_lane3);
         HPD_Signal = 1'b1;                      // Drive the HPD_Signal with the specified value
+        `uvm_info("DP_SINK_INTERFACE", $sformatf("Active Sink: HPD_Signal = %b", HPD_Signal), UVM_MEDIUM)
+
         PHY_START_STOP = 1'b0;                  // Deassert PHY_START_STOP
         aux_start_stop = AUX_START_STOP;        // Return the value of AUX_START_STOP
+        
+        // Return the PHY signals which are used in the Link Training process
+        phy_instruct = PHY_Instruct;
+        phy_adj_bw = PHY_ADJ_BW;
+        phy_adj_lc = PHY_ADJ_LC;
+        phy_instruct_vld = PHY_Instruct_VLD;
+
+        // Return the ISO symbols flags of the ISO symbols to be checked if they take any values in the Link Training steps
+        iso_symbols_lane0 = ISO_symbols_lane0;
+        iso_symbols_lane1 = ISO_symbols_lane1; 
+        iso_symbols_lane2 = ISO_symbols_lane2; 
+        iso_symbols_lane3 = ISO_symbols_lane3;
+
+        // Return the Control symbols flags of the ISO symbols to be checked if they take any values in the Link Training steps
+        control_sym_flag_lane0 = Control_sym_flag_lane0; 
+        control_sym_flag_lane1 = Control_sym_flag_lane1;
+        control_sym_flag_lane2 = Control_sym_flag_lane2;
+        control_sym_flag_lane3 = Control_sym_flag_lane3;
 
         if (AUX_START_STOP) begin
             value = AUX_IN_OUT;
-            `uvm_info("DP_SINK_INTERFACE", $sformatf("Read AUX_IN_OUT = 0x%0h", value), UVM_LOW);
+            `uvm_info("DP_SINK_INTERFACE", $sformatf("Read AUX_IN_OUT = 0x%0h", value), UVM_LOW)
 
         end else begin
             value = 8'b0;                      // If AUX_START_STOP is not asserted, set value to 0
         end
-        `uvm_info("DP_SINK_INTERFACE", $sformatf("Active Sink: HPD_Signal"), UVM_MEDIUM);
     endtask
 
     // TASK: drive_aux_in_out

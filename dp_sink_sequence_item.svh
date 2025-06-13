@@ -56,21 +56,20 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     constraint valid_i2c_aux_reply_cmd_c {
         i2c_reply_cmd dist {
             // Strongly prefer ACK, but occasionally allow NACK or DEFER
-            I2C_ACK      := 96,  // 50% of the time
-            I2C_NACK     := 2,   // 25% of the time
-            I2C_DEFER    := 2    // 25% of the time
+            I2C_ACK      := 96,  // 90% of the time
+            I2C_NACK     := 2,   // 5% of the time
+            I2C_DEFER    := 2    // 5% of the time
         };
     }
 
     constraint valid_native_aux_reply_cmd_c {
         // Strongly prefer ACK, but occasionally allow NACK or DEFER
         native_reply_cmd dist {
-            AUX_ACK      := 70,
+            AUX_ACK      := 100,
             AUX_NACK     := 0,
-            AUX_DEFER    := 30
+            AUX_DEFER    := 0
         };
     }
-
 
     ///////////////////////////////////////////////////////////////
     /////////////////////// CONSTRUCTOR ///////////////////////////
@@ -116,7 +115,6 @@ class dp_sink_sequence_item extends uvm_sequence_item;
             end
         end
     endfunction
-
 
     function string convert2string();
         string aux_data = "";

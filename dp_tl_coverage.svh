@@ -39,7 +39,7 @@ class dp_tl_coverage extends uvm_component;
         lpm_eq_final_adj_lc_c:          coverpoint cov_tl_seq_item.EQ_Final_ADJ_LC;
         lpm_fsm_cr_failed_c:            coverpoint cov_tl_seq_item.FSM_CR_Failed;
         lpm_eq_fsm_cr_failed_c:         coverpoint cov_tl_seq_item.EQ_FSM_CR_Failed;
-        lpm_eq_failed_c:                coverpoint cov_tl_seq_item.EQ_Failed;
+        lpm_eq_lt_failed_c:                coverpoint cov_tl_seq_item.EQ_LT_Failed;
         lpm_eq_lt_pass_c:               coverpoint cov_tl_seq_item.EQ_LT_Pass;
         lpm_lane_c:                     coverpoint cov_tl_seq_item.Lane_Align;
         lpm_max_vtg_c:                  coverpoint cov_tl_seq_item.MAX_VTG;

@@ -98,7 +98,7 @@
 | EQ_LT_Pass      | output    | 1 bit  |TL    | This signal is asserted once the EQ Phase has successfully completed, indicating successful link training.|
 | EQ_LT_Failed      | output    | 1 bit  |TL    | This signal is asserted when the EQ Phase has failed.|
 | EQ_FSM_CR_Failed      | output    | 1 bit  |TL    | Signal indicating the failure of the CR phase during EQ phase of link training. |
-| EQ_FSM_Repeat      | output    | 1 bit  |TL    | Signal indicating the repetition of the EQ loop. |
+| EQ_FSM_Repeat      | output    | 1 bit  |TL    | Signal indicating the repetition of the EQ FSM loop during link training. |
 | EQ_Final_ADJ_BW      | output    | 8 bits  |TL    | The adjusted link BW after successful LT used for sending main video stream.|
 | EQ_Final_ADJ_LC      | output    | 2 bits  |TL    | The adjusted lane count after successful LT used for sending main video stream.|
 | Wfull      | output    | 1 bit  |TL    |  Asserted when the internal FIFO becomes full while the stream source is actively sending pixels. It indicates that a pixel overflow is imminent.|

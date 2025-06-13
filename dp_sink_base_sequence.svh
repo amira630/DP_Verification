@@ -41,7 +41,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
     task Sink_FSM();
         sink_flow_stages_e current_state;
         int aux_stop_counter = 0;           // Counter for AUX_START_STOP being low
-        const int AUX_STOP_THRESHOLD = 5000; // Threshold for Stopping the FSM
+        const int AUX_STOP_THRESHOLD = 50000; // Threshold for Stopping the FSM
 
         // Randomize all registers once at the start
         if (!(randomize(EDID_registers) &&
@@ -78,7 +78,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                                 ready();      
                                 current_state = SINK_READY;                   // Set the current state to SINK_READY
 
-                                if (seq_item.AUX_START_STOP == 0) begin
+                                if (!seq_item.AUX_START_STOP && !seq_item.Control_sym_flag_lane0 && !seq_item.Control_sym_flag_lane1 && !seq_item.Control_sym_flag_lane2 && !seq_item.Control_sym_flag_lane3) begin
                                     aux_stop_counter++;
                                     if (aux_stop_counter >= AUX_STOP_THRESHOLD) begin
                                         `uvm_info(get_type_name(), "AUX_START_STOP threshold reached, stopping Sink_FSM", UVM_MEDIUM)
@@ -231,8 +231,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
             end
         end
         
-        reply_item.command = rsp_item.command;  // Copy the command from the response item
-
+         reply_item.command = rsp_item.command;  // Copy the command from the response item
         //rsp_item.aux_in_out.delete();
 
         `uvm_info(get_type_name(), $sformatf("process_aux_data - Processed AUX: cmd=0x%h, addr=0x%h, len=0x%h, data_size=%0d", 
