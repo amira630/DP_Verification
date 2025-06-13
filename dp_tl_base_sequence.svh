@@ -223,8 +223,9 @@ task FLOW_FSM();
                 seq_item.SPM_LEN = 0;               // Length
                 seq_item.SPM_Data = 0;               // Data
             finish_item(seq_item);
+            get_response(seq_item);
 
-            while ((ack_count <= seq_item.SPM_LEN) && (data_count <= seq_item.SPM_LEN)) begin
+            while ((ack_count <= 130) && (data_count <= 128)) begin
                 start_item(seq_item);
                 seq_item.SPM_Transaction_VLD = 1'b0; 
                 seq_item.operation = WAIT_REPLY;

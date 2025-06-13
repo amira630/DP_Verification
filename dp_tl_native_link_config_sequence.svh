@@ -11,5 +11,6 @@ class dp_tl_native_link_config_sequence extends dp_tl_base_sequence;
             native_read_request(20'h0_01_00 +16*i, 8'h0F);
         end
         `uvm_info(get_type_name(), "Completed native_receiver_capability_read_request test", UVM_MEDIUM)
+        $finish;
     endtask
 endclass //dp_tl_native_link_config_sequence extends superClass

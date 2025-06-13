@@ -853,3 +853,168 @@ Time: 8755000000
  native_reply_cmd = AUX_ACK
  RNG State: 0
 
+------
+Time: 4255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4855000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5155000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5455000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5755000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6055000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6355000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6655000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6955000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7855000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8155000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8455000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8755000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 4855000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5155000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5455000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 5755000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6055000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6355000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6655000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 6955000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7255000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7555000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 7855000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8155000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8455000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
+------
+Time: 8755000000
+ native_reply_cmd = AUX_ACK
+ RNG State: 0
+
