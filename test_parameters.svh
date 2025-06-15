@@ -49,8 +49,8 @@
 // typedef enums
     typedef enum bit [1:0] {
         DETECTING = 2'b00,
-        CR_STAGE = 2'b01,
-        EQ_STAGE = 2'b10,
+        CR_STAGE =  2'b01,
+        EQ_STAGE =  2'b10,
         ISO_STAGE = 2'b11
     } tl_flow_stages_e;
 

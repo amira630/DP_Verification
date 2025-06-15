@@ -1,6 +1,8 @@
 class dp_sink_sequence_item extends uvm_sequence_item;
     `uvm_object_utils(dp_sink_sequence_item);
 
+    string filename1, filename2, test_name1, test_name2;
+
     bit HPD_Signal;
 
     bit rst_n;           // Reset signal for the PHY Layer
@@ -80,6 +82,39 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     ///////////////////////////////////////////////////////////////
     ///////////////////////// METHODS /////////////////////////////
     ///////////////////////////////////////////////////////////////
+
+    function void post_randomize();
+        int fh1, fh2;
+
+        test_name1 = "sink_I2C_test";
+        test_name2 = "sink_native_test";
+
+        // Create a unique log filename for this test, persistent across randomizations
+        filename1 = $sformatf("rand_log_%s.txt", test_name1);
+        filename2 = $sformatf("rand_log_%s.txt", test_name2);
+        
+        if (command[3]) begin
+            fh2 = $fopen(filename2, "a");
+            if (fh2) begin
+                $fdisplay(fh2, "------\nTime: %0t", $time);
+                $fdisplay(fh2, " native_reply_cmd = %s", native_reply_cmd.name());
+                $fdisplay(fh2, " RNG State: %0p\n", $get_randstate());
+                $fclose(fh2);
+            end else begin
+                `uvm_warning("FILE_IO", $sformatf("Could not open %s", filename2));
+            end
+        end else begin
+            fh1 = $fopen(filename1, "a");
+            if (fh1) begin
+                $fdisplay(fh1, "------\nTime: %0t", $time);
+                $fdisplay(fh1, " i2c_reply_cmd = %s", i2c_reply_cmd.name());
+                $fdisplay(fh1, " RNG State: %0p\n", $get_randstate());
+                $fclose(fh1);
+            end else begin
+                `uvm_warning("FILE_IO", $sformatf("Could not open %s", filename1));
+            end
+        end
+    endfunction
 
     function string convert2string();
         string aux_data = "";

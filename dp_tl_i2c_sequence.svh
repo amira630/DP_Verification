@@ -11,5 +11,6 @@ class dp_tl_i2c_sequence extends dp_tl_base_sequence;
         i2c_request(AUX_I2C_READ, 0);
 
         `uvm_info(get_type_name(), "Completed i2c_request test", UVM_MEDIUM)
+        $finish;
     endtask
 endclass //dp_tl_i2c_sequence extends superClass

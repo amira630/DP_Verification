@@ -39,7 +39,10 @@ module Divider
             count         <= 0;
             busy          <= 0;
             done          <= 0;
-        end else if (start && !busy) begin
+        end 
+        else 
+        if (start && !busy) 
+        begin
             quotient_reg  <= 0;
             remainder_reg <= 0;
             divisor_reg   <= divisor;
@@ -47,17 +50,25 @@ module Divider
             count         <= WIDTH;
             busy          <= 1;
             done          <= 0;
-        end else if (busy) begin
-            if (count > 0) begin
+        end 
+        else 
+        if (busy) 
+        begin
+            if (count > 0) 
+            begin
                 remainder_reg <= subtract ? subtracted_remainder : next_remainder;
                 quotient_reg  <= {quotient_reg[WIDTH-2:0], subtract};
                 temp_dividend <= {temp_dividend[WIDTH-2:0], 1'b0};
                 count <= count - 1;
-            end else begin
+            end 
+            else 
+            begin
                 busy <= 0;
                 done <= 1;
             end
-        end else begin
+        end 
+        else 
+        begin
             done <= 0; // Hold done high for one clock only
         end
     end
