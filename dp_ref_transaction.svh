@@ -62,4 +62,72 @@ class dp_ref_transaction extends uvm_sequence_item;
         super.new(name);
     endfunction
 
+    // -------------------------------------------------------------
+    // Clone implementation (returns a copy of this object)
+    // -------------------------------------------------------------
+    function uvm_object clone();
+        dp_ref_transaction c;
+        c = dp_ref_transaction::type_id::create("c");
+        c.copy(this);
+        return c;
+    endfunction
+
+    // -------------------------------------------------------------
+    // Copy implementation (copies all fields from another object)
+    // -------------------------------------------------------------
+    function void copy(uvm_object rhs);
+        dp_ref_transaction rhs_;
+        super.copy(rhs);
+        if (!$cast(rhs_, rhs)) return;
+
+        // Stream Policy Maker
+        this.SPM_Reply_Data      = rhs_.SPM_Reply_Data;
+        this.SPM_Reply_ACK       = rhs_.SPM_Reply_ACK;
+        this.SPM_Reply_ACK_VLD   = rhs_.SPM_Reply_ACK_VLD;
+        this.SPM_Reply_Data_VLD  = rhs_.SPM_Reply_Data_VLD;
+        this.SPM_NATIVE_I2C      = rhs_.SPM_NATIVE_I2C;
+        this.CTRL_I2C_Failed     = rhs_.CTRL_I2C_Failed;
+
+        // Link Policy Maker
+        this.LPM_Reply_Data      = rhs_.LPM_Reply_Data;
+        this.LPM_Reply_ACK       = rhs_.LPM_Reply_ACK;
+        this.LPM_Reply_ACK_VLD   = rhs_.LPM_Reply_ACK_VLD;
+        this.LPM_Reply_Data_VLD  = rhs_.LPM_Reply_Data_VLD;
+        this.HPD_Detect          = rhs_.HPD_Detect;
+        this.HPD_IRQ             = rhs_.HPD_IRQ;
+        this.CTRL_Native_Failed  = rhs_.CTRL_Native_Failed;
+        this.LPM_NATIVE_I2C      = rhs_.LPM_NATIVE_I2C;
+
+        // Link Training Signals
+        this.EQ_Final_ADJ_BW     = rhs_.EQ_Final_ADJ_BW;
+        this.EQ_Final_ADJ_LC     = rhs_.EQ_Final_ADJ_LC;
+        this.FSM_CR_Failed       = rhs_.FSM_CR_Failed;
+        this.EQ_FSM_CR_Failed    = rhs_.EQ_FSM_CR_Failed;
+        this.EQ_LT_Failed        = rhs_.EQ_LT_Failed;
+        this.EQ_LT_Pass          = rhs_.EQ_LT_Pass;
+        this.CR_Completed        = rhs_.CR_Completed;
+        this.Timer_Timeout       = rhs_.Timer_Timeout;
+
+        // Physical Layer
+        this.PHY_ADJ_BW          = rhs_.PHY_ADJ_BW;
+        this.PHY_ADJ_LC          = rhs_.PHY_ADJ_LC;
+        this.PHY_Instruct        = rhs_.PHY_Instruct;
+        this.AUX_START_STOP      = rhs_.AUX_START_STOP;
+        this.PHY_Instruct_VLD    = rhs_.PHY_Instruct_VLD;
+        this.AUX_IN_OUT          = rhs_.AUX_IN_OUT;
+
+        // Isochronous Transport
+        this.ISO_symbols_lane0   = rhs_.ISO_symbols_lane0;
+        this.ISO_symbols_lane1   = rhs_.ISO_symbols_lane1;
+        this.ISO_symbols_lane2   = rhs_.ISO_symbols_lane2;
+        this.ISO_symbols_lane3   = rhs_.ISO_symbols_lane3;
+        this.Control_sym_flag_lane0 = rhs_.Control_sym_flag_lane0;
+        this.Control_sym_flag_lane1 = rhs_.Control_sym_flag_lane1;
+        this.Control_sym_flag_lane2 = rhs_.Control_sym_flag_lane2;
+        this.Control_sym_flag_lane3 = rhs_.Control_sym_flag_lane3;
+
+        // Main Stream Source
+        this.WFULL               = rhs_.WFULL;
+    endfunction
+
 endclass

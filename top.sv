@@ -57,7 +57,7 @@ module top();
             end
             begin
                 forever
-                    #0.003 MS_Stm_CLK = ~MS_Stm_CLK; // Pixel Stream Clock 
+                    #(0.00625) MS_Stm_CLK = ~MS_Stm_CLK; // Pixel Stream Clock 
                     // #3.086419753
                     // #(tl_if.CLOCK_PERIOD/2)
             end

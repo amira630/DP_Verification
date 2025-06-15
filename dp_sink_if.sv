@@ -80,6 +80,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
         `uvm_info("DP_SINK_INTERFACE", $sformatf("Active Sink: HPD_Signal = %b", HPD_Signal), UVM_MEDIUM)
 
         PHY_START_STOP = 1'b0;                  // Deassert PHY_START_STOP
+        aux_data = 8'b0;  
         aux_start_stop = AUX_START_STOP;        // Return the value of AUX_START_STOP
         
         // Return the PHY signals which are used in the Link Training process
@@ -121,6 +122,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
 
     // TASK: Interrupt
     task HPD_Interrupt();
+        PHY_START_STOP = 1'b0;
         `uvm_info("DP_SINK_INTERFACE", $sformatf("Driving Interrupt _NOW "), UVM_MEDIUM)
         HPD_Signal = 1'b1;              // Assert HPD_Signal
         #10000;                       // Wait for 10us 

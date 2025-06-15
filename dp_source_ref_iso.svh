@@ -89,7 +89,7 @@ class dp_source_ref_iso extends uvm_component;
         `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
 
         forever begin
-            if ((tl_item.rst_n && tl_item.SPM_ISO_start)) begin // if reset is off and LT is passed
+            if ((tl_item.rst_n && tl_item.SPM_ISO_start && !entered)) begin // if reset is off and LT is passed
                 entered = 1'b1; // Set entered flag to indicate that the reference model has entered the ISO operation  
                 if(!calc_flag) begin
                     calculate_timing_parameters( tl_item, hactive_period, hblank_period, vblank_period, htotal_period, valid_symbols_integer, valid_symbols_fraction, tu_alternate_up, tu_alternate_down, alternate_valid);
@@ -122,14 +122,14 @@ class dp_source_ref_iso extends uvm_component;
                     count_VBLANK =0; count_HBLANK_ACTIVE =0; count_HACTIVE =0; // Reset VBLANK and HBLANK counters to initial values
                     RED_8.delete(); RED_16.delete(); GREEN_8.delete(); GREEN_16.delete(); BLUE_8.delete(); BLUE_8.delete(); // Clear the pixel queue
                     `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
-                    ref_model_out_port.write(expected_transaction);
+                    send_expected_to_scoreboard();
                 end
                 else if(!tl_item.SPM_ISO_start) begin
                     ISO_IDLE_PATTERN(tl_item); // Call ISO_IDLE task to handle IDLE state
                 end
             end
             else if(!entered || !tl_item.rst_n) begin // LT not passed
-                repeat(50)
+                repeat(5)
                     `uvm_info(get_type_name(), "Reset or LT not passed — initializing internal state", UVM_MEDIUM)
                 expected_transaction.ISO_symbols_lane0 ='b0;
                 expected_transaction.ISO_symbols_lane1 ='b0;
@@ -152,12 +152,12 @@ class dp_source_ref_iso extends uvm_component;
                 count_MSA_0 = 0; count_MSA_1 = 0; count_MSA_2 = 0; count_MSA_3 = 0; // Reset MSA counters to initial values
                 count_VBLANK = 0; count_HBLANK_ACTIVE =0; count_HACTIVE =0; // Reset VBLANK and HBLANK counters to initial values
                 RED_8.delete(); RED_16.delete(); GREEN_8.delete(); GREEN_16.delete(); BLUE_8.delete(); BLUE_8.delete(); // Clear the pixel queue
-                repeat(50)    
+                repeat(5)    
                     `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
-                ref_model_out_port.write(expected_transaction);
-                break;
+                send_expected_to_scoreboard();
+                //break;
             end
-            else if(tl_item.rst_n && entered) begin
+            else if(tl_item.rst_n && entered && !tl_item.SPM_ISO_start) begin
                 ISO_IDLE_PATTERN(tl_item); // Call ISO_IDLE task to handle IDLE state
             end
             // Wait for the next transaction
@@ -308,7 +308,7 @@ class dp_source_ref_iso extends uvm_component;
             IDLE_PATTERN(tl_item, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
             // Send the expected transaction to the scoreboard
             `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
-            ref_model_out_port.write(expected_transaction);
+            send_expected_to_scoreboard();
             counter++; // Increment the counter for the number of symbols sent
             // Wait for the next transaction
             ref_tl_fifo.get(tl_item);
@@ -462,7 +462,7 @@ class dp_source_ref_iso extends uvm_component;
             end
             // Send the expected transaction to the scoreboard
             `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
-            ref_model_out_port.write(expected_transaction);
+            send_expected_to_scoreboard();
             ref_tl_fifo.get(tl_item);
             `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
             if(tl_item.MS_DE && tl_item.SPM_ISO_start)begin
@@ -823,7 +823,7 @@ class dp_source_ref_iso extends uvm_component;
             end
             // Send the expected transaction to the scoreboard
             `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
-            ref_model_out_port.write(expected_transaction);
+            send_expected_to_scoreboard();
             ref_tl_fifo.get(tl_item);
             `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
             if(tl_item.MS_DE && tl_item.SPM_ISO_start)begin
@@ -1008,7 +1008,7 @@ class dp_source_ref_iso extends uvm_component;
             end
             // Send the expected transaction to the scoreboard
             `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
-            ref_model_out_port.write(expected_transaction);
+            send_expected_to_scoreboard();
             ref_tl_fifo.get(tl_item);
             `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
             if(tl_item.MS_DE && tl_item.SPM_ISO_start)begin
@@ -1430,5 +1430,12 @@ class dp_source_ref_iso extends uvm_component;
             ///////////////////////////////////////////
             ///////////////////////////////////////////
         end
+    endtask
+
+    task send_expected_to_scoreboard();
+        dp_ref_transaction tx_copy;
+        tx_copy = dp_ref_transaction::type_id::create($sformatf("tx_copy_%0d", $time));
+        void'($cast(tx_copy, expected_transaction.clone()));
+        ref_model_out_port.write(tx_copy);
     endtask
 endclass

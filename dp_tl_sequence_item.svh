@@ -83,13 +83,14 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     rand logic [7:0]  MISC0;        // for bpc and color format
     rand logic [7:0]  MISC1;        // for colorimetry and colorimetry range
 
-    rand logic [15:0] HFront, HBack, VFront, VBack;
-
+    rand logic [15:0] HBack, VBack, HFront, VFront;
+    
     /////////////////// MAIN STREAM SOURCE ///////////////////////
 
     rand logic [47:0] MS_Pixel_Data;
     rand logic [9:0]  MS_Stm_BW;        // takes values on MHz max 1Ghz
-    rand logic        MS_DE, MS_VSYNC, MS_HSYNC;
+    logic        MS_VSYNC, MS_HSYNC;
+    bit MS_DE;
     bit MS_Stm_BW_VLD;   // added to indicate if MS_Stm_BW is valid
     bit MS_rst_n; // Reset is asynchronous active low for the MS Stream
     bit WFULL;  // Indicates if the FIFO is full
@@ -127,130 +128,77 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     //     SPM_CMD == AUX_I2C_READ; // Force SPM_CMD to always be AUX_I2C_READ
     // }
 
-    // constraint operation_type_dist {
-    //    operation inside {[reset_op:EQ_LT_op]};
-    // }
+    constraint video_timing_constraints {
 
-    // constraint hsp_vsp_constraint {
-    //     HSP dist {1'b1 := 90, 1'b0 := 10}; // HSP is 1 90% of the time
-    //     VSP dist {1'b1 := 90, 1'b0 := 10}; // VSP is 1 90% of the time
-    // }
+        // 1. Mvid / Nvid: Clock generation ratio
+        Mvid inside {[10_000 : 999_999]};        // Reasonable numerator
+        Nvid inside {[Mvid+1 : 1_000_000]};      // Ensure fractional ratio < 1
 
-    // // // constraint vtotal_constraint {
-    // // //     (VHeight + VStart - 1) == VTotal; // Ensure VTotal equals VHeight + VStart - 1
-    // // // }
+        // 2. Active visible resolution
+        HWidth inside {[640 : 3840]};            // Horizontal: VGA to 4K
+        VHeight inside {[480 : 2160]};           // Vertical: VGA to 4K
 
-    // // // constraint htotal_constraint {
-    // // //     (HWidth + HStart - 1) == HTotal; // Ensure HTotal equals HWidth + HStart - 1
-    // // // }
+        // 3. Sync pulse widths (typical non-zero values)
+        HSW inside {[8 : 255]};
+        VSW inside {[1 : 127]};
 
-    // // // constraint hstart_constraint {
-    // // //     HStart inside {[0:HTotal]}; // Ensure HStart is within the range of HTotal
-    // // // }
+        // 4. Back porch
+        HBack inside {[16 : 512]};
+        VBack inside {[4 : 128]};
 
-    // // // constraint vstart_constraint {
-    // // //     VStart inside {[0:VTotal]}; // Ensure VStart is within the range of VTotal
-    // // // }
+        // 5. Total dimensions: sum of all intervals
+        HTotal == HFront + HSW + HBack + HWidth;
+        VTotal == VFront + VSW + VBack + VHeight;
 
-    // // // constraint hwidth_constraint {
-    // // //     HWidth inside {[0:HTotal]}; // Ensure HWidth is within the range of HTotal
-    // // // }
+        // 6. Start of active video (after sync + back porch)
+        HStart == HBack + HSW;
+        VStart == VBack + VSW;
 
-    // // // constraint vheight_constraint {
-    // // //     VHeight inside {[0:VTotal]}; // Ensure VHeight is within the range of VTotal
-    // // // }
+        // 7. Derive front porch values from everything else
+        HFront == HTotal - (HWidth + HBack + HSW);
+        VFront == VTotal - (VHeight + VBack + VSW);
 
-    // constraint misc1_constraint {
-    //     MISC1[7:6] == 2'b00; // Ensure bits 7 and 6 are always 0
-    //     // MISC1[5:0] can be anything, no constraint needed
-    // }
+        // 8. Ensure front porch is non-negative (redundant safety)
+        HFront >= 0;
+        VFront >= 0;
 
-    // constraint misc0_constraint {
-    //     MISC0[7:5] inside {3'b001, 3'b100}; // 8bpc or 16bpc
-    //     MISC0[4] == 1'b0;                  // MISC0[4] must always be 0
-    //     // MISC0[3] inside {1'b0, 1'b1};      // RGB or YCbCr
-    //     if (MISC0[3] == 1'b0) {
-    //         MISC0[2:1] == 2'b00;           // RGB
-    //     } else {
-    //         MISC0[2:1] == 2'b10;           // YCbCr (4:4:4)
-    //     }
-    //     // MISC0[0] can be anything, no constraint needed
-    // }
+        // 9. Reasonable total bounds
+        HTotal inside {[800 : 4096]};            // HDMI/DVI/DP-friendly ranges
+        VTotal inside {[500 : 3000]};
+        HStart <= HTotal;
+        VStart <= VTotal;
 
-    // // // constraint hsw_constraint {
-    // // //     HSW == (HStart - 1) - HBack - HFront; // Ensure HSW is calculated correctly
-    // // // }
-    
-    // // // constraint vsw_constraint {
-    // // //     VSW == (VStart - 1) - VBack - VFront; // Ensure VSW is calculated correctly
-    // // // }
+    // 10. Sync polarities — fully random, with equal probability
+        HSP dist {1'b1 := 90, 1'b0 := 10}; // HSP is 1 90% of the time
+        VSP dist {1'b1 := 90, 1'b0 := 10}; // VSP is 1 90% of the time
+    }
 
-    // // // constraint hback_constraint {
-    // // //     HBack == (HStart - HSW); // Ensure HBack equals HStart - HSW
-    // // // }
+    constraint ms_pixel_data_constraint {
+        if (MISC0[7:5] == 3'b001) {
+            MS_Pixel_Data[47:24] == 24'b0; // Most significant 24 bits are zero for 8bpc mode
+        } 
+    }
 
-    // // // constraint vback_constraint {
-    // // //     VBack == (VStart - VSW); // Ensure HBack equals VStart - VSW
-    // // // }    
+    constraint ms_stm_bw_constraint {
+        MS_Stm_BW inside {[10:90]}; // Ensure MS_Stm_BW is within the range 10 to 90
+    }
 
-    // // // constraint hfront_constraint {
-    // // //     HFront == (HTotal - (HStart + HWidth)); // Ensure HFront equals HTotal - (HStart + HWidth)
-    // // // }
+    constraint misc1_constraint {
+        MISC1[7:6] == 2'b00; // Ensure bits 7 and 6 are always 0
+        // MISC1[5:0] can be anything, no constraint needed
+    }
 
-    // // // constraint vfront_constraint {
-    // // //     VFront == (VTotal - (VStart + VHeight)); // Ensure VFront equals VTotal - (VStart + VHeight)
-    // // // } 
-
-    // constraint htotal_range {
-    //     HTotal inside {[100:200]};
-    // }
-
-    // constraint vtotal_range {
-    //     VTotal inside {[100:300]};
-    // }
-
-    // constraint hstart_range {
-    //     HStart inside {[0:HTotal]};
-    // }
-
-    // constraint vstart_range {
-    //     VStart inside {[0:VTotal]};
-    // }
-
-    // constraint hwidth_range {
-    //     HWidth inside {[0:HTotal - HStart + 1]};
-    // }
-
-    // constraint vheight_range {
-    //     VHeight inside {[0:VTotal - VStart + 1]};
-    // }
-
-    // constraint hfront_range {
-    //     HFront inside {[0:HTotal - (HStart + HWidth)]};
-    // }
-
-    // constraint vfront_range {
-    //     VFront inside {[0:VTotal - (VStart + VHeight)]};
-    // }
-
-    // constraint hsw_range {
-    //     HSW inside {[1:32]}; // example range
-    // }
-
-    // constraint vsw_range {
-    //     VSW inside {[1:32]};
-    // }
-
-
-    // constraint ms_pixel_data_constraint {
-    //     if (MISC0[7:5] == 3'b001) {
-    //         MS_Pixel_Data[47:24] == 24'b0; // Most significant 24 bits are zero for 8bpc mode
-    //     } 
-    // }
-
-    // constraint ms_stm_bw_constraint {
-    //     MS_Stm_BW inside {[10:90]}; // Ensure MS_Stm_BW is within the range 10 to 90
-    // }
+    constraint misc0_constraint {
+        MISC0[7:5] inside {3'b001, 3'b100}; // 8bpc or 16bpc
+        MISC0[4] == 1'b0;                  // MISC0[4] must always be 0
+        // MISC0[3] inside {1'b0, 1'b1};      // RGB or YCbCr
+        if (MISC0[3] == 1'b0) {
+            MISC0[2:1] == 2'b00;           // RGB
+        } else {
+            MISC0[2:1] == 2'b10;           // YCbCr (4:4:4)
+        }
+        // MISC0[0] can be anything, no constraint needed
+    }
 
     // constraint error_flag_constraint {
     //     error_flag dist {1'b0 := 90, 1'b1 := 10}; // 90% chance of being 0, 10% chance of being 1
@@ -265,19 +213,19 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     //     MS_rst_n == rst_n; // Ensure MS_rst_n follows the rst_n value.
     // }
 
-    // constraint link_bw_cr_constraint {
-    //     Link_BW_CR inside {BW_RBR, BW_HBR, BW_HBR2, BW_HBR3}; // Allowed values for Link_BW_CR
-    // }
+    constraint link_bw_cr_constraint {
+        Link_BW_CR inside {BW_RBR, BW_HBR, BW_HBR2, BW_HBR3}; // Allowed values for Link_BW_CR
+    }
 
-    // constraint link_lc_cr_constraint {
-    //     Link_LC_CR != 2'b10; // Prevent Link_LC_CR from taking the value 10b
-    // }
+    constraint link_lc_cr_constraint {
+        Link_LC_CR != 2'b10; // Prevent Link_LC_CR from taking the value 10b
+    }
 
-    // constraint max_tps_supported_c {
-    //     ((Link_BW_CR == BW_RBR) || (Link_BW_CR == BW_HBR)) -> (MAX_TPS_SUPPORTED inside {TPS2, TPS3, TPS4});
-    //     (Link_BW_CR == BW_HBR2) -> (MAX_TPS_SUPPORTED inside {TPS3, TPS4});
-    //     (Link_BW_CR == BW_HBR3) -> (MAX_TPS_SUPPORTED == TPS4);
-    // }
+    constraint max_tps_supported_c {
+        ((Link_BW_CR == BW_RBR) || (Link_BW_CR == BW_HBR)) -> (MAX_TPS_SUPPORTED inside {TPS2, TPS3, TPS4});
+        (Link_BW_CR == BW_HBR2) -> (MAX_TPS_SUPPORTED inside {TPS3, TPS4});
+        (Link_BW_CR == BW_HBR3) -> (MAX_TPS_SUPPORTED == TPS4);
+    }
 
     // EQ-related value alignment control
     // rand bit eq_align_enable;
@@ -440,9 +388,6 @@ class dp_tl_sequence_item extends uvm_sequence_item;
 
         prev_vtg = VTG; // Store current VTG for next randomization
         prev_pre = PRE; // Store current PRE for next randomization
-        
-        HBack = HStart - HSW;
-        VBack = VStart - VSW;
 
         test_name1 = "tl_CR_test";
         test_name2 = "tl_EQ_test";
@@ -458,8 +403,20 @@ class dp_tl_sequence_item extends uvm_sequence_item;
                 fh1 = $fopen(filename1, "a");
                 if (fh1) begin
                     $fdisplay(fh1, "------\nTime: %0t", $time);
-                    //$fdisplay(fh1, " i2c_reply_cmd = %s", i2c_reply_cmd.name());
-                    $fdisplay(fh1, " RNG State: %0p\n", $get_randstate());
+                    $fdisplay(fh1, " CR_DONE = %b", CR_DONE);
+                    $fdisplay(fh1, " Link_LC_CR = %b", Link_LC_CR);
+                    $fdisplay(fh1, " Link_LC_CR = %s", Link_BW_CR.name());
+                    $fdisplay(fh1, " PRE = %b", PRE);
+                    $fdisplay(fh1, " VTG = %b", VTG);
+                    $fdisplay(fh1, " MAX_VTG = %b", MAX_VTG);
+                    $fdisplay(fh1, " MAX_PRE = %b", MAX_PRE);
+                    $fdisplay(fh1, " EQ_RD_Value = %b", EQ_RD_Value);
+                    $fdisplay(fh1, " MAX_TPS_SUPPORTED = %s", MAX_TPS_SUPPORTED.name());
+                    $fdisplay(fh1, " EQ_CR_DN = %b", EQ_CR_DN);
+                    $fdisplay(fh1, " Channel_EQ = %b", Channel_EQ);
+                    $fdisplay(fh1, " Symbol_Lock = %b", Symbol_Lock);
+                    $fdisplay(fh1, " Lane_Align = %b", Lane_Align);
+                    // $fdisplay(fh1, " RNG State: %0p\n", $get_randstate());
                     $fclose(fh1);
                 end else begin
                     `uvm_warning("FILE_IO", $sformatf("Could not open %s", filename1));
@@ -469,8 +426,20 @@ class dp_tl_sequence_item extends uvm_sequence_item;
                 fh2 = $fopen(filename2, "a");
                 if (fh2) begin
                     $fdisplay(fh2, "------\nTime: %0t", $time);
-                    //$fdisplay(fh2, " native_reply_cmd = %s", native_reply_cmd.name());
-                    $fdisplay(fh2, " RNG State: %0p\n", $get_randstate());
+                    $fdisplay(fh2, " CR_DONE = %b", CR_DONE);
+                    $fdisplay(fh2, " Link_LC_CR = %b", Link_LC_CR);
+                    $fdisplay(fh2, " Link_LC_CR = %s", Link_BW_CR.name());
+                    $fdisplay(fh2, " PRE = %b", PRE);
+                    $fdisplay(fh2, " VTG = %b", VTG);
+                    $fdisplay(fh2, " MAX_VTG = %b", MAX_VTG);
+                    $fdisplay(fh2, " MAX_PRE = %b", MAX_PRE);
+                    $fdisplay(fh2, " EQ_RD_Value = %b", EQ_RD_Value);
+                    $fdisplay(fh2, " MAX_TPS_SUPPORTED = %s", MAX_TPS_SUPPORTED.name());
+                    $fdisplay(fh2, " EQ_CR_DN = %b", EQ_CR_DN);
+                    $fdisplay(fh2, " Channel_EQ = %b", Channel_EQ);
+                    $fdisplay(fh2, " Symbol_Lock = %b", Symbol_Lock);
+                    $fdisplay(fh2, " Lane_Align = %b", Lane_Align);
+                    // $fdisplay(fh2, " RNG State: %0p\n", $get_randstate());
                     $fclose(fh2);
                 end else begin
                     `uvm_warning("FILE_IO", $sformatf("Could not open %s", filename2));
@@ -480,15 +449,20 @@ class dp_tl_sequence_item extends uvm_sequence_item;
                 fh3 = $fopen(filename3, "a");
                 if (fh3) begin
                     $fdisplay(fh3, "------\nTime: %0t", $time);
-                    //$fdisplay(fh3, " native_reply_cmd = %s", native_reply_cmd.name());
-                    $fdisplay(fh3, " RNG State: %0p\n", $get_randstate());
+                    $fdisplay(fh3, " SPM_Full_MSA = %b", SPM_Full_MSA);
+                    $fdisplay(fh3, " MS_Pixel_Data = %b", MS_Pixel_Data);
+                    $fdisplay(fh3, " MS_Stm_BW = %b", MS_Stm_BW);
+                    $fdisplay(fh3, " MS_VSYNC = %b", MS_VSYNC);
+                    $fdisplay(fh3, " MS_HSYNC = %b", MS_HSYNC);
+                    $fdisplay(fh3, " CLOCK_PERIOD = %b", CLOCK_PERIOD);
+                    // $fdisplay(fh3, " RNG State: %0p\n", $get_randstate());
                     $fclose(fh3);
                 end else begin
                     `uvm_warning("FILE_IO", $sformatf("Could not open %s", filename3));
                 end
             end
             default: begin
-                //`uvm_info("DP_TL_SEQ_ITEM", $sformatf("Not randomized operation: %s", operation.name()))
+                `uvm_info("DP_TL_SEQ_ITEM", $sformatf("Not randomized operation: %s", operation.name()), UVM_MEDIUM);
             end
         endcase
     endfunction

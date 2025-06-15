@@ -44,7 +44,7 @@ class dp_source_env extends uvm_env;
         `uvm_fatal("CONNECT", "ref_model is null")
 
         if (ref_model.tl_in_export == null)
-        `uvm_fatal("CONNECT", "ref_model.tl_in_export is null")
+            `uvm_fatal("CONNECT", "ref_model.tl_in_export is null")
 
         `uvm_info("CONNECT", "Connecting tl_agt.agt_ap to ref_model.tl_in_export", UVM_LOW)
 

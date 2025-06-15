@@ -42,7 +42,7 @@ class dp_sink_monitor extends uvm_monitor;
       rsp_sink_seq_item.Control_sym_flag_lane3 = dp_sink_vif.Control_sym_flag_lane3;
 
      mon_ap.write(rsp_sink_seq_item);
-      `uvm_info("run_phase", rsp_sink_seq_item.convert2string(), UVM_LOW) 
+      // `uvm_info("run_phase", rsp_sink_seq_item.convert2string(), UVM_LOW) 
    end
   endtask
  

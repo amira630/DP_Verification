@@ -11,12 +11,14 @@ package dp_source_test_pkg;
     // Includes:
     `include "dp_tl_base_sequence.svh"
     `include "dp_tl_flow_fsm_sequence.svh"
+    `include "dp_tl_basic_flow_sequence.svh"
     `include "dp_tl_lt_sequence.svh"
     `include "dp_tl_reset_seq.svh"
     `include "dp_tl_i2c_sequence.svh"
     `include "dp_tl_native_ext_receiver_cap_sequence.svh"
     `include "dp_tl_native_link_config_sequence.svh"
     `include "dp_tl_native_receiver_cap_sequence.svh"
+    `include "dp_tl_multi_read_sequence.svh"
     `include "dp_tl_link_training_sequence.svh"
 
     `include "dp_sink_base_sequence.svh"

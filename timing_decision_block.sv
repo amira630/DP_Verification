@@ -46,12 +46,12 @@ module timing_decision_block
     output wire        td_hsync,               // output horizontal sync
     output wire        td_vsync,               // output vertical sync
     output wire        td_de,                  // output data enable
-    output reg  [15:0]  td_tu_alternate_up,     // timing unit alternate up
-    output reg  [15:0]  td_tu_alternate_down,   // timing unit alternate down
+    output reg  [15:0] td_tu_alternate_up,    // timing unit alternate up
+    output reg  [15:0] td_tu_alternate_down,  // timing unit alternate down
     output reg  [15:0] td_h_total_ctr,         // total horizontal counter
     output reg         td_hsync_polarity,      // horizontal sync polarity
     output reg         td_vsync_polarity,      // vertical sync polarity
-    output reg  [8:0]  td_misc0_1,              // extracted from spm_msa representing bits per component
+    output reg  [8:0]  td_misc0_1,             // extracted from spm_msa representing bits per component
     output reg  [15:0] total_stuffing_req_reg
 );
 
@@ -76,14 +76,14 @@ module timing_decision_block
 
     // Define the variables used in the to calculate hwidth module number of lanes 
     reg [15:0] mod_lc_hwidth;        // Modulo result of hwidth_sync and spm_lane_count_sync
-    reg [15:0] div_lc_hwidth;        // Division result of hwidth_sync and spm_lane_count_sync
-    reg [15:0] mul_lc_hwidth;        // Multiplication result of div_lc_hwidth and spm_lane_count_sync
+    //reg [15:0] div_lc_hwidth;        // Division result of hwidth_sync and spm_lane_count_sync
+    //reg [15:0] mul_lc_hwidth;        // Multiplication result of div_lc_hwidth and spm_lane_count_sync
 
     reg        mod_flag_dn;          // Flag to indicate modulo operation is done
-    reg [3:0]  mod_pipeline_counter; // Pipeline counter for tracking stages
+    reg [4:0]  mod_pipeline_counter; // Pipeline counter for tracking stages
 
     // Hactive equivalent calculation registers
-    reg  [15:0] hactive_div_result;        // Result of division for HActive calculation
+    reg  [15:0] hactive_mod_result;        // Result of division for HActive calculation
     reg  [15:0] hactive_width_equivalent;  // equivalent horizontal width
 
     // Hactive period calculation registers
@@ -97,9 +97,19 @@ module timing_decision_block
     
     // Hblank equivalent period calculation registers
     reg  [19:0] hblank_stage1_result;    // Result of (HTotal - HWidth) * SPM_Lane_BW
-    reg  [13:0] hblank_width_equivalent; // blankibg period calcula 
+    reg  [13:0] hblank_width_equivalent; // blankibg period calculation 
     reg         hblank_valid;            // Valid flag for hblank calculation
     reg  [6:0]  hblank_pipeline_counter; // Pipeline counter for tracking stages
+
+
+
+    // Horizontal total period calculation registers
+    reg [23:0] htotal_calculate_stage1; // Total horizontal period counter
+    reg [15:0] htotal_calculate; // Final total horizontal period counter
+    reg [6:0] htotal_pipeline_counter; // Pipeline counter for tracking stages
+    reg       htotal_valid; // Valid flag for htotal calculation
+
+
 
     // Vertical blanking period calculation registers
     reg  [9:0]  vblank;       // vertical blanking period counter
@@ -113,27 +123,28 @@ module timing_decision_block
     reg  [31:0] stage4_symbols_per_TU;
     reg  [63:0] stage5_mult_result;
     wire [63:0] stage6_scaled_valid_symbols;
+    reg  [63:0] stage7_scaled_valid_symbols; // Scaled valid symbols for stuffing period calculation
     reg  [15:0] valid_symbols_integer;
     reg  [15:0] valid_symbols_fraction;
     reg  [15:0] valid_symbols_fraction_scaled;
     reg  [15:0] first_decimal;
     reg  [15:0] second_decimal;
     reg  [15:0] rounded_first_decimal;
-    reg  [6:0]  stuffing_pipeline_counter;
+    reg  [9:0]  stuffing_pipeline_counter;
     reg         stuffing_valid;
 
 
 
     // Intermediate registers for calculating up and down transitions
-    reg [15:0] tu_number ;    // number of transfer units inside active period
+    reg [63:0] tu_number ;    // number of transfer units inside active period
     reg [19:0] total_stuffing_req ;//total stuffing required in active period
     reg [19:0] total_stuffing_stage1 ;
     reg [19:0] total_stuffing_stage2 ;
     reg [19:0] tu_alternate_down_stage1 ;
     reg [19:0] tu_alternate_down_stage2 ;
-    reg [15:0]  tu_alternate_down ; // total number of times to alternate down in active period
-    reg [15:0]  tu_alternate_up ;  // total number of times to alternate up in active period
-    reg [5:0]  alternate_counter; // counter to count number of cycles the calculation for up and down transition is done
+    reg [15:0] tu_alternate_down ; // total number of times to alternate down in active period
+    reg [15:0] tu_alternate_up ;  // total number of times to alternate up in active period
+    reg [9:0]  alternate_counter; // counter to count number of cycles the calculation for up and down transition is done
     reg        alternate_valid; // valid flag indicating that the up and down transition calculation is done
 
 
@@ -159,51 +170,267 @@ module timing_decision_block
     reg         video_params_saved_flag; // flag to indicate video parameters are saved
     reg         all_saved_flag;          // flag to indicate that all data input are being saved 
 
-    // division module for stuffing period calculation
-    reg         div_start;
-    reg         div_done;
-    wire  [63:0] spm_bw ;
 
-
- 
+    //===============================================================================
     // division module for hactive period calculation
-    reg div_start_hactive;
-    reg div_done_hactive;
+    //===============================================================================
+
+    // first division module number 1 for hactive calculation
+    reg         div_start1;
+    reg         div_done1;
+
+    // second division module number 2 for hactive calculation
+    reg         div_start2;
+    reg         div_done2;
+    
+
+    // division module number 3 for hactive period calculation
+    reg         div_start3;
+    reg         div_done3;
     wire [15:0] lane_count;
 
-    assign lane_count = spm_lane_count_sync; // lane count in 16 bits so it can be input to the divisor module 
-    assign spm_bw     = spm_lane_bw_sync; // lane bandwidth in 64 bits so it can be input to the divisor module
-    Divider divider_inst 
+
+    // fourth division module number 4 for hblank calculation
+    reg         div_start4;
+    reg         div_done4;
+    wire [19:0] ms_stm_bw4;// ms_stm_bw4 is the bandwidth of the stream policy maker in 20 bits so it can be input to the divisor module number 4
+
+   
+    // fifth division module number 5 for htotal period calculation
+    reg         div_start5;
+    reg         div_done5;
+    wire [23:0] ms_stm_bw5;  // ms_stm_bw5 is the bandwidth of the stream policy maker in 16 bits so it can be input to the divisor module number 5
+
+    // sixth division module number 6 for stuffing period calculation
+    reg         div_start6; // Start signal for the division operation in stage 6
+    reg         div_done6;  // Done signal for the division operation in stage 6
+    reg [31:0]  symbol_bit_size6; // symbol bit size in bits (8 bits) (8/10 encoding)   
+
+    // seventh division module number 7 for stuffing period calculation
+    reg         div_done7; // Done signal for the division operation in stage 7
+    reg [31:0]  spm_lane_count7 ; // lane count in 32 bits so it can be input to the divisor module number 7
+
+    // division module number 8 for stuffing period calculation
+    reg         div_start8;
+    reg         div_done8;
+    wire [63:0] spm_bw ;
+
+    // division module number 9 for alterante up and down calculation 
+    reg         div_done9; // Done signal for the division operation in stage 9
+    reg         div_start9;
+
+    // tenth division module number 10 for alternate up and down calculation
+    reg         div_start10; // Start signal for the division operation in stage 10
+    reg         div_done10;  // Done signal for the division operation in stage 10
+    wire [19:0] ms_stm_bw10; // ms_stm_bw10 is the bandwidth of the stream policy maker in 20 bits so it can be input to the divisor module number 10
+
+    // eleventh division module number 11 for hwidth module lane count calculation
+    reg div_start11; // Start signal for the division operation in stage 11
+    reg div_done11; // Done signal for the division operation in stage 11
+
+
+
+    assign lane_count       = spm_lane_count_sync; // lane count in 16 bits so it can be input to the divisor module 
+    assign spm_bw           = spm_lane_bw_sync;    // lane bandwidth in 64 bits so it can be input to the divisor module
+    assign ms_stm_bw4       = ms_stm_bw_sync;      //  ms_stm_bw4 is the bandwidth of the stream policy maker in 20 bits so it can be input to the divisor module
+    assign ms_stm_bw5       = ms_stm_bw_sync;      // ms_stm_bw5 is the bandwidth of the stream policy maker in 16 bits so it can be input to the divisor module
+    assign symbol_bit_size6 = symbol_bit_size;     // symbol bi size in 32 bits so it can be input to the divisor module
+    assign spm_lane_count7  = spm_lane_count_sync; // lane count in 32 bits so it can be input to the divisor module number 7
+    assign ms_stm_bw10      = ms_stm_bw_sync;      // ms_stm_bw10 is the bandwidth of the stream policy maker in 20 bits so it can be input to the divisor module number 10
+
+
+ // first Divider module for hactive period calculation
+    Divider 
+    #
+    (
+        .WIDTH(16)
+    ) 
+    divider_hactive_inst1 
     (
         .clk(clk),
         .rst(rst_n),
-        .dividend(stage5_mult_result),
-        .divisor(spm_bw),
-        .start(div_start),
-        .quotient(stage6_scaled_valid_symbols),
+        .dividend(hwidth_sync),
+        .divisor(lane_count),
+        .start(div_start1),
+        //.quotient(hactive_mod_result),
+        .remainder(hactive_mod_result),
+        .done(div_done1)
+    );
+    
+    Divider 
+    #
+    (
+        .WIDTH(16)
+    ) 
+    divider_hactive_inst2 
+    (
+        .clk(clk),
+        .rst(rst_n),
+        .dividend(hactive_stage2_result),
+        .divisor(symbol_bit_size),
+        .start(div_start2),
+        .quotient(hactive_stage3_result),
         //.remainder(),
-        .done(div_done)
-    ); 
+        .done(div_done2)
+    );
 
-    //===============================================================================
-    // division module for hactive period calculation
-    //===============================================================================
+   
 
     Divider 
     #
     (
         .WIDTH(16)
     ) 
-    divider_hactive_inst 
+    divider_hactive_inst3 
     (
         .clk(clk),
         .rst(rst_n),
         .dividend(hactive_stage3_result),
         .divisor(lane_count),
-        .start(div_start_hactive),
+        .start(div_start3),
         .quotient(hactive_stage4_result),
         //.remainder(),
-        .done(div_done_hactive)
+        .done(div_done3)
+    );
+
+
+
+    Divider
+    #
+    (
+        .WIDTH(20)
+    )
+    divider_hactive_inst4 
+    (
+        .clk(clk),
+        .rst(rst_n),
+        .dividend(hblank_stage1_result),
+        .divisor(ms_stm_bw4),
+        .start(div_start4),
+        .quotient(hblank_width_equivalent),
+        //.remainder(),
+        .done(div_done4)
+    );
+
+ 
+    Divider
+    #
+    (
+        .WIDTH(24)
+    )
+    divider_hactive_inst5 
+    (
+        .clk(clk),
+        .rst(rst_n),
+        .dividend(htotal_calculate_stage1),
+        .divisor(ms_stm_bw5),
+        .start(div_start5),
+        .quotient(htotal_calculate),
+        //.remainder(),
+        .done(div_done5)
+    );
+
+    Divider
+    #
+    (
+        .WIDTH(32)
+    )
+    divider_stuffing_inst6 
+    (
+        .clk(clk),
+        .rst(rst_n),
+        .dividend(stage1_total_bits),
+        .divisor(symbol_bit_size6),
+        .start(div_start6),
+        .quotient(stage2_total_symbols),
+        //.remainder(),
+        .done(div_done6)
+    );
+
+    Divider
+    #
+    (
+        .WIDTH(32)
+    )
+    divider_stuffing_inst7 
+    (
+        .clk(clk),
+        .rst(rst_n),
+        .dividend(stage2_total_symbols),
+        .divisor(spm_lane_count7),
+        .start(div_done6),
+        .quotient(stage3_symbols_per_lane),
+        //.remainder(),
+        .done(div_done7)
+    );
+
+
+    Divider
+    #
+    (
+        .WIDTH(64)
+    ) 
+    divider_stuffing_inst8 
+    (
+        .clk(clk),
+        .rst(rst_n),
+        .dividend(stage5_mult_result),
+        .divisor(spm_bw),
+        .start(div_start8),
+        .quotient(stage6_scaled_valid_symbols),
+        //.remainder(),
+        .done(div_done8)
+    ); 
+
+    Divider
+    #
+    (
+        .WIDTH(64)
+    )
+    divider_stuffing_inst9 
+    (
+        .clk(clk),
+        .rst(rst_n),
+        .dividend(stage7_scaled_valid_symbols),
+        .divisor(stage6_scaled_valid_symbols),
+        .start(div_start9),
+        .quotient(tu_number),
+        //.remainder(),
+        .done(div_done9)
+    );
+
+    Divider
+    #
+    (
+        .WIDTH(20)
+    )
+    divider_alternate_inst10
+    (
+        .clk(clk),
+        .rst(rst_n),
+        .dividend(total_stuffing_stage1),
+        .divisor(ms_stm_bw10),
+        .start(div_start10),
+        .quotient(total_stuffing_stage2),
+        //.remainder(),
+        .done(div_done10)
+    );
+
+    Divider 
+    #
+    (
+        .WIDTH(16)
+    ) 
+    divider_hwidth_inst11 
+    (
+        .clk(clk),
+        .rst(rst_n),
+        .dividend(hwidth_sync),
+        .divisor(lane_count),
+        .start(div_start11),
+        //.quotient(div_lc_hwidth),
+        .remainder(mod_lc_hwidth),
+        .done(div_done11)
     );
 
     //===============================================================================
@@ -213,14 +440,6 @@ module timing_decision_block
     always_comb begin
         all_saved_flag = (video_params_saved_flag && ms_stm_bw_saved && spm_lane_info_saved);
     end
-
-
-
-
-    //===============================================================================
-    // division module for hblank period calculation
-    //===============================================================================
-    
 
     //=======================================================================================
     // always block for synchronization and saving the inputs (MSA) from stream policy maker
@@ -248,7 +467,13 @@ module timing_decision_block
         else
         if(spm_iso_start == 1'b0)
         begin
-        video_params_saved_flag         <= 1'b0;
+            video_params_saved_flag        <= 1'b0;
+            htotal_sync                    <= 16'b0;
+            hwidth_sync                    <= 16'b0;
+            vtotal_sync                    <= 16'b0;
+            vheight_sync                   <= 16'b0;
+            misc0_1_sync                   <= 9'b0;
+
         end
     end
     //==================================================================
@@ -270,6 +495,7 @@ module timing_decision_block
         if (spm_iso_start == 1'b0)
         begin
             ms_stm_bw_saved <= 1'b0;
+            ms_stm_bw_sync  <= 10'b0;
         end 
     end
 
@@ -316,6 +542,8 @@ module timing_decision_block
         if(spm_iso_start == 1'b0)
         begin
             spm_lane_info_saved <= 1'b0; // reset the flag if spm_iso_start is not high
+            spm_lane_bw_sync    <= 16'b0;
+            spm_lane_count_sync <= 3'b0;
         end
     end
     
@@ -366,7 +594,9 @@ always_comb begin
                 bpp               = 16'd30; // bits per pixel
             end
         endcase
-    end else begin
+    end 
+    else 
+    begin
         bpc               = 16'd0;
         symbols_per_pixel = 16'd0;
         symbol_bit_size   = 16'd0;
@@ -374,92 +604,99 @@ always_comb begin
     end
 end
 // calculating hwidth module number of lanes
+
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) 
     begin
-        mod_lc_hwidth        <= 16'b0;
-        div_lc_hwidth        <= 16'b0;
-        mul_lc_hwidth        <= 16'b0;
+        //mod_lc_hwidth        <= 16'b0;
+        //div_lc_hwidth        <= 16'b0;
+        //mul_lc_hwidth        <= 16'b0;
         mod_flag_dn          <= 1'b0;
-        mod_pipeline_counter <= 4'b0;
+        mod_pipeline_counter <= 5'b0;
+        div_start11          <= 1'b0; // Reset division start signal
     end 
     else 
     if (all_saved_flag == 1'b1) // every time we use data input we check if its saved at first or not
     begin
-        div_lc_hwidth       <= hwidth_sync / spm_lane_count_sync;
-        mul_lc_hwidth       <= div_lc_hwidth * spm_lane_count_sync; 
-        mod_lc_hwidth       <= hwidth_sync - mul_lc_hwidth;
-        if (mod_pipeline_counter < 4)
+        //div_lc_hwidth       <= hwidth_sync / spm_lane_count_sync;
+        if(mod_pipeline_counter == 1)
+        begin
+            div_start11         <= 1'b1 ; // Start the division operation
+        end
+        else
+        begin
+            div_start11 <= 1'b0; // Stop the division operation
+        end
+        if (mod_pipeline_counter <= 25)
         begin
             mod_pipeline_counter <= mod_pipeline_counter + 1;
         end
         // Valid flag (high when result is ready)
-        mod_flag_dn         <= (mod_pipeline_counter == 3);
+        mod_flag_dn         <= (mod_pipeline_counter == 25);
     end 
     else 
     if (spm_iso_start == 1'b0) 
     begin
-        mod_lc_hwidth        <= 16'b0;
-        div_lc_hwidth        <= 16'b0;
-        mul_lc_hwidth        <= 16'b0;
-        mod_pipeline_counter <= 4'b0;
+        //mod_lc_hwidth        <= 16'b0;
+        //div_lc_hwidth        <= 16'b0;
+        //mul_lc_hwidth        <= 16'b0;
+        mod_pipeline_counter <= 5'b0;
     end
 end
 
 // calculate x_value based on bpc
 // x_value is used to adjust the final result of hactive  calculation
-always_comb begin
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) 
+    begin
+        x_value <= 0;
+    end 
+    else 
     if (mod_flag_dn == 1'b1) 
     begin
         if (mod_lc_hwidth == 0) 
         begin
-            x_value = 0;
+            x_value <= 0;
         end 
         else 
         begin
             case (bpc)
-                16'd8:
-                begin  
-                    x_value = 3;
-                end
-                16'd16:
-                begin
-                    x_value = 6;
-                end
-                default:
-                begin
-                    x_value = 0;
-                end
+                16'd8:    x_value <= 3;
+                16'd16:   x_value <= 6;
+                default:  x_value <= 0;
             endcase
         end
     end 
-    else 
+    else
+    if (spm_iso_start == 1'b0)
     begin
-        x_value = 0;
+        x_value <= 0;
     end
 end
 //==============================================================================
-// ** 1)Calculating Horizontal Active Period Counter **
+// ** 1) Calculating Horizontal Active Period Counter **
 //==============================================================================
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) 
     begin
         // Reset hblank equivalent calculation
-        hactive_div_result        <= 16'b0;
+        //hactive_mod_result        <= 16'b0;
         hactive_width_equivalent  <= 16'b0;
 
         // Reset hactive period calculation
         hactive_stage1_result     <= 16'b0;
         hactive_stage2_result     <= 16'b0;
-        hactive_stage3_result     <= 16'b0;
+        //hactive_stage3_result     <= 16'b0;
         //hactive_stage4_result     <= 16'b0;
         hactive_stage5_result     <= 16'b0;
 
         // Reset pipeline counter and valid flag
         hactive_valid             <= 1'b0;
         hactive_pipeline_counter  <= 7'b0;
-        div_start_hactive         <= 1'b0;
+        div_start3                <= 1'b0;
+        div_start1                <= 1'b0; // Reset division start signal
+        div_start2                <= 1'b0; // Reset division start signal
     end 
     else 
     if(all_saved_flag == 1'b1)    
@@ -467,33 +704,52 @@ always @(posedge clk or negedge rst_n) begin
         // ** 1) hactive equivalent calculation **
 
         // Stage 1: Division (HWidth / SPM_Lane_count)
-        hactive_div_result       <= hwidth_sync / spm_lane_count_sync; 
-
-        // Stage 2: Multiplication (uses result from previous cycle) Hactive_width_Equivalent
-        hactive_width_equivalent <= spm_lane_count_sync * hactive_div_result;
-
-        // ** 2) hactive period calculation **
-
-        // Stage 1: Multiplication (hactive_width_equivalent * BPC)
-        hactive_stage1_result   <= hactive_width_equivalent * bpc;
-
-        // Stage 2: Multiplication with symbols_per_pixel
-        hactive_stage2_result   <= hactive_stage1_result * symbols_per_pixel;
-
-        // Stage 3: Multiplication with SPM_Lane_Count
-        hactive_stage3_result   <= hactive_stage2_result / symbol_bit_size ;
-
-        if(hactive_pipeline_counter == 10)
+        //hactive_mod_result       <= hwidth_sync / spm_lane_count_sync; 
+        if(hactive_pipeline_counter == 0)
         begin
-            div_start_hactive <= 1'b1;
+            div_start1 <= 1'b1; // Start the division operation
         end
         else
         begin
-            div_start_hactive <= 1'b0;
+            div_start1 <= 1'b0; // Stop the division operation
         end
-        if(div_done_hactive == 1'b1)
+
+        if(div_done1 == 1'b1)
         begin
-            // Stage 4: Division (stage2_result / stage3_result)
+            // Stage 2: Multiplication (uses result from previous cycle) Hactive_width_Equivalent
+            hactive_width_equivalent <= hwidth_sync - hactive_mod_result;
+        end
+        // ** 2) hactive period calculation **
+
+        // Stage 1: 
+        hactive_stage1_result   <= hactive_width_equivalent ;
+
+        // Stage 2: Multiplication with number of bits per pixel
+        hactive_stage2_result   <= hactive_stage1_result * bpp;
+
+        // Stage 3: division (hactive_stage2_result / symbol_bit_size)
+        //hactive_stage3_result   <= hactive_stage2_result / symbol_bit_size ;
+        if(hactive_pipeline_counter == 25)
+        begin
+            div_start2 <= 1'b1; // Start the division operation
+        end
+        else
+        begin
+            div_start2 <= 1'b0; // Stop the division operation
+        end
+        
+
+        if(hactive_pipeline_counter == 50)
+        begin
+            div_start3 <= 1'b1;
+        end
+        else
+        begin
+            div_start3 <= 1'b0;
+        end
+        // Stage 4: Division (hactive_stage3_result / SPM_Lane_Count)
+        if(div_done3 == 1'b1)
+        begin
             hactive_stage5_result <= hactive_stage4_result + x_value;
         end
 
@@ -502,23 +758,23 @@ always @(posedge clk or negedge rst_n) begin
         //------------------------------------------------------------------
         // hactive_pipeline_counter is used to track the stages of the pipeline
         // pipeline tracker
-        if (hactive_pipeline_counter <= 28)
+        if (hactive_pipeline_counter <= 80)
         begin
             hactive_pipeline_counter <= hactive_pipeline_counter + 1;
         end
         // Valid flag (high when result is ready)
-        hactive_valid <= (hactive_pipeline_counter == 28);
+        hactive_valid <= (hactive_pipeline_counter == 80);
     end
     else
     begin
         // Reset hactive equivalent calculation
-        hactive_div_result        <= 16'b0;
+        //hactive_mod_result        <= 16'b0;
         hactive_width_equivalent  <= 16'b0;
 
         // Reset hactive period calculation
         hactive_stage1_result     <= 16'b0;
         hactive_stage2_result     <= 16'b0;
-        hactive_stage3_result     <= 16'b0;
+        //hactive_stage3_result     <= 16'b0;
         //hactive_stage4_result  <= 16'b0;
         hactive_stage5_result     <= 16'b0;
 
@@ -536,7 +792,7 @@ always @(posedge clk or negedge rst_n) begin
     if (!rst_n) 
     begin
         // Reset hblank equivalent calculation
-        hblank_width_equivalent   <= 0;
+        //hblank_width_equivalent   <= 0;
 
         // Reset hblank period calculation
         hblank_stage1_result      <= 0;
@@ -544,6 +800,7 @@ always @(posedge clk or negedge rst_n) begin
         // Reset pipeline counter and valid flag
         hblank_valid              <= 0;
         hblank_pipeline_counter   <= 0;
+        div_start4                <= 0; // Reset division start signal
     end 
     else 
     if(all_saved_flag == 1'b1)
@@ -553,56 +810,84 @@ always @(posedge clk or negedge rst_n) begin
         // Stage 1: 
         hblank_stage1_result <= (htotal_sync - hwidth_sync) * spm_lane_bw_sync;
         // Stage 2: 
-        hblank_width_equivalent <= hblank_stage1_result / ms_stm_bw_sync;
+        if(hblank_pipeline_counter == 5)
+        begin
+            div_start4 <= 1'b1; // Start the division operation
+        end
+        else
+        begin
+            div_start4 <= 1'b0; // Stop the division operation
+        end
+        //hblank_width_equivalent <= hblank_stage1_result / ms_stm_bw_sync;
         // -----------------------------------------------------------------
         // track the pipeline stages to determine when the result is valid
         //------------------------------------------------------------------
         // pipeline_counter is used to track the stages of the pipeline
         // pipeline tracker 
-        if (hblank_pipeline_counter < 6)
+        if (hblank_pipeline_counter <= 10)
         begin
             hblank_pipeline_counter <= hblank_pipeline_counter + 1;
         end
         // Valid flag (high when result is ready)
-        hblank_valid <= (hblank_pipeline_counter == 5);
+        hblank_valid <= (div_done4 == 1'b1);
     end
     else
     begin
         // Reset hblank equivalent calculation
-        hblank_width_equivalent   <= 0;
+        //hblank_width_equivalent   <= 0;
         hblank_stage1_result      <= 0;
         // Reset pipeline counter and valid flag
         hblank_valid              <= 0;
         hblank_pipeline_counter   <= 0;
+        div_start4                <= 0; // Reset division start signal
     end
 end
 
 //==============================================================================
 // ** 3) Calculating total Horizontal Period (Blank + Active)**
 //==============================================================================
-reg [23:0] htotal_calculate_stage1; // Total horizontal period counter
-reg [23:0] htotal_calculate_stage2; // Intermediate total horizontal period counter
-reg [15:0] htotal_calculate; // Final total horizontal period counter
+
 
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) 
     begin
         // Reset horizontal total counter
-        htotal_calculate <= 16'b0;
-        htotal_calculate_stage1 <= 16'b0;
+        //htotal_calculate <= 16'b0;
+        htotal_calculate_stage1  <= 24'b0;
+        div_start5               <= 1'b0; // Reset division start signal
+        htotal_pipeline_counter  <= 0; // Reset pipeline counter
+        htotal_valid             <= 0; // Reset valid flag
     end 
     else 
     if (all_saved_flag == 1'b1) 
     begin
         // Calculate total horizontal period (HTotal = HActive + HBlank)
         htotal_calculate_stage1 <=  htotal_sync * spm_lane_bw_sync;
-        htotal_calculate        <=  htotal_calculate_stage1 / ms_stm_bw_sync ;
-        //htotal_calculate        <=  htotal_sync * (spm_lane_bw_sync/ ms_stm_bw_sync);
+        //htotal_calculate        <=  htotal_calculate_stage1 / ms_stm_bw_sync ;
+        if (htotal_pipeline_counter == 5)
+        begin
+            div_start5 <= 1'b1; // Start the division operation
+        end
+        else
+        begin
+            div_start5 <= 1'b0; // Stop the division operation
+        end
+
+        if(htotal_pipeline_counter < 20)
+        begin
+            htotal_pipeline_counter <= htotal_pipeline_counter + 1;
+        end
+        // Valid flag (high when result is ready)
+        htotal_valid <= ( div_done5 == 1'b1);
+
     end
     else
     begin
         // Reset horizontal total counter
-        htotal_calculate <= 16'b0;
+        htotal_calculate_stage1  <= 24'b0;
+        div_start5               <= 1'b0; // Reset division start signal
+        htotal_pipeline_counter  <= 0; // Reset pipeline counter
+        htotal_valid             <= 0; // Reset valid flag
     end
 end
 
@@ -643,20 +928,20 @@ end
         begin
             // Reset all pipeline stages
             stage1_total_bits             <= 0;
-            stage2_total_symbols          <= 0;
-            stage3_symbols_per_lane       <= 0;
+            //stage2_total_symbols          <= 0;
+            //stage3_symbols_per_lane       <= 0;
             stage4_symbols_per_TU         <= 0;
             stage5_mult_result            <= 0;
             //stage6_scaled_valid_symbols   <= 0;
             valid_symbols_integer         <= 0;
             valid_symbols_fraction        <= 0;
-            valid_symbols_fraction_scaled <= 0;
+            //valid_symbols_fraction_scaled <= 0;
             stuffing_pipeline_counter     <= 0;
             stuffing_valid                <= 0;
-            first_decimal                 <= 0;
-            second_decimal                <= 0;
-            rounded_first_decimal         <= 0;
-            div_start                     <= 0;
+            //first_decimal                 <= 0;
+            //second_decimal                <= 0;
+            //rounded_first_decimal         <= 0;
+            div_start8                    <= 0;
         end 
         else
         if(all_saved_flag == 1'b1) 
@@ -665,57 +950,69 @@ end
             stage1_total_bits <= ms_stm_bw_sync * bpp;
 
             // Stage 2: symbols/sec (8b/10b encoding → divide by 8)
-            stage2_total_symbols <= stage1_total_bits / symbol_bit_size;
-
+            //stage2_total_symbols <= stage1_total_bits / symbol_bit_size;
+            if(stuffing_pipeline_counter == 4)
+            begin
+                div_start6 <= 1'b1; // Start the division operation
+            end
+            else
+            begin
+                div_start6 <= 1'b0; // Stop the division operation
+            end
+            
             // Stage 3: symbols per lane = total_symbols / lanes
-            stage3_symbols_per_lane <= stage2_total_symbols / spm_lane_count_sync;
+            
+            //stage3_symbols_per_lane <= stage2_total_symbols / spm_lane_count_sync;
 
             // Stage 4: Fixed-point shift TU size → TU × 2^N
-            stage4_symbols_per_TU <= stage3_symbols_per_lane * TU_SIZE ;
+            if(div_done7 == 1'b1)
+            begin
+                stage4_symbols_per_TU <= stage3_symbols_per_lane * TU_SIZE ;
+            end
 
             // Stage 5: Multiply TU_shifted × symbols_per_lane
             stage5_mult_result <= stage4_symbols_per_TU << FP_PRECISION;
 
             // Stage 6: Divide by link symbol rate
-            if(stuffing_pipeline_counter == 5)
+            if(stuffing_pipeline_counter == 80)
             begin
-                div_start <= 1'b1; // Start the division operation
+                div_start8 <= 1'b1; // Start the division operation
             end
             else
             begin
-                div_start <= 1'b0; // Stop the division operation
+                div_start8 <= 1'b0; // Stop the division operation
             end
             //stage6_scaled_valid_symbols <= stage5_mult_result / spm_lane_bw_sync;
 
             // Stage 7: Extract integer and fractional parts
-            if(div_done == 1'b1)
+            if(div_done8 == 1'b1)
             begin
                 valid_symbols_integer         <= stage6_scaled_valid_symbols >> FP_PRECISION;
                 valid_symbols_fraction        <= stage6_scaled_valid_symbols[FP_PRECISION-1:0];
             end
             // Stage 8: Scale fractional part to two decimal points
-            valid_symbols_fraction_scaled <= (valid_symbols_fraction * 100) >> FP_PRECISION; // to get two digits after decimal point
+            //valid_symbols_fraction_scaled <= (valid_symbols_fraction * 100) >> FP_PRECISION; // to get two digits after decimal point
 
             // Stage 9: Extract first and second decimal digits
-            first_decimal                 <= valid_symbols_fraction_scaled / FP_PRECISION;
-            second_decimal                <= valid_symbols_fraction_scaled - (first_decimal * FP_PRECISION); 
+            //first_decimal                 <= valid_symbols_fraction_scaled / FP_PRECISION;
+            //second_decimal                <= valid_symbols_fraction_scaled - (first_decimal * FP_PRECISION); 
             // calculating up and down transition on integer part
-            if (second_decimal == 5 || second_decimal == 6 || second_decimal == 7 || second_decimal == 8 || second_decimal == 9) 
+            /*if (second_decimal == 5 || second_decimal == 6 || second_decimal == 7 || second_decimal == 8 || second_decimal == 9) 
             begin
                 rounded_first_decimal <= first_decimal + 1;
             end
             else
             begin
                 rounded_first_decimal <= first_decimal;
-            end
+            end*/
 
             // Pipeline valid flag
-            if (stuffing_pipeline_counter < 100)
+            if (stuffing_pipeline_counter <= 200)
             begin
-            stuffing_pipeline_counter <= stuffing_pipeline_counter + 1;
+                stuffing_pipeline_counter <= stuffing_pipeline_counter + 1;
             end
-            else
-            if(stuffing_pipeline_counter == 100)
+            // Valid flag (high when result is ready)
+            if(stuffing_pipeline_counter == 200)
             begin
                 stuffing_valid <= 1'b1; // Set valid flag when pipeline is ready
             end
@@ -724,20 +1021,21 @@ end
         begin       
             // Reset all pipeline stages
             stage1_total_bits             <= 0;
-            stage2_total_symbols          <= 0;
-            stage3_symbols_per_lane       <= 0;
+            //stage2_total_symbols          <= 0;
+            //stage3_symbols_per_lane       <= 0;
             stage4_symbols_per_TU         <= 0;
             stage5_mult_result            <= 0;
             //stage6_scaled_valid_symbols   <= 0;
             valid_symbols_integer         <= 0;
             valid_symbols_fraction        <= 0;
-            valid_symbols_fraction_scaled <= 0;
-            first_decimal                 <= 0;
-            second_decimal                <= 0;
-            rounded_first_decimal         <= 0;
+            //valid_symbols_fraction_scaled <= 0;
+            //first_decimal                 <= 0;
+            //second_decimal                <= 0;
+            //rounded_first_decimal         <= 0;
             // Reset pipeline counter and valid flag
             stuffing_pipeline_counter     <= 0;
             stuffing_valid                <= 0;
+            div_start8                    <= 0; // Reset division start signal
         end
     end
 
@@ -746,7 +1044,7 @@ end
 //===========================================================================
 // calculating the up and down transition on the integer part
 //===========================================================================
-reg [63:0] stage7_scaled_valid_symbols; // Scaled valid symbols for stuffing period calculation
+
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) 
         begin
@@ -759,18 +1057,34 @@ reg [63:0] stage7_scaled_valid_symbols; // Scaled valid symbols for stuffing per
             tu_alternate_down_stage2    <= 0;
             total_stuffing_req          <= 0;
             total_stuffing_stage1       <= 0;
-            total_stuffing_stage2       <= 0;
-            tu_number                   <= 0; 
+            //total_stuffing_stage2       <= 0;
+            //tu_number                   <= 0; 
             stage7_scaled_valid_symbols <= 0;
+            div_start9                  <= 0; // Reset division start signal
         end 
         else
         if(stuffing_valid == 1'b1) 
         begin
             stage7_scaled_valid_symbols <= hactive_stage5_result << FP_PRECISION ; // Shift left to scale by 2^N
-            tu_number                   <= (stage7_scaled_valid_symbols / stage6_scaled_valid_symbols)  ;
+            //tu_number                   <= (stage7_scaled_valid_symbols / stage6_scaled_valid_symbols)  ;
+            // Calculate total stuffing required
             total_stuffing_stage1       <= hwidth_sync * spm_lane_bw_sync ;
-            total_stuffing_stage2       <= total_stuffing_stage1 / (ms_stm_bw_sync) ;
-            total_stuffing_req          <= total_stuffing_stage2 - hactive_stage5_result ;
+            //total_stuffing_stage2     <= total_stuffing_stage1 / (ms_stm_bw_sync) ;
+
+            if(alternate_counter == 6'd3)
+            begin
+                div_start9  <= 1'b1; // Start the division operation
+                div_start10 <= 1'b1; // Start the division operation
+            end
+            else
+            begin
+                div_start9  <= 1'b0; // Stop the division operation
+                div_start10 <= 1'b0; // Stop the division operation
+            end
+            if(div_done10 == 1'b1)
+            begin
+                total_stuffing_req    <= total_stuffing_stage2 - hactive_stage5_result ;
+            end
             // total stuffing required % transfer unit number 
             if(tu_number != 0)
             begin
@@ -778,7 +1092,7 @@ reg [63:0] stage7_scaled_valid_symbols; // Scaled valid symbols for stuffing per
                 tu_alternate_down_stage2           <= (TU_SIZE - valid_symbols_integer)*tu_number;
                 tu_alternate_down                  <=  tu_alternate_down_stage1 - tu_alternate_down_stage2 ; // calculating alternating down number of times 
                 // calculating alternating up number of times 
-                tu_alternate_up             <= tu_number - tu_alternate_down ;
+                tu_alternate_up                    <= tu_number - tu_alternate_down ;
             end
             else    
             begin
@@ -789,11 +1103,27 @@ reg [63:0] stage7_scaled_valid_symbols; // Scaled valid symbols for stuffing per
             end
             
             // Valid flag for alternate up and down transition
-            if (alternate_counter < 10)
+            if (alternate_counter <= 75)
             begin
                 alternate_counter <= alternate_counter + 1;
             end
-            alternate_valid <= (alternate_counter == 9);
+            alternate_valid <= (alternate_counter == 75); // Set valid flag when pipeline is ready
+        end
+        else
+        begin
+            // Reset up and down transition registers
+            tu_alternate_up             <= 0;
+            tu_alternate_down           <= 0;
+            alternate_valid             <= 0;
+            alternate_counter           <= 0;
+            tu_alternate_down_stage1    <= 0;
+            tu_alternate_down_stage2    <= 0;
+            total_stuffing_req          <= 0;
+            total_stuffing_stage1       <= 0;
+            //total_stuffing_stage2       <= 0;
+            //tu_number                   <= 0; 
+            stage7_scaled_valid_symbols <= 0;
+            div_start9                  <= 0; // Reset division start signal
         end
     end
 

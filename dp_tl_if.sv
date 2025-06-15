@@ -160,6 +160,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             CR_DONE_VLD = 1'b1;                 // Assert CR_DONE Valid     
             SPM_ISO_start = 1'b1;               // Assert SPM ISO Start 
             MS_Stm_BW_VLD = 1'b1;               // Assert Main Stream Bandwidth Valid
+            SPM_MSA_VLD = 1'b1;
 
             @(negedge clk_AUX);         // Wait for clock edge
             rst_n = 1'b1;           // Deassert reset
@@ -173,6 +174,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             CR_DONE_VLD = 1'b0;                 // Reset CR_DONE Valid     
             SPM_ISO_start = 1'b0;               // Reset SPM ISO Start 
             MS_Stm_BW_VLD = 1'b0;               // Reset Main Stream Bandwidth Valid
+            SPM_MSA_VLD = 1'b0;
       endtask
 
       // I2C_READ task
@@ -275,7 +277,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             end
       endtask
 
-      // //////////////////////////// LINK TRAINING ////////////////////////////
+      //////////////////////////// LINK TRAINING ////////////////////////////
 
       // Clock Recovery Link Training task
       // This task is used to set the parameters for the Clock Recovery Link Training phase
@@ -329,50 +331,10 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             timer_timeout = Timer_Timeout;
       endtask
 
-      // Channel Equalization Link Training task
-      // This task is used to set the parameters for the Channel Equalization Link Training phase
-      task LT_EQ (input bit driving_vld, done_vld, eq_data_vld, logic [AUX_DATA_WIDTH-1:0] pre, vtg, lane_align, [3:0] cr_done, eq_cr_dn, channel_eq, symbol_lock, output logic hpd_detect, hpd_irq, reply_data_vld, lpm_vld, native_failed, fsm_cr_failed, eq_lt_failed, eq_lt_pass, cr_completed, eq_fsm_cr_failed, eq_fsm_repeat, timer_timeout, lpm_cr_apply_new_bw_lc, lpm_cr_apply_new_driving_param, reply_ack_vld, [1:0] reply_ack, eq_final_adj_lc, [AUX_DATA_WIDTH-1:0] reply_data, eq_final_adj_bw);
-            // @(negedge clk_AUX)
-            LPM_Transaction_VLD = 1'b0;
-            SPM_Transaction_VLD = 1'b0;
-            CR_DONE_VLD  = done_vld;
-            CR_DONE      = cr_done;
-            PRE          = pre;
-            VTG          = vtg;
-            Driving_Param_VLD = driving_vld;
-            Config_Param_VLD = 1'b0;
-            LPM_Start_CR = 1'b0;
-
-            EQ_CR_DN     = eq_cr_dn;
-            Channel_EQ   = channel_eq;
-            Symbol_Lock  = symbol_lock;
-            Lane_Align   = lane_align;
-            EQ_Data_VLD  = eq_data_vld;
-
-            hpd_detect = HPD_Detect;
-            hpd_irq = HPD_IRQ;
-            reply_data = LPM_Reply_Data;
-            reply_data_vld = LPM_Reply_Data_VLD;
-            reply_ack = LPM_Reply_ACK;
-            reply_ack_vld = LPM_Reply_ACK_VLD;
-            lpm_vld = LPM_NATIVE_I2C;
-            native_failed = CTRL_Native_Failed; 
-
-            fsm_cr_failed = FSM_CR_Failed;
-            eq_lt_failed = EQ_LT_Failed;
-            eq_lt_pass = EQ_LT_Pass;
-            eq_final_adj_bw = EQ_Final_ADJ_BW;
-            eq_final_adj_lc = EQ_Final_ADJ_LC;
-            cr_completed = CR_Completed;
-            eq_fsm_cr_failed = EQ_FSM_CR_Failed;
-            eq_fsm_repeat = EQ_FSM_Repeat;
-            lpm_cr_apply_new_bw_lc = LPM_CR_Apply_New_BW_LC;
-            lpm_cr_apply_new_driving_param = LPM_CR_Apply_New_Driving_Param;
-            timer_timeout = Timer_Timeout;
-      endtask
-
+      //////////////////////////// ISOCHRONOUS ////////////////////////////
+      
       // Modified adj_bw to be 16 bits instead of 8 bits and adj_lc to be 3 bits instead of 2 bits and used SPM_Full_MSA instead of SPM_MSA
-      task ISO(input real clk_stream, bit iso_start, msa_vld, stm_bw_vld, de, vsync, hsync, [15:0] adj_bw, [2:0] adj_lc, bw_sel, [47:0] pixels, [9:0] stm_bw, [191:0] msa, output logic hpd_detect, hpd_irq);
+      task ISO(input real clk_stream, bit iso_start, msa_vld, stm_bw_vld, de, vsync, hsync, [15:0] adj_bw, [2:0] adj_lc, bw_sel, [47:0] pixels, [9:0] stm_bw, [191:0] msa, output logic hpd_detect, hpd_irq, wfull);
             // Set SPM-related signals for Isochronous Transport Layer
             SPM_Lane_BW = adj_bw;
             SPM_Lane_Count = adj_lc;
@@ -390,6 +352,7 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
 
             hpd_detect = HPD_Detect;
             hpd_irq = HPD_IRQ;
+            wfull = WFULL; // Set FIFO full signal to indicate that the FIFO is full
       endtask
 
       task DETECT(output logic hpd_detect);
@@ -430,6 +393,11 @@ interface dp_tl_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (inpu
             MS_Stm_BW_VLD = 1'b0;               // Reset Main Stream Bandwidth Valid
             MS_VSYNC = 1'b0;                    // Reset Main Stream Vsync
             MS_HSYNC = 1'b0;                    // Reset Main Stream Hsync
+            SPM_Full_MSA = 1'b0;
+            SPM_Lane_BW = 1'b0;
+            SPM_Lane_Count = 1'b0;
+            SPM_BW_Sel = 1'b0;
+            SPM_MSA_VLD = 1'b0;
       endtask
       
 endinterface
