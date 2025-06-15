@@ -491,6 +491,166 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b", seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN + 1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
     endtask
 
+///////////////////////////////// Multi Read Request Sequences //////////////////////////////////
+
+    task multi_read_request();
+        `uvm_info(get_type_name(), "start multi read request task", UVM_MEDIUM)
+        if(seq_item == null) begin
+            seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        end
+
+        // First Transaction
+        start_item(seq_item);
+            seq_item.operation = NATIVE_READ;       // Set the operation to NATIVE_READ
+            seq_item.LPM_CMD = AUX_NATIVE_READ;     // Read
+            seq_item.LPM_Transaction_VLD = 1'b1;    // LPM is going to request a Native transaction
+            seq_item.LPM_Address = 20'h0_02_00;     // Address
+            seq_item.LPM_LEN = 8'h04;               // Length
+            seq_item.LPM_Data = 8'h0F;              // Data
+        finish_item(seq_item);
+        get_response(seq_item);
+
+        start_item(seq_item);
+            seq_item.LPM_Transaction_VLD = 1'b0;    // LPM is off
+        finish_item(seq_item);
+        get_response(seq_item);
+
+        // Second Transaction 
+        start_item(seq_item);
+            seq_item.operation = NATIVE_READ;       // Set the operation to NATIVE_READ
+            seq_item.LPM_CMD = AUX_NATIVE_READ;     // Read
+            seq_item.LPM_Transaction_VLD = 1'b1;    // LPM is going to request a Native transaction
+            seq_item.LPM_Address = 20'h0_02_04;     // Address
+            seq_item.LPM_LEN = 8'h04;               // Length
+            seq_item.LPM_Data = 8'h4F;              // Data
+        finish_item(seq_item);
+        get_response(seq_item);
+
+        start_item(seq_item);
+            seq_item.LPM_Transaction_VLD = 1'b0;    // LPM is off
+        finish_item(seq_item);
+        get_response(seq_item);
+
+        // Third Transaction
+        start_item(seq_item);
+            seq_item.operation = NATIVE_READ;       // Set the operation to NATIVE_READ
+            seq_item.LPM_CMD = AUX_NATIVE_READ;     // Read
+            seq_item.LPM_Transaction_VLD = 1'b1;    // LPM is going to request a Native transaction
+            seq_item.LPM_Address = 20'h0_02_08;     // Address
+            seq_item.LPM_LEN = 8'h04;               // Length
+            seq_item.LPM_Data = 8'h8F;              // Data
+        finish_item(seq_item);
+        get_response(seq_item);
+
+        start_item(seq_item);
+            seq_item.LPM_Transaction_VLD = 1'b0;    // LPM is off
+        finish_item(seq_item);
+        get_response(seq_item);
+
+        `uvm_info(get_type_name(), "Completed multi read request task", UVM_MEDIUM)
+    endtask
+
+/////////////////////// Another one with Waiting ACK ////////////////////////////
+
+    task multi_read_request_with_waiting_ack();
+        int retry = 1;
+
+        `uvm_info(get_type_name(), "start multi read request with waiting ack task", UVM_MEDIUM)
+        if(seq_item == null) begin
+            seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        end
+
+        while (retry) begin
+            // First Transaction
+            start_item(seq_item);
+                seq_item.operation = NATIVE_READ;       // Set the operation to NATIVE_READ
+                seq_item.LPM_CMD = AUX_NATIVE_READ;     // Read
+                seq_item.LPM_Transaction_VLD = 1'b1;    // LPM is going to request a Native transaction
+                seq_item.LPM_Address = 20'h0_02_00;     // Address
+                seq_item.LPM_LEN = 8'h04;               // Length
+                seq_item.LPM_Data = 8'h0F;              // Data
+            finish_item(seq_item);
+            get_response(seq_item);
+
+            while (!seq_item.LPM_Reply_ACK_VLD) begin
+                start_item(seq_item);
+                    seq_item.LPM_Transaction_VLD = 1'b0;    // LPM is off
+                    seq_item.operation = WAIT_REPLY; // Set the operation to WAIT_REPLY
+                finish_item(seq_item);
+                get_response(seq_item);
+            end
+
+            if (seq_item.LPM_Reply_ACK == 2'b00) begin
+                retry = 0; // Exit the loop if ACK is valid
+            end else begin
+                `uvm_info(get_type_name(), $sformatf("ACK not valid, retrying... ACK = %b", seq_item.LPM_Reply_ACK), UVM_MEDIUM)
+                retry = 1; // Retry the transaction
+            end
+        end 
+
+        retry = 1;              // Reset retry for the next transaction
+
+        while (retry) begin
+            // Second Transaction
+            start_item(seq_item);
+                seq_item.operation = NATIVE_READ;       // Set the operation to NATIVE_READ
+                seq_item.LPM_CMD = AUX_NATIVE_READ;     // Read
+                seq_item.LPM_Transaction_VLD = 1'b1;    // LPM is going to request a Native transaction
+                seq_item.LPM_Address = 20'h0_02_04;     // Address
+                seq_item.LPM_LEN = 8'h04;               // Length
+                seq_item.LPM_Data = 8'h4F;              // Data
+            finish_item(seq_item);
+            get_response(seq_item);
+
+            while (!seq_item.LPM_Reply_ACK_VLD) begin
+                start_item(seq_item);
+                    seq_item.LPM_Transaction_VLD = 1'b0;    // LPM is off
+                    seq_item.operation = WAIT_REPLY; // Set the operation to WAIT_REPLY
+                finish_item(seq_item);
+                get_response(seq_item);
+            end
+
+            if (seq_item.LPM_Reply_ACK == 2'b00) begin
+                retry = 0; // Exit the loop if ACK is valid
+            end else begin
+                `uvm_info(get_type_name(), $sformatf("ACK not valid, retrying... ACK = %b", seq_item.LPM_Reply_ACK), UVM_MEDIUM)
+                retry = 1; // Retry the transaction
+            end
+        end 
+
+        retry = 1;              // Reset retry for the next transaction
+
+        while (retry) begin
+            // Third Transaction
+            start_item(seq_item);
+                seq_item.operation = NATIVE_READ;       // Set the operation to NATIVE_READ
+                seq_item.LPM_CMD = AUX_NATIVE_READ;     // Read
+                seq_item.LPM_Transaction_VLD = 1'b1;    // LPM is going to request a Native transaction
+                seq_item.LPM_Address = 20'h0_02_08;     // Address
+                seq_item.LPM_LEN = 8'h04;               // Length
+                seq_item.LPM_Data = 8'h8F;              // Data
+            finish_item(seq_item);
+            get_response(seq_item);
+
+            while (!seq_item.LPM_Reply_ACK_VLD) begin
+                start_item(seq_item);
+                    seq_item.LPM_Transaction_VLD = 1'b0;    // LPM is off
+                    seq_item.operation = WAIT_REPLY; // Set the operation to WAIT_REPLY
+                finish_item(seq_item);
+                get_response(seq_item);
+            end
+
+            if (seq_item.LPM_Reply_ACK == 2'b00) begin
+                retry = 0; // Exit the loop if ACK is valid
+            end else begin
+                `uvm_info(get_type_name(), $sformatf("ACK not valid, retrying... ACK = %b", seq_item.LPM_Reply_ACK), UVM_MEDIUM)
+                retry = 1; // Retry the transaction
+            end
+        end
+
+        `uvm_info(get_type_name(), "Completed multi read request with waiting ack task", UVM_MEDIUM)
+    endtask
+
 ///////////////////////////////////// LINK TRAINING CR /////////////////////////////////////////
 
     task CR_LT();

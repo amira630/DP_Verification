@@ -19,6 +19,7 @@ package dp_source_test_pkg;
     `include "dp_tl_native_link_config_sequence.svh"
     `include "dp_tl_native_receiver_cap_sequence.svh"
     `include "dp_tl_multi_read_sequence.svh"
+    `include "dp_tl_multi_read_with_wait_sequence.svh"
     `include "dp_tl_link_training_sequence.svh"
 
     `include "dp_sink_base_sequence.svh"

@@ -24,6 +24,7 @@ class dp_source_test extends uvm_test;
     dp_tl_native_link_config_sequence dp_tl_native_link_config_seq;
     dp_tl_native_receiver_cap_sequence dp_tl_native_receiver_cap_seq;
     dp_tl_multi_read_sequence dp_tl_multi_read_seq;
+    dp_tl_multi_read_with_wait_sequence dp_tl_multi_read_with_wait_seq;
     dp_tl_link_training_sequence dp_tl_link_training_seq;
 
     ////////////////////////////////////////////// Sink Sequences //////////////////////////////////////////
@@ -53,6 +54,7 @@ class dp_source_test extends uvm_test;
         dp_tl_native_link_config_seq = dp_tl_native_link_config_sequence::type_id::create("dp_tl_native_link_config_seq", this);
         dp_tl_native_receiver_cap_seq = dp_tl_native_receiver_cap_sequence::type_id::create("dp_tl_native_receiver_cap_seq", this);
         dp_tl_multi_read_seq = dp_tl_multi_read_sequence::type_id::create("dp_tl_multi_read_seq", this); // This sequence is for testing multi read requests
+        dp_tl_multi_read_with_wait_seq = dp_tl_multi_read_with_wait_sequence::type_id::create("dp_tl_multi_read_with_wait_seq", this); // This sequence is for testing multi read requests with waiting for ACK
         dp_tl_link_training_seq = dp_tl_link_training_sequence::type_id::create("dp_tl_link_training_seq", this);
         
         // Sink Sequences creation
@@ -108,11 +110,11 @@ class dp_source_test extends uvm_test;
             //     `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
             // end
 
-            begin
-                `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
-                dp_tl_basic_seq.start(env.tl_agt.sqr);
-                `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
-            end
+            // begin
+            //     `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
+            //     dp_tl_basic_seq.start(env.tl_agt.sqr);
+            //     `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
+            // end
 
             // DPCD (RX Cap) Read Sequence
             // begin
@@ -135,6 +137,13 @@ class dp_source_test extends uvm_test;
             //     `uvm_info("run_phase", "TL Multi Read stimulus generation ended", UVM_LOW);
             // end
 
+            // Multi Read With waiting ACK Sequence
+            // begin
+            //     `uvm_info("run_phase", "TL Multi Read with wait ACK stimulus generation started", UVM_LOW);
+            //     dp_tl_multi_read_with_wait_seq.start(env.tl_agt.sqr);
+            //     `uvm_info("run_phase", "TL Multi Read with wait ACK stimulus generation ended", UVM_LOW);
+            // end
+
             // // TL Link Training Sequence
             // begin
             //     `uvm_info("run_phase", "TL Link Training seq stimulus generation started", UVM_LOW);
@@ -143,11 +152,11 @@ class dp_source_test extends uvm_test;
             // end
 
             // EDID Read Sequence
-            // begin
-            //     `uvm_info("run_phase", "TL I2C stimulus generation started", UVM_LOW);
-            //     dp_tl_i2c_seq.start(env.tl_agt.sqr);
-            //     `uvm_info("run_phase", "TL I2C stimulus generation ended", UVM_LOW);
-            // end
+            begin
+                `uvm_info("run_phase", "TL I2C stimulus generation started", UVM_LOW);
+                dp_tl_i2c_seq.start(env.tl_agt.sqr);
+                `uvm_info("run_phase", "TL I2C stimulus generation ended", UVM_LOW);
+            end
 
             // begin
             //     `uvm_info("run_phase", "Sink HPD stimulus generation started", UVM_LOW);
