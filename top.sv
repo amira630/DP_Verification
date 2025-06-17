@@ -20,7 +20,8 @@ module top();
 
     // Create the interfaces for Transport Layer and the Sink Link Layer
     dp_tl_if #(.AUX_ADDRESS_WIDTH(20), .AUX_DATA_WIDTH(8))  tl_if (clk_AUX, clk_RBR, clk_HBR, clk_HBR2, clk_HBR3, MS_Stm_CLK);
-    dp_sink_if #(.AUX_ADDRESS_WIDTH(20), .AUX_DATA_WIDTH(8)) sink_if (clk_AUX);
+    dp_sink_if #(.AUX_ADDRESS_WIDTH(20), .AUX_DATA_WIDTH(8)) sink_if (clk_AUX, clk_RBR, clk_HBR, clk_HBR2, clk_HBR3);
+    dp_ref_if #(.AUX_DATA_WIDTH(8)) ref_if ();
 
     dp_source DUT (tl_if, sink_if);
 
@@ -69,6 +70,7 @@ module top();
         uvm_config_db #(virtual dp_tl_if)::set(null, "uvm_test_top", "dp_tl_vif", tl_if);
         uvm_config_db #(virtual dp_sink_if)::set(null, "uvm_test_top", "dp_sink_vif", sink_if);
         
+        uvm_config_db #(virtual dp_ref_if)::set(null, "uvm_test_top", "dp_ref_vif", ref_if);
         // Run the test
         run_test("dp_source_test");
         $dumpfile("test.vcd");

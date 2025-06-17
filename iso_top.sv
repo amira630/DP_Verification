@@ -51,10 +51,10 @@ wire             sched_blank_en_lane0;
 wire             sched_blank_en_lane1;
 wire             sched_blank_en_lane2;
 wire             sched_blank_en_lane3;
-wire             sched_idle_en_lane0;
-wire             sched_idle_en_lane1;
-wire             sched_idle_en_lane2;
-wire             sched_idle_en_lane3;
+//wire             sched_idle_en_lane0;
+//wire             sched_idle_en_lane1;
+//wire             sched_idle_en_lane2;
+//wire             sched_idle_en_lane3;
 wire    [1:0]    sched_stream_idle_sel_lane0;
 wire    [1:0]    sched_stream_idle_sel_lane1;
 wire    [1:0]    sched_stream_idle_sel_lane2;
@@ -129,10 +129,10 @@ iso_ctrl_top iso_ctrl_top_0 (
 .sched_blank_en_lane1(sched_blank_en_lane1),
 .sched_blank_en_lane2(sched_blank_en_lane2),
 .sched_blank_en_lane3(sched_blank_en_lane3),
-.sched_idle_en_lane0(sched_idle_en_lane0),
-.sched_idle_en_lane1(sched_idle_en_lane1),
-.sched_idle_en_lane2(sched_idle_en_lane2),
-.sched_idle_en_lane3(sched_idle_en_lane3),
+//.sched_idle_en_lane0(sched_idle_en_lane0),
+//.sched_idle_en_lane1(sched_idle_en_lane1),
+//.sched_idle_en_lane2(sched_idle_en_lane2),
+//.sched_idle_en_lane3(sched_idle_en_lane3),
 .sched_stream_idle_sel_lane0(sched_stream_idle_sel_lane0),
 .sched_stream_idle_sel_lane1(sched_stream_idle_sel_lane1),
 .sched_stream_idle_sel_lane2(sched_stream_idle_sel_lane2),
@@ -153,7 +153,7 @@ iso_lanes_top iso_lanes_top_0(
 .sched_blank_id(sched_blank_id),
 .sched_blank_state(sched_blank_state),
 .sched_blank_en(sched_blank_en_lane0),
-.sched_idle_en(sched_idle_en_lane0),
+.sched_idle_en(spm_iso_start),
 .idle_activate_en(idle_activate_en_lane0),
 .sched_stream_idle_sel(sched_stream_idle_sel_lane0),
 .iso_symbols(iso_symbols_lane0),
@@ -175,7 +175,7 @@ iso_lanes_top iso_lanes_top_1(
 .sched_blank_id(sched_blank_id),
 .sched_blank_state(sched_blank_state),
 .sched_blank_en(sched_blank_en_lane1),
-.sched_idle_en(sched_idle_en_lane1),
+.sched_idle_en(spm_iso_start),
 .idle_activate_en(idle_activate_en_lane1),
 .sched_stream_idle_sel(sched_stream_idle_sel_lane1),
 .iso_symbols(iso_symbols_lane1),
@@ -197,7 +197,7 @@ iso_lanes_top iso_lanes_top_2(
 .sched_blank_id(sched_blank_id),
 .sched_blank_state(sched_blank_state),
 .sched_blank_en(sched_blank_en_lane2),
-.sched_idle_en(sched_idle_en_lane2),
+.sched_idle_en(spm_iso_start),
 .idle_activate_en(idle_activate_en_lane2),
 .sched_stream_idle_sel(sched_stream_idle_sel_lane2),
 .iso_symbols(iso_symbols_lane2),
@@ -219,7 +219,7 @@ iso_lanes_top iso_lanes_top_3(
 .sched_blank_id(sched_blank_id),
 .sched_blank_state(sched_blank_state),
 .sched_blank_en(sched_blank_en_lane3),
-.sched_idle_en(sched_idle_en_lane3),
+.sched_idle_en(spm_iso_start),
 .idle_activate_en(idle_activate_en_lane3),
 .sched_stream_idle_sel(sched_stream_idle_sel_lane3),
 .iso_symbols(iso_symbols_lane3),
@@ -253,6 +253,7 @@ sec_bus_steering sec_bus_steering_0(
 .clk(ls_clk),
 .rst_n(rst_n),
 .td_lane_count(td_lane_count),
+.td_vld_data(td_vld_data),
 .spm_msa(spm_msa),
 .spm_vld(spm_msa_vld),
 .blank_steering_state0(blank_steering_state_lane0),        

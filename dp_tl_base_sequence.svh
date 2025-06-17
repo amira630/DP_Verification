@@ -491,6 +491,166 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         `uvm_info("TL_Native_REQ_SEQ", $sformatf("Native AUX %s request transaction sent: addr=0x%0h, Data Length=0x%0d, Transaction Validity = 0x%0b", seq_item.LPM_CMD, seq_item.LPM_Address, seq_item.LPM_LEN + 1, seq_item.LPM_Transaction_VLD), UVM_MEDIUM)
     endtask
 
+///////////////////////////////// Multi Read Request Sequences //////////////////////////////////
+
+    task multi_read_request();
+        `uvm_info(get_type_name(), "start multi read request task", UVM_MEDIUM)
+        if(seq_item == null) begin
+            seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        end
+
+        // First Transaction
+        start_item(seq_item);
+            seq_item.operation = NATIVE_READ;       // Set the operation to NATIVE_READ
+            seq_item.LPM_CMD = AUX_NATIVE_READ;     // Read
+            seq_item.LPM_Transaction_VLD = 1'b1;    // LPM is going to request a Native transaction
+            seq_item.LPM_Address = 20'h0_02_00;     // Address
+            seq_item.LPM_LEN = 8'h04;               // Length
+            seq_item.LPM_Data = 8'h0F;              // Data
+        finish_item(seq_item);
+        get_response(seq_item);
+
+        start_item(seq_item);
+            seq_item.LPM_Transaction_VLD = 1'b0;    // LPM is off
+        finish_item(seq_item);
+        get_response(seq_item);
+
+        // Second Transaction 
+        start_item(seq_item);
+            seq_item.operation = NATIVE_READ;       // Set the operation to NATIVE_READ
+            seq_item.LPM_CMD = AUX_NATIVE_READ;     // Read
+            seq_item.LPM_Transaction_VLD = 1'b1;    // LPM is going to request a Native transaction
+            seq_item.LPM_Address = 20'h0_02_04;     // Address
+            seq_item.LPM_LEN = 8'h04;               // Length
+            seq_item.LPM_Data = 8'h4F;              // Data
+        finish_item(seq_item);
+        get_response(seq_item);
+
+        start_item(seq_item);
+            seq_item.LPM_Transaction_VLD = 1'b0;    // LPM is off
+        finish_item(seq_item);
+        get_response(seq_item);
+
+        // Third Transaction
+        start_item(seq_item);
+            seq_item.operation = NATIVE_READ;       // Set the operation to NATIVE_READ
+            seq_item.LPM_CMD = AUX_NATIVE_READ;     // Read
+            seq_item.LPM_Transaction_VLD = 1'b1;    // LPM is going to request a Native transaction
+            seq_item.LPM_Address = 20'h0_02_08;     // Address
+            seq_item.LPM_LEN = 8'h04;               // Length
+            seq_item.LPM_Data = 8'h8F;              // Data
+        finish_item(seq_item);
+        get_response(seq_item);
+
+        start_item(seq_item);
+            seq_item.LPM_Transaction_VLD = 1'b0;    // LPM is off
+        finish_item(seq_item);
+        get_response(seq_item);
+
+        `uvm_info(get_type_name(), "Completed multi read request task", UVM_MEDIUM)
+    endtask
+
+/////////////////////// Another one with Waiting ACK ////////////////////////////
+
+    task multi_read_request_with_waiting_ack();
+        int retry = 1;
+
+        `uvm_info(get_type_name(), "start multi read request with waiting ack task", UVM_MEDIUM)
+        if(seq_item == null) begin
+            seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+        end
+
+        while (retry) begin
+            // First Transaction
+            start_item(seq_item);
+                seq_item.operation = NATIVE_READ;       // Set the operation to NATIVE_READ
+                seq_item.LPM_CMD = AUX_NATIVE_READ;     // Read
+                seq_item.LPM_Transaction_VLD = 1'b1;    // LPM is going to request a Native transaction
+                seq_item.LPM_Address = 20'h0_02_00;     // Address
+                seq_item.LPM_LEN = 8'h04;               // Length
+                seq_item.LPM_Data = 8'h0F;              // Data
+            finish_item(seq_item);
+            get_response(seq_item);
+
+            while (!seq_item.LPM_Reply_ACK_VLD) begin
+                start_item(seq_item);
+                    seq_item.LPM_Transaction_VLD = 1'b0;    // LPM is off
+                    seq_item.operation = WAIT_REPLY; // Set the operation to WAIT_REPLY
+                finish_item(seq_item);
+                get_response(seq_item);
+            end
+
+            if (seq_item.LPM_Reply_ACK == 2'b00) begin
+                retry = 0; // Exit the loop if ACK is valid
+            end else begin
+                `uvm_info(get_type_name(), $sformatf("ACK not valid, retrying... ACK = %b", seq_item.LPM_Reply_ACK), UVM_MEDIUM)
+                retry = 1; // Retry the transaction
+            end
+        end 
+
+        retry = 1;              // Reset retry for the next transaction
+
+        while (retry) begin
+            // Second Transaction
+            start_item(seq_item);
+                seq_item.operation = NATIVE_READ;       // Set the operation to NATIVE_READ
+                seq_item.LPM_CMD = AUX_NATIVE_READ;     // Read
+                seq_item.LPM_Transaction_VLD = 1'b1;    // LPM is going to request a Native transaction
+                seq_item.LPM_Address = 20'h0_02_04;     // Address
+                seq_item.LPM_LEN = 8'h04;               // Length
+                seq_item.LPM_Data = 8'h4F;              // Data
+            finish_item(seq_item);
+            get_response(seq_item);
+
+            while (!seq_item.LPM_Reply_ACK_VLD) begin
+                start_item(seq_item);
+                    seq_item.LPM_Transaction_VLD = 1'b0;    // LPM is off
+                    seq_item.operation = WAIT_REPLY; // Set the operation to WAIT_REPLY
+                finish_item(seq_item);
+                get_response(seq_item);
+            end
+
+            if (seq_item.LPM_Reply_ACK == 2'b00) begin
+                retry = 0; // Exit the loop if ACK is valid
+            end else begin
+                `uvm_info(get_type_name(), $sformatf("ACK not valid, retrying... ACK = %b", seq_item.LPM_Reply_ACK), UVM_MEDIUM)
+                retry = 1; // Retry the transaction
+            end
+        end 
+
+        retry = 1;              // Reset retry for the next transaction
+
+        while (retry) begin
+            // Third Transaction
+            start_item(seq_item);
+                seq_item.operation = NATIVE_READ;       // Set the operation to NATIVE_READ
+                seq_item.LPM_CMD = AUX_NATIVE_READ;     // Read
+                seq_item.LPM_Transaction_VLD = 1'b1;    // LPM is going to request a Native transaction
+                seq_item.LPM_Address = 20'h0_02_08;     // Address
+                seq_item.LPM_LEN = 8'h04;               // Length
+                seq_item.LPM_Data = 8'h8F;              // Data
+            finish_item(seq_item);
+            get_response(seq_item);
+
+            while (!seq_item.LPM_Reply_ACK_VLD) begin
+                start_item(seq_item);
+                    seq_item.LPM_Transaction_VLD = 1'b0;    // LPM is off
+                    seq_item.operation = WAIT_REPLY; // Set the operation to WAIT_REPLY
+                finish_item(seq_item);
+                get_response(seq_item);
+            end
+
+            if (seq_item.LPM_Reply_ACK == 2'b00) begin
+                retry = 0; // Exit the loop if ACK is valid
+            end else begin
+                `uvm_info(get_type_name(), $sformatf("ACK not valid, retrying... ACK = %b", seq_item.LPM_Reply_ACK), UVM_MEDIUM)
+                retry = 1; // Retry the transaction
+            end
+        end
+
+        `uvm_info(get_type_name(), "Completed multi read request with waiting ack task", UVM_MEDIUM)
+    endtask
+
 ///////////////////////////////////// LINK TRAINING CR /////////////////////////////////////////
 
     task CR_LT();
@@ -1444,16 +1604,16 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                         seq_item.SPM_MSA[11], seq_item.SPM_MSA[10], seq_item.SPM_MSA[9],  seq_item.SPM_MSA[8],
                         seq_item.SPM_MSA[7],  seq_item.SPM_MSA[6],  seq_item.SPM_MSA[5],  seq_item.SPM_MSA[4],
                         seq_item.SPM_MSA[3],  seq_item.SPM_MSA[2],  seq_item.SPM_MSA[1],  seq_item.SPM_MSA[0]};
-        if(seq_item.HSP) // HSP is active high, so set MS_HSYNC to 0 
-            seq_item.MS_HSYNC = 1'b0; // HSP is active high, so set MS_HSYNC to 0
+        if(seq_item.HSP) // HSP is active high, so set MS_HSYNC to 1 
+            seq_item.MS_HSYNC = 1'b1; // HSP is active high, so set MS_HSYNC to 1
         else
-            seq_item.MS_HSYNC = 1'b1; // HSP is active low, so set MS_HSYNC to 1
-        if(seq_item.VSP) // VSP is active high, so set MS_VSYNC to 0
-            seq_item.MS_VSYNC = 1'b0; // VSP is active high, so set MS_VSYNC to 0
+            seq_item.MS_HSYNC = 1'b0; // HSP is active low, so set MS_HSYNC to 0
+        if(seq_item.VSP) // VSP is active high, so set MS_VSYNC to 1
+            seq_item.MS_VSYNC = 1'b1; // VSP is active high, so set MS_VSYNC to 1
         else
-            seq_item.MS_VSYNC = 1'b1; // VSP is active low, so set MS_VSYNC to 1
+            seq_item.MS_VSYNC = 1'b0; // VSP is active low, so set MS_VSYNC to 0
         seq_item.MS_Stm_BW = 10'd80; // 80MHz for now, should be randomized
-        seq_item.MS_Pixel_Data = 'b0;
+        seq_item.MS_Pixel_Data = 'b1;
         seq_item.CLOCK_PERIOD = (1/seq_item.MS_Stm_BW);
         finish_item(seq_item);
         get_response(seq_item);
@@ -1462,8 +1622,9 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
 
     
     task Main_Stream(input [15:0] frames);
-        int countv = 0;
-        int counth = 0;
+        int countv = 1;
+        int counth = 1;
+        bit is_firstframe = 1'b1;
         bit new_frame;
         // New Video Stream
         repeat(frames) begin // Start new frame
@@ -1474,14 +1635,23 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                     seq_item.rand_mode(0);
                     seq_item.MS_Stm_BW_VLD = 1'b0; // Stream bandwidth is not valid
                     seq_item.SPM_Transaction_VLD = 1'b0;
-                    if(new_frame) begin
+                    seq_item.SPM_MSA_VLD = 1'b0;
+                    if(is_firstframe == 1) begin
+                        seq_item.SPM_MSA_VLD = 1'b0;
+                        is_firstframe = 0;
+                        new_frame = 0;
+                        `uvm_info("TL BASE SEQ", "We are in the first frame", UVM_MEDIUM);
+                    end
+                    else if(new_frame) begin
                         seq_item.SPM_MSA_VLD = 1'b1;
+                        `uvm_info("TL BASE SEQ", "We are NOT in the first frame", UVM_MEDIUM);
                         /*seq_item.Mvid.rand_mode(1); seq_item.Nvid.rand_mode(1);*/ seq_item.HTotal.rand_mode(1); seq_item.VTotal.rand_mode(1); seq_item.HStart.rand_mode(1); seq_item.VStart.rand_mode(1); seq_item.HSP.rand_mode(1); seq_item.VSP.rand_mode(1);
                         seq_item.HSW.rand_mode(1); seq_item.VSW.rand_mode(1); seq_item.HWidth.rand_mode(1); seq_item.VHeight.rand_mode(1); //seq_item.MISC0.rand_mode(1); seq_item.MISC1.rand_mode(1);
                         new_frame = 0;
                     end
-                    else
+                    else begin
                         seq_item.SPM_MSA_VLD = 1'b0;
+                    end
                     if(countv >= seq_item.VStart && counth >= seq_item.HStart) begin // inside active video
                         seq_item.MS_DE = 1;
                         seq_item.MS_Pixel_Data.rand_mode(1);
@@ -1547,7 +1717,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         seq_item.SPM_MSA_VLD = 1'b0;
         seq_item.SPM_ISO_start = 1'b0; // NEED TO ADD A CONDITION FOR ERROR THAT RELATES TO THE HPD_IRQ // I think I will need to add a flag in the IRQ task that I will check here
         finish_item(seq_item);
-        get_response(seq_item); 
+        get_response(seq_item);
     endtask
 
 endclass //dp_tl_base_sequence extends superClass

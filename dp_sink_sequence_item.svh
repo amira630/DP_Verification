@@ -24,6 +24,8 @@ class dp_sink_sequence_item extends uvm_sequence_item;
     logic [7:0] PHY_ADJ_BW;
     logic       PHY_Instruct_VLD;
 
+    link_bw_cr_e Final_BW; // to know which clock to use
+
 // ISO signals
     logic [7:0] ISO_symbols_lane0, ISO_symbols_lane1, ISO_symbols_lane2, ISO_symbols_lane3;
     logic       Control_sym_flag_lane0, Control_sym_flag_lane1, Control_sym_flag_lane2, Control_sym_flag_lane3;

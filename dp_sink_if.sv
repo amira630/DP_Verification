@@ -2,7 +2,7 @@
 import uvm_pkg::*;
     `include "uvm_macros.svh"
 
-interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk_AUX);
+interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (input clk_AUX, clk_RBR, clk_HBR, clk_HBR2, clk_HBR3);
 
 
     ///////////////////////////////////////////////////////////////
@@ -11,7 +11,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
 
     ///////////////////// PHYSICAL LAYER //////////////////////////
 
-    logic [AUX_DATA_WIDTH:0]    aux_data, PHY_ADJ_BW;
+    logic [AUX_DATA_WIDTH-1:0]  aux_data, PHY_ADJ_BW;
     logic [1:0]                 PHY_ADJ_LC, PHY_Instruct;
     logic                       HPD_Signal, AUX_START_STOP, PHY_START_STOP, PHY_Instruct_VLD;
 
@@ -30,6 +30,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     assign AUX_IN_OUT = PHY_START_STOP ? aux_data : 8'bz; // The AUX_IN_OUT signal is driven by the PHY_START_STOP signal. When PHY_START_STOP is high, the aux_data is driven onto the AUX_IN_OUT line. Otherwise, it is in high impedance state (8'bz).
 
     // aux_in_out_tb = phy_start_stop_tb ? aux_in_value : 8'bz;
+    logic [AUX_DATA_WIDTH-1:0] Final_BW; // to know which clock to use
 
     ///////////////////////////////////////////////////////////////
     //////////////////////// MODPORTS /////////////////////////////
@@ -71,11 +72,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
 
     // TASK: Active
     // This task is used to assert the HPD_Signal
-    task Active(output logic aux_start_stop, output logic [7:0] value, output logic [1:0] phy_instruct, output logic [7:0] phy_adj_bw, output logic [1:0] phy_adj_lc, output logic phy_instruct_vld,
-                output logic [7:0] iso_symbols_lane0, output logic [7:0] iso_symbols_lane1, 
-                output logic [7:0] iso_symbols_lane2, output logic [7:0] iso_symbols_lane3,
-                output logic control_sym_flag_lane0, output logic control_sym_flag_lane1,
-                output logic control_sym_flag_lane2, output logic control_sym_flag_lane3);
+    task Active(output logic aux_start_stop, output logic [7:0] value, output logic [1:0] phy_instruct, output logic [7:0] phy_adj_bw, output logic [1:0] phy_adj_lc, output logic phy_instruct_vld);
         HPD_Signal = 1'b1;                      // Drive the HPD_Signal with the specified value
         `uvm_info("DP_SINK_INTERFACE", $sformatf("Active Sink: HPD_Signal = %b", HPD_Signal), UVM_MEDIUM)
 
@@ -88,6 +85,16 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
         phy_adj_lc = PHY_ADJ_LC;
         phy_instruct_vld = PHY_Instruct_VLD;
 
+        if (AUX_START_STOP) begin
+            value = AUX_IN_OUT;
+            `uvm_info("DP_SINK_INTERFACE", $sformatf("Read AUX_IN_OUT = 0x%0h", value), UVM_LOW)
+
+        end else begin
+            value = 8'b0;                      // If AUX_START_STOP is not asserted, set value to 0
+        end
+    endtask
+
+    task ISO_sink(output logic control_sym_flag_lane0, control_sym_flag_lane1, control_sym_flag_lane2, control_sym_flag_lane3, iso_symbols_lane0, iso_symbols_lane1, iso_symbols_lane2, iso_symbols_lane3);
         // Return the ISO symbols flags of the ISO symbols to be checked if they take any values in the Link Training steps
         iso_symbols_lane0 = ISO_symbols_lane0;
         iso_symbols_lane1 = ISO_symbols_lane1; 
@@ -99,14 +106,6 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
         control_sym_flag_lane1 = Control_sym_flag_lane1;
         control_sym_flag_lane2 = Control_sym_flag_lane2;
         control_sym_flag_lane3 = Control_sym_flag_lane3;
-
-        if (AUX_START_STOP) begin
-            value = AUX_IN_OUT;
-            `uvm_info("DP_SINK_INTERFACE", $sformatf("Read AUX_IN_OUT = 0x%0h", value), UVM_LOW)
-
-        end else begin
-            value = 8'b0;                      // If AUX_START_STOP is not asserted, set value to 0
-        end
     endtask
 
     // TASK: drive_aux_in_out
@@ -121,6 +120,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
 
     // TASK: Interrupt
     task HPD_Interrupt();
+        PHY_START_STOP = 1'b0;
         `uvm_info("DP_SINK_INTERFACE", $sformatf("Driving Interrupt _NOW "), UVM_MEDIUM)
         HPD_Signal = 1'b1;              // Assert HPD_Signal
         #10000;                       // Wait for 10us 

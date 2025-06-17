@@ -6,6 +6,7 @@ dp_source_env_pkg.sv
 dp_source_test_pkg.sv
 dp_tl_if.sv
 dp_sink_if.sv
+dp_ref_if.sv
 bidirectional_aux_phy_interface.sv
 Reply_Decoder.sv
 timeout_timer.sv

@@ -146,6 +146,9 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         finish_item(seq_item);                          // Send the sequence item to the driver
         `uvm_info(get_type_name(), "finish_item for ready state", UVM_MEDIUM)
         get_response(seq_item);
+        if(seq_item.PHY_Instruct_VLD) begin
+            seq_item.Final_BW = link_bw_cr_e'(seq_item.PHY_ADJ_BW);
+        end
 
         if (seq_item.AUX_START_STOP) begin
              `uvm_info(get_type_name(), "AUX_START_STOP is high, capturing first byte", UVM_MEDIUM)
@@ -157,6 +160,9 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                 finish_item(seq_item);                          // Send the sequence item to the driver
                 `uvm_info(get_type_name(), "finish_item for ready state", UVM_MEDIUM)
                 get_response(seq_item);
+                if(seq_item.PHY_Instruct_VLD) begin
+                    seq_item.Final_BW = link_bw_cr_e'(seq_item.PHY_ADJ_BW);
+                end
             end
 
             foreach (seq_item.aux_in_out[i]) begin
@@ -182,6 +188,9 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                 finish_item(reply_seq_item);                                // Send the sequence item to the driver
                 `uvm_info(get_type_name(), "finish_item for reply transaction", UVM_MEDIUM)
                 get_response(seq_item);
+                if(seq_item.PHY_Instruct_VLD) begin
+                    seq_item.Final_BW = link_bw_cr_e'(seq_item.PHY_ADJ_BW);
+                end
             end
         end 
         else begin
@@ -324,10 +333,7 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                 else if (reply_item.native_reply_cmd == AUX_NACK) begin                             
                     `uvm_info(get_type_name(), "Received AUX_NACK for Native Read", UVM_MEDIUM)
                     // In case of NACK, the acknowledgment is sent as ACK not NACK && Data == 0
-                    reply_item.aux_in_out[0] = {AUX_ACK, 4'b0000};                              // NACK for Native Read
-                    for (i = 0; i<= rsp_item.length ; i++) begin
-                        reply_item.aux_in_out.push_back(8'h00); // Push dummy data for NACK
-                    end
+                    reply_item.aux_in_out[0] = {AUX_NACK, 4'b0000};                              // NACK for Native Read
                 end
                 else if (reply_item.native_reply_cmd == AUX_DEFER) begin
                     `uvm_info(get_type_name(), "Received AUX_DEFER for Native Read", UVM_MEDIUM)

@@ -12,6 +12,8 @@ class dp_scoreboard extends uvm_scoreboard;
     dp_tl_sequence_item tl_item;
     dp_sink_sequence_item sink_item;
     dp_ref_transaction expected_transaction;
+
+    virtual dp_ref_if ref_vif;
     
     int error_count = 0;
     int correct_count = 0;
@@ -50,7 +52,16 @@ class dp_scoreboard extends uvm_scoreboard;
             sb_tl_fifo.get(tl_item);
             sb_sink_fifo.get(sink_item);
             sb_ref_fifo.get(expected_transaction);
+            
+            ref_vif.expected_ISO_symbols_lane0 = expected_transaction.ISO_symbols_lane0;
+            ref_vif.expected_ISO_symbols_lane1 = expected_transaction.ISO_symbols_lane1;
+            ref_vif.expected_ISO_symbols_lane2 = expected_transaction.ISO_symbols_lane2;
+            ref_vif.expected_ISO_symbols_lane3 = expected_transaction.ISO_symbols_lane3;
 
+            ref_vif.expected_Control_sym_flag_lane0 = expected_transaction.Control_sym_flag_lane0;
+            ref_vif.expected_Control_sym_flag_lane1 = expected_transaction.Control_sym_flag_lane1;
+            ref_vif.expected_Control_sym_flag_lane2 = expected_transaction.Control_sym_flag_lane2;
+            ref_vif.expected_Control_sym_flag_lane3 = expected_transaction.Control_sym_flag_lane3;
             // Compare the reference model output with the actual transactions
             compare_transactions_ISO(tl_item, sink_item, expected_transaction);
 

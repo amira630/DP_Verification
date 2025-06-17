@@ -70,10 +70,10 @@ module iso_scheduler (
     //===============================================================//
     //                    idle_pattern interface                     //
     //===============================================================//
-    output    reg            sched_idle_en_lane0,
-    output    reg            sched_idle_en_lane1,
-    output    reg            sched_idle_en_lane2,
-    output    reg            sched_idle_en_lane3,
+    //output    reg            sched_idle_en_lane0,
+    //output    reg            sched_idle_en_lane1,
+    //output    reg            sched_idle_en_lane2,
+    //output    reg            sched_idle_en_lane3,
     //===============================================================//
     //              stream_idle_mux selections interface             //
     //===============================================================//
@@ -443,6 +443,44 @@ always @ (*)
                     end 
                     
     ACTIVE_VLD:     begin
+      /*
+                      if((h_active_ctr != td_h_active_ctr_max)&&(total_stuffing_ctr == total_stuffing_req_reg))
+                      begin
+                        next_state = ACTIVE_VLD;
+                      end
+                      else if (
+                          (!(max_stuffing_reg == 'b00 || max_stuffing_reg == 'b01 || max_stuffing_reg == 'b10)&&(((tu_vld_data_ctr_reg == td_tu_vld_data_size_min - 'b1) && !alternate_up_flag) ||((tu_vld_data_ctr_reg == td_tu_vld_data_size_min) && alternate_up_flag)) && h_active_ctr_reg != td_h_active_ctr_max - 'b1)
+                          || ((h_active_ctr == td_h_active_ctr_max)&&(total_stuffing_ctr != total_stuffing_req_reg - 1)&&(total_stuffing_ctr != total_stuffing_req_reg))
+                         )
+                        begin
+                          next_state = FS;
+                        end
+                      else if (
+                               ((max_stuffing_reg == 'b1)&& (((tu_vld_data_ctr_reg == td_tu_vld_data_size_min - 'b1) && !alternate_up_flag)||((tu_vld_data_ctr_reg == td_tu_vld_data_size_min ) && alternate_up_flag))&& h_active_ctr_reg != td_h_active_ctr_max - 'b1)
+                               || ((h_active_ctr == td_h_active_ctr_max)&&(total_stuffing_ctr == total_stuffing_req_reg - 1))
+                              ) 
+                        begin
+                          next_state = FE;
+                        end
+                      else if (((h_active_ctr == td_h_active_ctr_max)&&(total_stuffing_ctr == total_stuffing_req_reg))&& 
+                               !((v_active_ctr_reg == td_v_active_ctr_max)&&(td_scheduler_start_reg == 'b0)))
+                        begin
+                          next_state = BS;
+                        end                        
+                      else if((h_active_ctr == td_h_active_ctr_max)&&(total_stuffing_ctr == total_stuffing_req_reg) 
+                               &&(v_active_ctr_reg == td_v_active_ctr_max)&&(td_scheduler_start_reg == 'b0))
+                        begin
+                          next_state = IDLE;
+                        end
+                      else
+                        begin
+                          next_state = ACTIVE_VLD;
+                        end     
+                        */                   
+
+                 
+
+///*
 
                       if((h_active_ctr_reg != td_h_active_ctr_max-1)&&(total_stuffing_ctr_reg == total_stuffing_req_reg)&&(h_active_ctr_reg != td_h_active_ctr_max))
                       begin
@@ -542,10 +580,10 @@ always @ (*)
                       sched_blank_en_lane2        = 'b0;
                       sched_blank_en_lane3        = 'b0;
     //-------------------------------------------------------------------//                     
-                      sched_idle_en_lane0         = 'b1;
-                      sched_idle_en_lane1         = 'b1;
-                      sched_idle_en_lane2         = 'b1;
-                      sched_idle_en_lane3         = 'b1;    
+                      //sched_idle_en_lane0         = 'b1;
+                      //sched_idle_en_lane1         = 'b1;
+                      //sched_idle_en_lane2         = 'b1;
+                      //sched_idle_en_lane3         = 'b1;    
     //-------------------------------------------------------------------//
                       sched_stream_idle_sel_lane0_comb = 'b0;
                       sched_stream_idle_sel_lane1_comb = 'b0;
@@ -580,10 +618,10 @@ always @ (*)
                       sched_blank_en_lane2        = 'b0;
                       sched_blank_en_lane3        = 'b0;
     //-------------------------------------------------------------------//                    
-                      sched_idle_en_lane0         = 'b0; 
-                      sched_idle_en_lane1         = 'b0;
-                      sched_idle_en_lane2         = 'b0;
-                      sched_idle_en_lane3         = 'b0;    
+                      //sched_idle_en_lane0         = 'b0; //!! ==========================================***+++***+++***+++***+++***+++___________________
+                      //sched_idle_en_lane1         = 'b0;
+                      //sched_idle_en_lane2         = 'b0;
+                      //sched_idle_en_lane3         = 'b0;    
     //-------------------------------------------------------------------//
                       sched_stream_idle_sel_lane0_comb = 'b0;
                       sched_stream_idle_sel_lane1_comb = 'b0;
@@ -630,10 +668,10 @@ always @ (*)
                           sched_blank_en_lane2        = 'b0;
                           sched_blank_en_lane3        = 'b0;
     //------------------------------idle_pattern-------------------------//                          
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b1;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+                          //sched_idle_en_lane0         = 'b0;
+                          //sched_idle_en_lane1         = 'b1;
+                          //sched_idle_en_lane2         = 'b1;
+                          //sched_idle_en_lane3         = 'b1;
     //------------------------------stream_idle_mux----------------------//                      
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b0;
@@ -647,10 +685,10 @@ always @ (*)
                           sched_blank_en_lane2        = 'b0;
                           sched_blank_en_lane3        = 'b0;
                           
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+                          //sched_idle_en_lane0         = 'b0;
+                          //sched_idle_en_lane1         = 'b0;
+                          //sched_idle_en_lane2         = 'b1;
+                          //sched_idle_en_lane3         = 'b1;
                       
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b01;
@@ -664,10 +702,10 @@ always @ (*)
                           sched_blank_en_lane2        = 'b1;
                           sched_blank_en_lane3        = 'b1;                        
                         
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b0;
-                          sched_idle_en_lane3         = 'b0;
+                          //sched_idle_en_lane0         = 'b0;
+                          //sched_idle_en_lane1         = 'b0;
+                          //sched_idle_en_lane2         = 'b0;
+                          //sched_idle_en_lane3         = 'b0;
                       
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b01;
@@ -745,10 +783,10 @@ always @ (*)
                           sched_blank_en_lane2        = 'b0;
                           sched_blank_en_lane3        = 'b0;
                           // idle_pattern
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b1;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+                          //sched_idle_en_lane0         = 'b0;
+                          //sched_idle_en_lane1         = 'b1;
+                          //sched_idle_en_lane2         = 'b1;
+                          //sched_idle_en_lane3         = 'b1;
                           // stream_idle_mux
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b0;
@@ -762,10 +800,10 @@ always @ (*)
                           sched_blank_en_lane2        = 'b0;
                           sched_blank_en_lane3        = 'b0;
                           
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+                          //sched_idle_en_lane0         = 'b0;
+                          //sched_idle_en_lane1         = 'b0;
+                          //sched_idle_en_lane2         = 'b1;
+                          //sched_idle_en_lane3         = 'b1;
                       
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b01;
@@ -779,10 +817,10 @@ always @ (*)
                           sched_blank_en_lane2        = 'b1;
                           sched_blank_en_lane3        = 'b1;                        
                         
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b0;
-                          sched_idle_en_lane3         = 'b0;
+                          //sched_idle_en_lane0         = 'b0;
+                          //sched_idle_en_lane1         = 'b0;
+                          //sched_idle_en_lane2         = 'b0;
+                          //sched_idle_en_lane3         = 'b0;
                       
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b01;
@@ -852,10 +890,10 @@ always @ (*)
                           sched_blank_en_lane2        = 'b0;
                           sched_blank_en_lane3        = 'b0;
                           // idle_pattern
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b1;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+                          //sched_idle_en_lane0         = 'b0;
+                          //sched_idle_en_lane1         = 'b1;
+                          //sched_idle_en_lane2         = 'b1;
+                          //sched_idle_en_lane3         = 'b1;
                           // stream_idle_mux
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b0;
@@ -869,10 +907,10 @@ always @ (*)
                           sched_blank_en_lane2        = 'b0;
                           sched_blank_en_lane3        = 'b0;
                           
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+                          //sched_idle_en_lane0         = 'b0;
+                          //sched_idle_en_lane1         = 'b0;
+                          //sched_idle_en_lane2         = 'b1;
+                          //sched_idle_en_lane3         = 'b1;
                       
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b01;
@@ -886,10 +924,10 @@ always @ (*)
                           sched_blank_en_lane2        = 'b1;
                           sched_blank_en_lane3        = 'b1;                        
                         
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b0;
-                          sched_idle_en_lane3         = 'b0;
+                          //sched_idle_en_lane0         = 'b0;
+                          //sched_idle_en_lane1         = 'b0;
+                          //sched_idle_en_lane2         = 'b0;
+                          //sched_idle_en_lane3         = 'b0;
                       
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b01;
@@ -953,10 +991,10 @@ always @ (*)
                           sched_blank_en_lane2        = 'b0;
                           sched_blank_en_lane3        = 'b0;
                           // idle_pattern
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b1;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+                          //sched_idle_en_lane0         = 'b0;
+                          //sched_idle_en_lane1         = 'b1;
+                          //sched_idle_en_lane2         = 'b1;
+                          //sched_idle_en_lane3         = 'b1;
                           // stream_idle_mux
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b0;
@@ -970,10 +1008,10 @@ always @ (*)
                           sched_blank_en_lane2        = 'b0;
                           sched_blank_en_lane3        = 'b0;
                           
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+                          //sched_idle_en_lane0         = 'b0;
+                          //sched_idle_en_lane1         = 'b0;
+                          //sched_idle_en_lane2         = 'b1;
+                          //sched_idle_en_lane3         = 'b1;
                       
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b01;
@@ -987,10 +1025,10 @@ always @ (*)
                           sched_blank_en_lane2        = 'b1;
                           sched_blank_en_lane3        = 'b1;                        
                         
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b0;
-                          sched_idle_en_lane3         = 'b0;
+                          //sched_idle_en_lane0         = 'b0;
+                          //sched_idle_en_lane1         = 'b0;
+                          //sched_idle_en_lane2         = 'b0;
+                          //sched_idle_en_lane3         = 'b0;
                       
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b01;
@@ -1056,11 +1094,7 @@ always @ (*)
                           sched_blank_en_lane1        = 'b0;
                           sched_blank_en_lane2        = 'b0;
                           sched_blank_en_lane3        = 'b0;
-                          // idle_pattern
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b1;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+
                           // stream_idle_mux
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b0;
@@ -1073,11 +1107,7 @@ always @ (*)
                           sched_blank_en_lane1        = 'b1;
                           sched_blank_en_lane2        = 'b0;
                           sched_blank_en_lane3        = 'b0;
-                          
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+
                       
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b01;
@@ -1090,11 +1120,6 @@ always @ (*)
                           sched_blank_en_lane1        = 'b1;
                           sched_blank_en_lane2        = 'b1;
                           sched_blank_en_lane3        = 'b1;                        
-                        
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b0;
-                          sched_idle_en_lane3         = 'b0;
                       
                           sched_stream_idle_sel_lane0_comb = 'b01;
                           sched_stream_idle_sel_lane1_comb = 'b01;
@@ -1167,11 +1192,7 @@ always @ (*)
                           sched_stream_en_lane1       = 'b0;
                           sched_stream_en_lane2       = 'b0;
                           sched_stream_en_lane3       = 'b0;
-                          // idle_pattern
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b1;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+
                           // stream_idle_mux
                           sched_stream_idle_sel_lane0_comb = 'b10;
                           sched_stream_idle_sel_lane1_comb = 'b0;
@@ -1186,11 +1207,6 @@ always @ (*)
                           sched_stream_en_lane1       = 'b1;
                           sched_stream_en_lane2       = 'b0;
                           sched_stream_en_lane3       = 'b0;
-                          
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
                  
                           sched_stream_idle_sel_lane0_comb = 'b10;
                           sched_stream_idle_sel_lane1_comb = 'b10;
@@ -1205,11 +1221,6 @@ always @ (*)
                           sched_stream_en_lane1       = 'b1;
                           sched_stream_en_lane2       = 'b1;
                           sched_stream_en_lane3       = 'b1;                    
-                        
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b0;
-                          sched_idle_en_lane3         = 'b0;
                       
                           sched_stream_idle_sel_lane0_comb = 'b10;
                           sched_stream_idle_sel_lane1_comb = 'b10;
@@ -1274,11 +1285,7 @@ always @ (*)
                           sched_stream_en_lane1       = 'b0;
                           sched_stream_en_lane2       = 'b0;
                           sched_stream_en_lane3       = 'b0;
-                          // idle_pattern
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b1;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+
                           // stream_idle_mux
                           sched_stream_idle_sel_lane0_comb = 'b10;
                           sched_stream_idle_sel_lane1_comb = 'b0;
@@ -1294,10 +1301,6 @@ always @ (*)
                           sched_stream_en_lane2       = 'b0;
                           sched_stream_en_lane3       = 'b0;
                           
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
                       
                           sched_stream_idle_sel_lane0_comb = 'b10;
                           sched_stream_idle_sel_lane1_comb = 'b10;
@@ -1313,11 +1316,6 @@ always @ (*)
                           sched_stream_en_lane2       = 'b1;
                           sched_stream_en_lane3       = 'b1;                    
                         
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b0;
-                          sched_idle_en_lane3         = 'b0;
-                      
                           sched_stream_idle_sel_lane0_comb = 'b10;
                           sched_stream_idle_sel_lane1_comb = 'b10;
                           sched_stream_idle_sel_lane2_comb = 'b10;
@@ -1357,11 +1355,7 @@ always @ (*)
                           sched_stream_en_lane1       = 'b0;
                           sched_stream_en_lane2       = 'b0;
                           sched_stream_en_lane3       = 'b0;
-                          // idle_pattern
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b1;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+
                           // stream_idle_mux
                           sched_stream_idle_sel_lane0_comb = 'b10;
                           sched_stream_idle_sel_lane1_comb = 'b0;
@@ -1377,10 +1371,6 @@ always @ (*)
                           sched_stream_en_lane2       = 'b0;
                           sched_stream_en_lane3       = 'b0;
                           
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
                       
                           sched_stream_idle_sel_lane0_comb = 'b10;
                           sched_stream_idle_sel_lane1_comb = 'b10;
@@ -1395,11 +1385,6 @@ always @ (*)
                           sched_stream_en_lane1       = 'b1;
                           sched_stream_en_lane2       = 'b1;
                           sched_stream_en_lane3       = 'b1;                    
-                        
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b0;
-                          sched_idle_en_lane3         = 'b0;
                       
                           sched_stream_idle_sel_lane0_comb = 'b10;
                           sched_stream_idle_sel_lane1_comb = 'b10;
@@ -1440,11 +1425,7 @@ always @ (*)
                           sched_stream_en_lane1       = 'b0;
                           sched_stream_en_lane2       = 'b0;
                           sched_stream_en_lane3       = 'b0;
-                          // idle_pattern
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b1;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+
                           // stream_idle_mux
                           sched_stream_idle_sel_lane0_comb = 'b10;
                           sched_stream_idle_sel_lane1_comb = 'b0;
@@ -1458,11 +1439,7 @@ always @ (*)
                           sched_stream_en_lane1       = 'b1;
                           sched_stream_en_lane2       = 'b0;
                           sched_stream_en_lane3       = 'b0;
-                          //------------------------------//
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b1;
-                          sched_idle_en_lane3         = 'b1;
+
                           //------------------------------//
                           sched_stream_idle_sel_lane0_comb = 'b10;
                           sched_stream_idle_sel_lane1_comb = 'b10;
@@ -1476,11 +1453,7 @@ always @ (*)
                           sched_stream_en_lane1       = 'b1;
                           sched_stream_en_lane2       = 'b1;
                           sched_stream_en_lane3       = 'b1;                    
-                          //-------------------------------//
-                          sched_idle_en_lane0         = 'b0;
-                          sched_idle_en_lane1         = 'b0;
-                          sched_idle_en_lane2         = 'b0;
-                          sched_idle_en_lane3         = 'b0;
+
                           //-------------------------------//
                           sched_stream_idle_sel_lane0_comb = 'b10;
                           sched_stream_idle_sel_lane1_comb = 'b10;
@@ -1532,10 +1505,7 @@ always @ (*)
                       sched_blank_en_lane2        = 'b0;
                       sched_blank_en_lane3        = 'b0;
                       //------------------------------// 
-                      sched_idle_en_lane0         = 'b1;
-                      sched_idle_en_lane1         = 'b1;
-                      sched_idle_en_lane2         = 'b1;
-                      sched_idle_en_lane3         = 'b1;    
+  
                       //------------------------------//
                       sched_stream_idle_sel_lane0_comb = 'b0;
                       sched_stream_idle_sel_lane1_comb = 'b0;

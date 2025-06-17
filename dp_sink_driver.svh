@@ -37,6 +37,7 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
             end
 
             // Drive the values to the interface according to the operation
+
             @(posedge dp_sink_vif.clk_AUX);
             case (stim_seq_item.sink_operation)
                 Reset: begin
@@ -47,12 +48,23 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
                 Ready: begin
                     // HPD operation
                     `uvm_info("DP_SINK_DRIVER", $sformatf("ACTIVE SINK"), UVM_MEDIUM);
-                    dp_sink_vif.Active(stim_seq_item.AUX_START_STOP, stim_seq_item.AUX_IN_OUT, stim_seq_item.PHY_Instruct, 
-                                       stim_seq_item.PHY_ADJ_BW, stim_seq_item.PHY_ADJ_LC, stim_seq_item.PHY_Instruct_VLD,
-                                       stim_seq_item.ISO_symbols_lane0, stim_seq_item.ISO_symbols_lane1, 
-                                       stim_seq_item.ISO_symbols_lane2, stim_seq_item.ISO_symbols_lane3,
-                                       stim_seq_item.Control_sym_flag_lane0, stim_seq_item.Control_sym_flag_lane1,
-                                       stim_seq_item.Control_sym_flag_lane2, stim_seq_item.Control_sym_flag_lane3);
+                    fork
+                        begin
+                            dp_sink_vif.Active(stim_seq_item.AUX_START_STOP, stim_seq_item.AUX_IN_OUT, stim_seq_item.PHY_Instruct, 
+                                        stim_seq_item.PHY_ADJ_BW, stim_seq_item.PHY_ADJ_LC, stim_seq_item.PHY_Instruct_VLD);
+                        end
+                        begin
+                            case (stim_seq_item.Final_BW)
+                                BW_RBR:  @(posedge dp_sink_vif.clk_RBR);
+                                BW_HBR:  @(posedge dp_sink_vif.clk_HBR);
+                                BW_HBR2: @(posedge dp_sink_vif.clk_HBR2);
+                                BW_HBR3: @(posedge dp_sink_vif.clk_HBR3);
+                                default: @(posedge dp_sink_vif.clk_RBR);
+                            endcase
+                        dp_sink_vif.ISO_sink(stim_seq_item.Control_sym_flag_lane0, stim_seq_item.Control_sym_flag_lane1, stim_seq_item.Control_sym_flag_lane2, stim_seq_item.Control_sym_flag_lane3,
+                                        stim_seq_item.ISO_symbols_lane0, stim_seq_item.ISO_symbols_lane1, stim_seq_item.ISO_symbols_lane2, stim_seq_item.ISO_symbols_lane3);                   
+                        end
+                    join
                     if (stim_seq_item.AUX_START_STOP) begin
                         stim_seq_item.aux_in_out.push_back(stim_seq_item.AUX_IN_OUT); // Store the AUX_IN_OUT values while the AUX_START_STOP is high
                     end
@@ -78,9 +90,41 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
                         `uvm_error("DP_SINK_DRIVER", "Unsupported operation in sink transaction")
                     end
             endcase
-
-            // Send response back properly via seq_item_port
             @(negedge dp_sink_vif.clk_AUX);
+            // Send response back properly via seq_item_port
+            // fork
+            //     begin
+                    
+            //     end
+            //     begin
+            //         case (stim_seq_item.Final_BW)
+            //             BW_RBR:  @(posedge dp_sink_vif.clk_RBR);
+            //             BW_HBR:  @(posedge dp_sink_vif.clk_HBR);
+            //             BW_HBR2: @(posedge dp_sink_vif.clk_HBR2);
+            //             BW_HBR3: @(posedge dp_sink_vif.clk_HBR3);
+            //             default: @(posedge dp_sink_vif.clk_RBR);
+            //         endcase
+            //         case (stim_seq_item.sink_operation)
+            //             Reset: begin
+            //                 // Reset operation
+            //                 `uvm_info("DP_SINK_DRIVER", $sformatf("NOT ACTIVE SINK"), UVM_MEDIUM);
+            //                 dp_sink_vif.SINK_Reset();
+            //             end
+            //             Ready: begin
+            //                 // HPD operation
+            //                 `uvm_info("DP_SINK_DRIVER", $sformatf("ACTIVE SINK"), UVM_MEDIUM);
+            //                 dp_sink_vif.ISO_sink(stim_seq_item.Control_sym_flag_lane0, stim_seq_item.Control_sym_flag_lane1, stim_seq_item.Control_sym_flag_lane2, stim_seq_item.Control_sym_flag_lane3,
+            //                                     stim_seq_item.ISO_symbols_lane0, stim_seq_item.ISO_symbols_lane1, stim_seq_item.ISO_symbols_lane2, stim_seq_item.ISO_symbols_lane3);                   
+            //             end
+            //             default: 
+            //                 begin
+            //                     // dp_sink_vif = null; // Set the interface to null if the operation is not supported
+            //                     `uvm_warning("DP_SINK_DRIVER", "Unknown sink_operation type.")
+            //                     `uvm_error("DP_SINK_DRIVER", "Unsupported operation in sink transaction")
+            //                 end
+            //         endcase
+            //     end
+            // join
             seq_item_port.item_done(stim_seq_item);
             `uvm_info("run_phase", stim_seq_item.convert2string(), UVM_HIGH);
         end

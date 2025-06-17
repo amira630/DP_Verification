@@ -8,6 +8,9 @@ class dp_source_env extends uvm_env;
     dp_tl_coverage tl_cov;
     dp_sink_coverage sink_cov;
 
+    virtual dp_ref_if ref_vif;
+    dp_source_config dp_source_cfg;
+
     function new(string name = "dp_source_env", uvm_component parent = null);
         super.new(name, parent);
     endfunction //new()
@@ -21,6 +24,10 @@ class dp_source_env extends uvm_env;
         ref_model = dp_source_ref_iso::type_id::create("ref_model", this);
         tl_cov = dp_tl_coverage::type_id::create("tl_cov", this);
         sink_cov = dp_sink_coverage::type_id::create("sink_cov", this);
+
+        `uvm_info("ENV", "Trying to get CFG now!", UVM_MEDIUM);
+        if (!uvm_config_db #(dp_source_config)::get(this, "", "CFG", dp_source_cfg))
+            `uvm_fatal("build_phase","Unable to get configuration object in TL Agent");
     endfunction   
         
     function void connect_phase(uvm_phase phase);
@@ -53,6 +60,9 @@ class dp_source_env extends uvm_env;
 
         // Sink Agent → Reference Model
         // sink_agt.agt_ap.connect(ref_model.sink_in_port);
+
+        ref_model.ref_vif = dp_source_cfg.dp_ref_vif;            // added
+        sb.ref_vif = dp_source_cfg.dp_ref_vif;
 
     endfunction
 endclass //className extends superClass

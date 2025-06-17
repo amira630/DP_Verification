@@ -6,5 +6,6 @@ add wave /top/*
 add wave -group DUT /top/DUT/*
 add wave -group TL_Interface /top/tl_if/*
 add wave -group SINK_Interface /top/sink_if/*
+add wave -group REF_Interface /top/ref_if/*
 
 run -all

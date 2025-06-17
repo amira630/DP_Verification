@@ -6,6 +6,7 @@ class dp_source_config extends uvm_object;
     // Virtual Interfaces
     virtual dp_tl_if dp_tl_vif;
     virtual dp_sink_if dp_sink_vif;
+    virtual dp_ref_if dp_ref_vif;
 
     function new(string name = "dp_source_config");
         super.new(name);

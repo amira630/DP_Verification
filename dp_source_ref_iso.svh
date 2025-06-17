@@ -15,16 +15,18 @@ class dp_source_ref_iso extends uvm_component;
 
     // Transaction variables for output of Reference model
     dp_ref_transaction expected_transaction;
-    // dp_sink_sequence_item sink_item;
     dp_tl_sequence_item tl_item;
+
+    virtual dp_ref_if ref_vif;
     
     iso_op_code cs; // Current and next state variables for the reference model
     iso_idle_code cs_0, cs_1, cs_2, cs_3; // Current and next state variables for the IDLE pattern
     iso_TU_code cs_0_TU, cs_1_TU, cs_2_TU, cs_3_TU; // Current and next state variables for the Transfer Unit
 
     bit ready; // for when ISO is ready to transition from IDLE to actual stream transmission
-    bit BS_flag, SR_flag, BF_flag, MSA_done, FS_flag, FE_flag, calc_flag, entered; // Flags for ready and busy states
-    
+    bit BF_flag, MSA_done, FS_flag, FE_flag, calc_flag, entered; // Flags for ready and busy states
+    bit BS_flag_0, BS_flag_1, BS_flag_2, BS_flag_3, SR_flag_0, SR_flag_1, SR_flag_2, SR_flag_3, BF_flag_0, BF_flag_1, BF_flag_2, BF_flag_3;
+
     int counter, counter_0, counter_SR_0, counter_1, counter_SR_1, counter_2, counter_SR_2, counter_3, counter_SR_3, count_MSA_0, count_MSA_1, count_MSA_2, count_MSA_3; // Reset MSA counters to initial values; // Counters for the number of symbols sent
     int count_VBLANK, count_HBLANK_ACTIVE, count_HACTIVE; // Counter for the number of VBLANK  and HBLANK symbols sent
     
@@ -33,6 +35,30 @@ class dp_source_ref_iso extends uvm_component;
     logic [7:0] BLUE_8 [$];  logic [15:0] BLUE_16 [$];
 
     bit [15:0] RED, GREEN, BLUE; // Variables to store pixel data
+
+    // Pixel clock and link parameters
+    logic [23:0] Mvid_q[$];        // Replaces logic [23:0] Mvid
+    logic [23:0] Nvid_q[$];        // Replaces logic [23:0] Nvid
+
+    // Timing parameters
+    logic [15:0] HTotal_q[$];
+    logic [15:0] VTotal_q[$];
+    logic [15:0] HStart_q[$];
+    logic [15:0] VStart_q[$];
+    logic [15:0] HWidth_q[$];
+    logic [15:0] VHeight_q[$];
+
+    // Sync polarities
+    logic HSP_q[$];               // Replaces logic HSP
+    logic VSP_q[$];               // Replaces logic VSP
+
+    // Sync widths
+    logic [14:0] HSW_q[$];
+    logic [14:0] VSW_q[$];
+
+    // Miscellaneous
+    logic [7:0] MISC0_q[$];
+    logic [7:0] MISC1_q[$];
 
     ////////// Variables to store Timing Parameters //////////////////
     logic [15:0] hactive_period;
@@ -89,48 +115,82 @@ class dp_source_ref_iso extends uvm_component;
         `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
 
         forever begin
-            if ((tl_item.rst_n && tl_item.SPM_ISO_start && !entered)) begin // if reset is off and LT is passed
+            if(!tl_item.MS_rst_n) begin // Reset
+                `uvm_info(get_type_name(), "Reset — initializing internal state", UVM_MEDIUM)
+                expected_transaction.ISO_symbols_lane0 ='b0;
+                expected_transaction.ISO_symbols_lane1 ='b0;
+                expected_transaction.ISO_symbols_lane2 ='b0;
+                expected_transaction.ISO_symbols_lane3 ='b0;
+                expected_transaction.Control_sym_flag_lane0 ='b0;
+                expected_transaction.Control_sym_flag_lane1 ='b0;
+                expected_transaction.Control_sym_flag_lane2 ='b0;
+                expected_transaction.Control_sym_flag_lane3 ='b0;
+                expected_transaction.WFULL = 1'b0; // Reset WFULL flag
+                calc_flag = 0;
+                cs = ISO_IDLE; // Reset state to ISO_IDLE
+                cs_0 = ISO_SR; cs_1 = ISO_SR; cs_2 = ISO_SR; cs_3 = ISO_SR; 
+                cs_0_TU = ISO_TU_PIXELS; cs_1_TU = ISO_TU_PIXELS; cs_2_TU = ISO_TU_PIXELS; cs_3_TU = ISO_TU_PIXELS;
+                counter_0 = 0; counter_SR_0 = 0; // Reset state and counters to initial values
+                counter_1 = 0; counter_SR_1 = 0; // Reset state and counters to initial values
+                counter_2 = 0; counter_SR_2 = 0; // Reset state and counters to initial values
+                counter_3 = 0; counter_SR_3 = 0; // Reset state and counters to initial values
+                count_MSA_0 = 0; count_MSA_1 = 0; count_MSA_2 = 0; count_MSA_3 = 0; // Reset MSA counters to initial values
+                count_VBLANK = 0; count_HBLANK_ACTIVE =0; count_HACTIVE =0; // Reset VBLANK and HBLANK counters to initial values
+                RED_8.delete(); RED_16.delete(); GREEN_8.delete(); GREEN_16.delete(); BLUE_8.delete(); BLUE_8.delete(); // Clear the pixel queue
+                Mvid_q.delete(); Nvid_q.delete(); HTotal_q.delete(); VTotal_q.delete(); HStart_q.delete();
+                VStart_q.delete(); HSP_q.delete(); HSW_q.delete(); VSP_q.delete(); VSW_q.delete();
+                HWidth_q.delete(); VHeight_q.delete(); MISC0_q.delete(); MISC1_q.delete();
+                `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
+                ref_vif.ref_expected_ISO_symbols_lane0 = expected_transaction.ISO_symbols_lane0;
+                ref_vif.ref_expected_ISO_symbols_lane1 = expected_transaction.ISO_symbols_lane1;
+                ref_vif.ref_expected_ISO_symbols_lane2 = expected_transaction.ISO_symbols_lane2;
+                ref_vif.ref_expected_ISO_symbols_lane3 = expected_transaction.ISO_symbols_lane3;
+
+                ref_vif.ref_expected_Control_sym_flag_lane0 = expected_transaction.Control_sym_flag_lane0;
+                ref_vif.ref_expected_Control_sym_flag_lane1 = expected_transaction.Control_sym_flag_lane1;
+                ref_vif.ref_expected_Control_sym_flag_lane2 = expected_transaction.Control_sym_flag_lane2;
+                ref_vif.ref_expected_Control_sym_flag_lane3 = expected_transaction.Control_sym_flag_lane3;
+                entered = 0;
+                send_expected_to_scoreboard();
+                //break;
+            end
+            else if (tl_item.SPM_ISO_start && tl_item.MS_rst_n) begin // if reset is off and LT is passed
                 entered = 1'b1; // Set entered flag to indicate that the reference model has entered the ISO operation  
-                if(!calc_flag) begin
+                if(tl_item.SPM_MSA_VLD) begin
+                    Mvid_q.push_back(tl_item.SPM_Full_MSA[23:0]);
+                    Nvid_q.push_back(tl_item.SPM_Full_MSA[47:24]);
+                    HTotal_q.push_back(tl_item.SPM_Full_MSA[63:48]);
+                    VTotal_q.push_back(tl_item.SPM_Full_MSA[79:64]);
+                    HStart_q.push_back(tl_item.SPM_Full_MSA[95:80]);
+                    VStart_q.push_back(tl_item.SPM_Full_MSA[111:96]);
+                    HSP_q.push_back(tl_item.SPM_Full_MSA[112]);
+                    HSW_q.push_back(tl_item.SPM_Full_MSA[127:113]);
+                    VSP_q.push_back(tl_item.SPM_Full_MSA[128]);
+                    VSW_q.push_back(tl_item.SPM_Full_MSA[143:129]);
+                    HWidth_q.push_back(tl_item.SPM_Full_MSA[159:144]);
+                    VHeight_q.push_back(tl_item.SPM_Full_MSA[175:160]);
+                    MISC0_q.push_back(tl_item.SPM_Full_MSA[183:176]);
+                    MISC1_q.push_back(tl_item.SPM_Full_MSA[191:184]);
                     calculate_timing_parameters( tl_item, hactive_period, hblank_period, vblank_period, htotal_period, valid_symbols_integer, valid_symbols_fraction, tu_alternate_up, tu_alternate_down, alternate_valid);
+                    Mvid_q.delete(0); Nvid_q.delete(0); HTotal_q.delete(0); VTotal_q.delete(0); HStart_q.delete(0);
+                    VStart_q.delete(0); HSP_q.delete(0); HSW_q.delete(0); VSP_q.delete(0); VSW_q.delete(0);
+                    HWidth_q.delete(0); VHeight_q.delete(0); MISC0_q.delete(0); MISC1_q.delete(0);
                     `uvm_info(get_type_name(), "Calculated timing parameters for expected transaction", UVM_LOW)
-                    calc_flag = 1;
                 end
                 `uvm_info(get_type_name(), "Calling generate_expected_transaction()", UVM_LOW)
                 if(!tl_item.MS_rst_n)
                     expected_transaction.WFULL = 1'b0;
                 generate_expected_transaction(tl_item); // Generate expected transaction based on TL item
-                if(!tl_item.rst_n) begin
-                    entered = 1'b0; // Reset entered flag if reset is active 
-                    expected_transaction.ISO_symbols_lane0 ='b0;
-                    expected_transaction.ISO_symbols_lane1 ='b0;
-                    expected_transaction.ISO_symbols_lane2 ='b0;
-                    expected_transaction.ISO_symbols_lane3 ='b0;
-                    expected_transaction.Control_sym_flag_lane0 ='b0;
-                    expected_transaction.Control_sym_flag_lane1 ='b0;
-                    expected_transaction.Control_sym_flag_lane2 ='b0;
-                    expected_transaction.Control_sym_flag_lane3 ='b0;
-                    expected_transaction.WFULL = 1'b0; // Reset WFULL flag
-                    cs = ISO_IDLE; // Reset state to ISO_IDLE
-                    cs_0 = ISO_SR; cs_1 = ISO_SR; cs_2 = ISO_SR; cs_3 = ISO_SR; 
-                    cs_0_TU = ISO_TU_PIXELS; cs_1_TU = ISO_TU_PIXELS; cs_2_TU = ISO_TU_PIXELS; cs_3_TU = ISO_TU_PIXELS;
-                    counter_0 = 0; counter_SR_0 = 0; // Reset state and counters to initial values
-                    counter_1 = 0; counter_SR_1 = 0; // Reset state and counters to initial values
-                    counter_2 = 0; counter_SR_2 = 0; // Reset state and counters to initial values
-                    counter_3 = 0; counter_SR_3 = 0; // Reset state and counters to initial values
-                    count_MSA_0 = 0; count_MSA_1 = 0; count_MSA_2 = 0; count_MSA_3 = 0;// Reset MSA counters to initial values
-                    count_VBLANK =0; count_HBLANK_ACTIVE =0; count_HACTIVE =0; // Reset VBLANK and HBLANK counters to initial values
-                    RED_8.delete(); RED_16.delete(); GREEN_8.delete(); GREEN_16.delete(); BLUE_8.delete(); BLUE_8.delete(); // Clear the pixel queue
-                    `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
-                    send_expected_to_scoreboard();
-                end
-                else if(!tl_item.SPM_ISO_start) begin
+                if(tl_item.MS_rst_n && !tl_item.SPM_ISO_start) begin
                     ISO_IDLE_PATTERN(tl_item); // Call ISO_IDLE task to handle IDLE state
                 end
+                else if(!tl_item.MS_rst_n) begin
+                    entered = 0;
+                    continue;
+                end
             end
-            else if(!entered || !tl_item.rst_n) begin // LT not passed
-                repeat(5)
-                    `uvm_info(get_type_name(), "Reset or LT not passed — initializing internal state", UVM_MEDIUM)
+            else if (!entered || !tl_item.MS_rst_n) begin
+                `uvm_info(get_type_name(), "LT not passed", UVM_MEDIUM)
                 expected_transaction.ISO_symbols_lane0 ='b0;
                 expected_transaction.ISO_symbols_lane1 ='b0;
                 expected_transaction.ISO_symbols_lane2 ='b0;
@@ -152,13 +212,28 @@ class dp_source_ref_iso extends uvm_component;
                 count_MSA_0 = 0; count_MSA_1 = 0; count_MSA_2 = 0; count_MSA_3 = 0; // Reset MSA counters to initial values
                 count_VBLANK = 0; count_HBLANK_ACTIVE =0; count_HACTIVE =0; // Reset VBLANK and HBLANK counters to initial values
                 RED_8.delete(); RED_16.delete(); GREEN_8.delete(); GREEN_16.delete(); BLUE_8.delete(); BLUE_8.delete(); // Clear the pixel queue
-                repeat(5)    
-                    `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
-                send_expected_to_scoreboard();
-                //break;
+                Mvid_q.delete(); Nvid_q.delete(); HTotal_q.delete(); VTotal_q.delete(); HStart_q.delete();
+                VStart_q.delete(); HSP_q.delete(); HSW_q.delete(); VSP_q.delete(); VSW_q.delete();
+                HWidth_q.delete(); VHeight_q.delete(); MISC0_q.delete(); MISC1_q.delete();
+                `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
+                ref_vif.ref_expected_ISO_symbols_lane0 = expected_transaction.ISO_symbols_lane0;
+                ref_vif.ref_expected_ISO_symbols_lane1 = expected_transaction.ISO_symbols_lane1;
+                ref_vif.ref_expected_ISO_symbols_lane2 = expected_transaction.ISO_symbols_lane2;
+                ref_vif.ref_expected_ISO_symbols_lane3 = expected_transaction.ISO_symbols_lane3;
+
+                ref_vif.ref_expected_Control_sym_flag_lane0 = expected_transaction.Control_sym_flag_lane0;
+                ref_vif.ref_expected_Control_sym_flag_lane1 = expected_transaction.Control_sym_flag_lane1;
+                ref_vif.ref_expected_Control_sym_flag_lane2 = expected_transaction.Control_sym_flag_lane2;
+                ref_vif.ref_expected_Control_sym_flag_lane3 = expected_transaction.Control_sym_flag_lane3;
+                send_expected_to_scoreboard();               
             end
-            else if(tl_item.rst_n && entered && !tl_item.SPM_ISO_start) begin
+            else if(entered && !tl_item.SPM_ISO_start) begin
                 ISO_IDLE_PATTERN(tl_item); // Call ISO_IDLE task to handle IDLE state
+                counter = 0;
+                if(!tl_item.MS_rst_n) begin
+                    entered = 0;
+                    continue;
+                end
             end
             // Wait for the next transaction
             ref_tl_fifo.get(tl_item);
@@ -189,50 +264,86 @@ class dp_source_ref_iso extends uvm_component;
     );
         case (cs)
             ISO_IDLE: begin
-                if (tl_item.SPM_ISO_start && tl_item.MS_DE) begin
-                    case(tl_item.MISC0[7:5])
-                        3'b001: begin // 8bpc
-                            RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
-                            GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
-                            BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
-                        end
-                        3'b100: begin // 16bpc
-                            RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
-                            GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
-                            BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
-                        end
-                    endcase
+                if (tl_item.SPM_ISO_start) begin
+                    if(tl_item.MS_DE) begin
+                        case(MISC0_q[0][7:5])
+                            3'b001: begin // 8bpc
+                                RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
+                                GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
+                                BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
+                            end
+                            3'b100: begin // 16bpc
+                                RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
+                                GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
+                                BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
+                            end
+                        endcase
+                    end
+                    else if (tl_item.SPM_MSA_VLD) begin
+                        Mvid_q.push_back(tl_item.SPM_Full_MSA[23:0]);
+                        Nvid_q.push_back(tl_item.SPM_Full_MSA[47:24]);
+                        HTotal_q.push_back(tl_item.SPM_Full_MSA[63:48]);
+                        VTotal_q.push_back(tl_item.SPM_Full_MSA[79:64]);
+                        HStart_q.push_back(tl_item.SPM_Full_MSA[95:80]);
+                        VStart_q.push_back(tl_item.SPM_Full_MSA[111:96]);
+                        HSP_q.push_back(tl_item.SPM_Full_MSA[112]);
+                        HSW_q.push_back(tl_item.SPM_Full_MSA[127:113]);
+                        VSP_q.push_back(tl_item.SPM_Full_MSA[128]);
+                        VSW_q.push_back(tl_item.SPM_Full_MSA[143:129]);
+                        HWidth_q.push_back(tl_item.SPM_Full_MSA[159:144]);
+                        VHeight_q.push_back(tl_item.SPM_Full_MSA[175:160]);
+                        MISC0_q.push_back(tl_item.SPM_Full_MSA[183:176]);
+                        MISC1_q.push_back(tl_item.SPM_Full_MSA[191:184]);
+                    end
                 end
                 cs = ISO_VBLANK; // Transition to VBLANK state
                 ISO_IDLE_PATTERN(tl_item); // Call ISO_IDLE task to handle IDLE state
                 counter = 0; // Reset counter after sending IDLE state for the current video
                 cs_0_TU = ISO_TU_PIXELS; cs_1_TU = ISO_TU_PIXELS; cs_2_TU = ISO_TU_PIXELS; cs_3_TU = ISO_TU_PIXELS;
                 //Optional
-                //counter_SR_0 = 0; // about to start a new video
-                // cs_0 = ISO_SR; 
-                // if(tl_item.ISO_LC == 2'b01) begin
-                //     counter_SR_1 = 0;
-                //     cs_1 = ISO_SR; 
-                // end
-                // else if (tl_item.ISO_LC == 2'b11) begin
-                //     counter_SR_1 = 0; counter_SR_2 = 0; counter_SR_3 = 0;
-                //     cs_1 = ISO_SR; cs_2 = ISO_SR; cs_3 = ISO_SR;
-                // end
+                counter_0 = 0; // about to start a new video
+                cs_0 = ISO_BS; 
+                if(tl_item.ISO_LC == 2'b01) begin
+                    counter_1 = 0;
+                    cs_1 = ISO_BS; 
+                end
+                else if (tl_item.ISO_LC == 2'b11) begin
+                    counter_1 = 0; counter_2 = 0; counter_3 = 0;
+                    cs_1 = ISO_BS; cs_2 = ISO_BS; cs_3 = ISO_BS;
+                end
             end 
             ISO_VBLANK: begin
-                if (tl_item.SPM_ISO_start && tl_item.MS_DE) begin
-                    case(tl_item.MISC0[7:5])
-                        3'b001: begin // 8bpc
-                            RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
-                            GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
-                            BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
-                        end
-                        3'b100: begin // 16bpc
-                            RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
-                            GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
-                            BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
-                        end
-                    endcase
+                if (tl_item.SPM_ISO_start) begin
+                    if(tl_item.MS_DE) begin
+                        case(MISC0_q[0][7:5])
+                            3'b001: begin // 8bpc
+                                RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
+                                GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
+                                BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
+                            end
+                            3'b100: begin // 16bpc
+                                RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
+                                GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
+                                BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
+                            end
+                        endcase
+                    end
+                    else if (tl_item.SPM_MSA_VLD) begin
+                        Mvid_q.push_back(tl_item.SPM_Full_MSA[23:0]);
+                        Nvid_q.push_back(tl_item.SPM_Full_MSA[47:24]);
+                        HTotal_q.push_back(tl_item.SPM_Full_MSA[63:48]);
+                        VTotal_q.push_back(tl_item.SPM_Full_MSA[79:64]);
+                        HStart_q.push_back(tl_item.SPM_Full_MSA[95:80]);
+                        VStart_q.push_back(tl_item.SPM_Full_MSA[111:96]);
+                        HSP_q.push_back(tl_item.SPM_Full_MSA[112]);
+                        HSW_q.push_back(tl_item.SPM_Full_MSA[127:113]);
+                        VSP_q.push_back(tl_item.SPM_Full_MSA[128]);
+                        VSW_q.push_back(tl_item.SPM_Full_MSA[143:129]);
+                        HWidth_q.push_back(tl_item.SPM_Full_MSA[159:144]);
+                        VHeight_q.push_back(tl_item.SPM_Full_MSA[175:160]);
+                        MISC0_q.push_back(tl_item.SPM_Full_MSA[183:176]);
+                        MISC1_q.push_back(tl_item.SPM_Full_MSA[191:184]);
+                    end
                 end
                 cs = ISO_HBLANK; // Transition to HBLANK state
                 ISO_VBLANK_PATTERN(tl_item); // Call VBLANK task to handle VBLANK state
@@ -241,49 +352,95 @@ class dp_source_ref_iso extends uvm_component;
                 count_VBLANK =0; // Reset VBLANK counter after sending VBLANK symbols for the current video frame
             end 
             ISO_HBLANK: begin
-                if (tl_item.SPM_ISO_start && tl_item.MS_DE) begin
-                    case(tl_item.MISC0[7:5])
-                        3'b001: begin // 8bpc
-                            RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
-                            GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
-                            BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
-                        end
-                        3'b100: begin // 16bpc
-                            RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
-                            GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
-                            BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
-                        end
-                    endcase
+                if (tl_item.SPM_ISO_start) begin
+                    if(tl_item.MS_DE) begin
+                        case(MISC0_q[0][7:5])
+                            3'b001: begin // 8bpc
+                                RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
+                                GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
+                                BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
+                            end
+                            3'b100: begin // 16bpc
+                                RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
+                                GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
+                                BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
+                            end
+                        endcase
+                    end
+                    else if (tl_item.SPM_MSA_VLD) begin
+                        Mvid_q.push_back(tl_item.SPM_Full_MSA[23:0]);
+                        Nvid_q.push_back(tl_item.SPM_Full_MSA[47:24]);
+                        HTotal_q.push_back(tl_item.SPM_Full_MSA[63:48]);
+                        VTotal_q.push_back(tl_item.SPM_Full_MSA[79:64]);
+                        HStart_q.push_back(tl_item.SPM_Full_MSA[95:80]);
+                        VStart_q.push_back(tl_item.SPM_Full_MSA[111:96]);
+                        HSP_q.push_back(tl_item.SPM_Full_MSA[112]);
+                        HSW_q.push_back(tl_item.SPM_Full_MSA[127:113]);
+                        VSP_q.push_back(tl_item.SPM_Full_MSA[128]);
+                        VSW_q.push_back(tl_item.SPM_Full_MSA[143:129]);
+                        HWidth_q.push_back(tl_item.SPM_Full_MSA[159:144]);
+                        VHeight_q.push_back(tl_item.SPM_Full_MSA[175:160]);
+                        MISC0_q.push_back(tl_item.SPM_Full_MSA[183:176]);
+                        MISC1_q.push_back(tl_item.SPM_Full_MSA[191:184]);
+                    end
                 end
                 ISO_HBLANK_PATTERN(tl_item); // Call HBLANK task to handle HBLANK state
                 cs = ISO_ACTIVE;
             end 
             ISO_ACTIVE: begin
-                if (tl_item.SPM_ISO_start && tl_item.MS_DE) begin
-                    case(tl_item.MISC0[7:5])
-                        3'b001: begin // 8bpc
-                            RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
-                            GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
-                            BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
-                        end
-                        3'b100: begin // 16bpc
-                            RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
-                            GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
-                            BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
-                        end
-                    endcase
+                if (tl_item.SPM_ISO_start) begin
+                    if(tl_item.MS_DE) begin
+                        case(MISC0_q[0][7:5])
+                            3'b001: begin // 8bpc
+                                RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
+                                GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
+                                BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
+                            end
+                            3'b100: begin // 16bpc
+                                RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
+                                GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
+                                BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
+                            end
+                        endcase
+                    end
+                    else if (tl_item.SPM_MSA_VLD) begin
+                        Mvid_q.push_back(tl_item.SPM_Full_MSA[23:0]);
+                        Nvid_q.push_back(tl_item.SPM_Full_MSA[47:24]);
+                        HTotal_q.push_back(tl_item.SPM_Full_MSA[63:48]);
+                        VTotal_q.push_back(tl_item.SPM_Full_MSA[79:64]);
+                        HStart_q.push_back(tl_item.SPM_Full_MSA[95:80]);
+                        VStart_q.push_back(tl_item.SPM_Full_MSA[111:96]);
+                        HSP_q.push_back(tl_item.SPM_Full_MSA[112]);
+                        HSW_q.push_back(tl_item.SPM_Full_MSA[127:113]);
+                        VSP_q.push_back(tl_item.SPM_Full_MSA[128]);
+                        VSW_q.push_back(tl_item.SPM_Full_MSA[143:129]);
+                        HWidth_q.push_back(tl_item.SPM_Full_MSA[159:144]);
+                        VHeight_q.push_back(tl_item.SPM_Full_MSA[175:160]);
+                        MISC0_q.push_back(tl_item.SPM_Full_MSA[183:176]);
+                        MISC1_q.push_back(tl_item.SPM_Full_MSA[191:184]);
+                    end
                 end
                 ISO_ACTIVE_PATTERN(tl_item); // Call ACTIVE task to handle ACTIVE state
                 count_HBLANK_ACTIVE++;
                 count_HACTIVE = 0;
-                if(count_HBLANK_ACTIVE < tl_item.VHeight)    // If all lines are done, go back to VBLANK state
+                if(count_HBLANK_ACTIVE < VHeight_q[0])    // If all lines are done, go back to VBLANK state
                     cs = ISO_HBLANK; // Transition to HBLANK state
                 else if(RED_8.size() != 0 || GREEN_8.size() != 0 || BLUE_8.size() != 0 || RED_16.size() != 0 || GREEN_16.size() != 0 || BLUE_16.size() != 0) begin // Start a new frame
                     cs = ISO_VBLANK; // Transition to VBLANK state
                     count_HBLANK_ACTIVE = 0;
+                    // empty queues
+                    Mvid_q.delete(0); Nvid_q.delete(0); HTotal_q.delete(0); VTotal_q.delete(0); HStart_q.delete(0);
+                    VStart_q.delete(0); HSP_q.delete(0); HSW_q.delete(0); VSP_q.delete(0); VSW_q.delete(0);
+                    HWidth_q.delete(0); VHeight_q.delete(0); MISC0_q.delete(0); MISC1_q.delete(0);
                 end 
                 else begin
                     cs = ISO_IDLE;
+                    // empty queues
+                    if ((Mvid_q.size() > 0)) begin
+                        Mvid_q.delete(0); Nvid_q.delete(0); HTotal_q.delete(0); VTotal_q.delete(0); HStart_q.delete(0);
+                        VStart_q.delete(0); HSP_q.delete(0); HSW_q.delete(0); VSP_q.delete(0); VSW_q.delete(0);
+                        HWidth_q.delete(0); VHeight_q.delete(0); MISC0_q.delete(0); MISC1_q.delete(0);
+                    end
                 end
             end
             default: begin
@@ -296,39 +453,65 @@ class dp_source_ref_iso extends uvm_component;
     // This task sends the idle pattern on all 4 lanes 
     task ISO_IDLE_PATTERN(input dp_tl_sequence_item tl_item);
         while(!ready) begin
-            if (!tl_item.rst_n || !tl_item.LT_Pass) begin
+            if (!tl_item.MS_rst_n) begin
+                entered = 0;
                 break; // Exit the loop if reset is active or link training no longer valid so ISO signals are don't cares
             end
-            if(!tl_item.MS_rst_n) begin
-                expected_transaction.WFULL = 1'b0; // Reset WFULL flag
-            end 
-            IDLE_PATTERN(tl_item, counter_SR_0, counter_0, cs_0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call IDLE_PATTERN task to handle IDLE state
-            IDLE_PATTERN(tl_item, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
-            IDLE_PATTERN(tl_item, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
-            IDLE_PATTERN(tl_item, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
+            expected_transaction.WFULL = 1'b0; // Reset WFULL flag
+            IDLE_PATTERN(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, cs_0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call IDLE_PATTERN task to handle IDLE state
+            IDLE_PATTERN(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
+            IDLE_PATTERN(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
+            IDLE_PATTERN(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
             // Send the expected transaction to the scoreboard
             `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
+            ref_vif.ref_expected_ISO_symbols_lane0 = expected_transaction.ISO_symbols_lane0;
+            ref_vif.ref_expected_ISO_symbols_lane1 = expected_transaction.ISO_symbols_lane1;
+            ref_vif.ref_expected_ISO_symbols_lane2 = expected_transaction.ISO_symbols_lane2;
+            ref_vif.ref_expected_ISO_symbols_lane3 = expected_transaction.ISO_symbols_lane3;
+
+            ref_vif.ref_expected_Control_sym_flag_lane0 = expected_transaction.Control_sym_flag_lane0;
+            ref_vif.ref_expected_Control_sym_flag_lane1 = expected_transaction.Control_sym_flag_lane1;
+            ref_vif.ref_expected_Control_sym_flag_lane2 = expected_transaction.Control_sym_flag_lane2;
+            ref_vif.ref_expected_Control_sym_flag_lane3 = expected_transaction.Control_sym_flag_lane3;
             send_expected_to_scoreboard();
             counter++; // Increment the counter for the number of symbols sent
             // Wait for the next transaction
             ref_tl_fifo.get(tl_item);
             `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
-            if(tl_item.MS_DE && tl_item.SPM_ISO_start) begin
-                case(tl_item.MISC0[7:5])
-                    3'b001: begin // 8bpc
-                        RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
-                        GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
-                        BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
-                    end
-                    3'b100: begin // 16bpc
-                        RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
-                        GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
-                        BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
-                    end
-                endcase
+            if (tl_item.SPM_ISO_start && tl_item.MS_rst_n) begin
+                if(tl_item.MS_DE) begin
+                    case(MISC0_q[0][7:5])
+                        3'b001: begin // 8bpc
+                            RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
+                            GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
+                            BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
+                        end
+                        3'b100: begin // 16bpc
+                            RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
+                            GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
+                            BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
+                        end
+                    endcase
+                end
+                else if (tl_item.SPM_MSA_VLD) begin
+                    Mvid_q.push_back(tl_item.SPM_Full_MSA[23:0]);
+                    Nvid_q.push_back(tl_item.SPM_Full_MSA[47:24]);
+                    HTotal_q.push_back(tl_item.SPM_Full_MSA[63:48]);
+                    VTotal_q.push_back(tl_item.SPM_Full_MSA[79:64]);
+                    HStart_q.push_back(tl_item.SPM_Full_MSA[95:80]);
+                    VStart_q.push_back(tl_item.SPM_Full_MSA[111:96]);
+                    HSP_q.push_back(tl_item.SPM_Full_MSA[112]);
+                    HSW_q.push_back(tl_item.SPM_Full_MSA[127:113]);
+                    VSP_q.push_back(tl_item.SPM_Full_MSA[128]);
+                    VSW_q.push_back(tl_item.SPM_Full_MSA[143:129]);
+                    HWidth_q.push_back(tl_item.SPM_Full_MSA[159:144]);
+                    VHeight_q.push_back(tl_item.SPM_Full_MSA[175:160]);
+                    MISC0_q.push_back(tl_item.SPM_Full_MSA[183:176]);
+                    MISC1_q.push_back(tl_item.SPM_Full_MSA[191:184]);
+                end
             end
-            if(tl_item.SPM_ISO_start) begin
-                if(counter < 408) begin // 408 Ls_clks need to go buy for the IDLE pattern to stop sending
+            if(tl_item.SPM_ISO_start && tl_item.MS_rst_n) begin
+                if(counter < 408) begin // 408 Ls_clks need to go by for the IDLE pattern to stop sending
                     ready = 1'b0; // Not ready to stop IDLE pattern
                 end
                 else begin
@@ -336,6 +519,8 @@ class dp_source_ref_iso extends uvm_component;
                 end
             end
             else begin
+                if(!tl_item.MS_rst_n)
+                    entered = 0;
                 counter = 0; // because there is no video stream to countdown to.
                 ready = 1'b0; // Not ready to stop IDLE pattern
             end
@@ -344,6 +529,7 @@ class dp_source_ref_iso extends uvm_component;
 
     task IDLE_PATTERN(
         input dp_tl_sequence_item tl_item, 
+        ref bit SR_flag, BS_flag, BF_flag, 
         ref int counter_SR, counter, // Counters for the number of symbols sent
         ref iso_idle_code cs, // Current and next state variables for the IDLE pattern
         output logic [AUX_DATA_WIDTH-1:0] ISO_symbols_lanex,
@@ -367,7 +553,7 @@ class dp_source_ref_iso extends uvm_component;
                 ISO_symbols_lanex = BS;
                 BS_flag = 1'b1; // Set BS_flag to indicate that a BS symbol has been sent
                 if(BF_flag) begin // if BF has been sent twice
-                    counter_SR++; // To make sure after every 512 BS Control Link Symbol sequences one gets replaced by a SR symbol sequence
+                    counter_SR++; // To make sure after every 511 BS Control Link Symbol sequences one gets replaced by a SR symbol sequence
                     counter++; // Increment the counter for the number of symbols sent
                     cs = ISO_VB_ID; // Transition to VB_ID state
                 end
@@ -389,6 +575,7 @@ class dp_source_ref_iso extends uvm_component;
                         cs = ISO_BS; // Reset count_SR after sending BS and BF symbols
                     end
                 end
+                counter++; // Increment the counter for the number of symbols sent
             end
             ISO_VB_ID:begin
                 Control_sym_flag_lanex = 1'b0;
@@ -414,17 +601,20 @@ class dp_source_ref_iso extends uvm_component;
             ISO_DUMMY:begin
                 Control_sym_flag_lanex = 1'b0;
                 ISO_symbols_lanex = 8'b0; // Dummy symbol for IDLE state
-                if(counter<8188) begin
+                if(counter<8192) begin
                     cs = ISO_DUMMY; // Stay in IDLE state
                     counter++; // Increment the counter for the number of symbols sent
+                    `uvm_info(get_type_name(), $sformatf("INSIDE DUMMY AGAINNNNNNN: Counter = 0x%0d",  counter), UVM_MEDIUM)
                 end
                 else begin
                     counter = 0;
-                    if(counter_SR == 512) begin
+                    if(counter_SR == 511) begin
                         cs = ISO_SR; // Transition to SR state
                     end
-                    else
+                    else begin
+                        `uvm_info(get_type_name(), "ENTER BS AGAINNNNNNN", UVM_MEDIUM)
                         cs = ISO_BS; // Transition to BS state
+                    end
                 end
             end
             default: `uvm_fatal("ISO_STATE_ERROR", "Invalid state in ISO operation")
@@ -433,28 +623,29 @@ class dp_source_ref_iso extends uvm_component;
 
     task ISO_VBLANK_PATTERN(input dp_tl_sequence_item tl_item);
         while(count_VBLANK < vblank_period) begin
-            if (!tl_item.rst_n || !tl_item.LT_Pass) begin
+            if (!tl_item.MS_rst_n) begin
+                entered = 0;
                 break; // Exit the loop if reset is active
             end
             else begin
                 case(tl_item.ISO_LC) // according to the actvie lane count, send VBlank on all active lanes and remain with IDLE pattern on inactive lanes
                     2'b00: begin // // Data transmission on 1 lane
-                        send_vblank_symbols(tl_item, counter_SR_0, counter_0, count_MSA_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
-                        IDLE_PATTERN(tl_item, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
-                        IDLE_PATTERN(tl_item, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
-                        IDLE_PATTERN(tl_item, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state 
+                        send_vblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                        IDLE_PATTERN(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
+                        IDLE_PATTERN(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
+                        IDLE_PATTERN(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state 
                     end
                     2'b01: begin // // Data transmission on 2 lanes
-                        send_vblank_symbols(tl_item, counter_SR_0, counter_0, count_MSA_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_vblank_symbols(tl_item, counter_SR_1, counter_1, count_MSA_1, cs_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
-                        IDLE_PATTERN(tl_item, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
-                        IDLE_PATTERN(tl_item, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state            
+                        send_vblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_vblank_symbols(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, count_MSA_1, cs_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
+                        IDLE_PATTERN(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
+                        IDLE_PATTERN(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state            
                     end
                     2'b11: begin // Data transmission on 4 lanes
-                        send_vblank_symbols(tl_item, counter_SR_0, counter_0, count_MSA_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_vblank_symbols(tl_item, counter_SR_1, counter_1, count_MSA_1, cs_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_vblank_symbols(tl_item, counter_SR_2, counter_2, count_MSA_2, cs_2, tl_item.ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_vblank_symbols(tl_item, counter_SR_3, counter_3, count_MSA_3, cs_3, tl_item.ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call VBLANK_PATTERN task to handle VBLANK state           
+                        send_vblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_vblank_symbols(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, count_MSA_1, cs_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_vblank_symbols(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, count_MSA_2, cs_2, tl_item.ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_vblank_symbols(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, count_MSA_3, cs_3, tl_item.ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call VBLANK_PATTERN task to handle VBLANK state           
                     end
                     default:    // Default case to handle unexpected states
                         `uvm_fatal("ISO_LANE_NUM_ERROR", "Invalid lane number in ISO operation! Lane Count cannot be 3!")
@@ -462,22 +653,49 @@ class dp_source_ref_iso extends uvm_component;
             end
             // Send the expected transaction to the scoreboard
             `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
+            ref_vif.ref_expected_ISO_symbols_lane0 = expected_transaction.ISO_symbols_lane0;
+            ref_vif.ref_expected_ISO_symbols_lane1 = expected_transaction.ISO_symbols_lane1;
+            ref_vif.ref_expected_ISO_symbols_lane2 = expected_transaction.ISO_symbols_lane2;
+            ref_vif.ref_expected_ISO_symbols_lane3 = expected_transaction.ISO_symbols_lane3;
+
+            ref_vif.ref_expected_Control_sym_flag_lane0 = expected_transaction.Control_sym_flag_lane0;
+            ref_vif.ref_expected_Control_sym_flag_lane1 = expected_transaction.Control_sym_flag_lane1;
+            ref_vif.ref_expected_Control_sym_flag_lane2 = expected_transaction.Control_sym_flag_lane2;
+            ref_vif.ref_expected_Control_sym_flag_lane3 = expected_transaction.Control_sym_flag_lane3;
             send_expected_to_scoreboard();
             ref_tl_fifo.get(tl_item);
             `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
-            if(tl_item.MS_DE && tl_item.SPM_ISO_start)begin
-                case(tl_item.MISC0[7:5])
-                    3'b001: begin // 8bpc
-                        RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
-                        GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
-                        BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
-                    end
-                    3'b100: begin // 16bpc
-                        RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
-                        GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
-                        BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
-                    end
-                endcase
+            if (tl_item.SPM_ISO_start && tl_item.MS_rst_n) begin
+                if(tl_item.MS_DE) begin
+                    case(MISC0_q[0][7:5])
+                        3'b001: begin // 8bpc
+                            RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
+                            GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
+                            BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
+                        end
+                        3'b100: begin // 16bpc
+                            RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
+                            GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
+                            BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
+                        end
+                    endcase
+                end
+                else if (tl_item.SPM_MSA_VLD) begin
+                    Mvid_q.push_back(tl_item.SPM_Full_MSA[23:0]);
+                    Nvid_q.push_back(tl_item.SPM_Full_MSA[47:24]);
+                    HTotal_q.push_back(tl_item.SPM_Full_MSA[63:48]);
+                    VTotal_q.push_back(tl_item.SPM_Full_MSA[79:64]);
+                    HStart_q.push_back(tl_item.SPM_Full_MSA[95:80]);
+                    VStart_q.push_back(tl_item.SPM_Full_MSA[111:96]);
+                    HSP_q.push_back(tl_item.SPM_Full_MSA[112]);
+                    HSW_q.push_back(tl_item.SPM_Full_MSA[127:113]);
+                    VSP_q.push_back(tl_item.SPM_Full_MSA[128]);
+                    VSW_q.push_back(tl_item.SPM_Full_MSA[143:129]);
+                    HWidth_q.push_back(tl_item.SPM_Full_MSA[159:144]);
+                    VHeight_q.push_back(tl_item.SPM_Full_MSA[175:160]);
+                    MISC0_q.push_back(tl_item.SPM_Full_MSA[183:176]);
+                    MISC1_q.push_back(tl_item.SPM_Full_MSA[191:184]);
+                end
             end
             count_VBLANK++; // Increment the VBLANK counter, the line is finished
         end 
@@ -485,6 +703,7 @@ class dp_source_ref_iso extends uvm_component;
 
     task send_vblank_symbols(
         input dp_tl_sequence_item tl_item,
+        ref bit SR_flag, BS_flag, BF_flag,
         ref int counter_SR, counter, count_MSA, // Counters for the number of symbols sent
         ref iso_idle_code cs, // Current and next state variables for the IDLE pattern
         input bit [1:0] lane_num, 
@@ -578,7 +797,7 @@ class dp_source_ref_iso extends uvm_component;
                 else begin
                     counter = 0;
                     count_VBLANK++; // Increment the VBLANK counter, the line is finished
-                    if(counter_SR == 512) begin
+                    if(counter_SR == 511) begin
                         cs = ISO_SR; // Transition to SR state
                     end
                     else
@@ -614,7 +833,7 @@ class dp_source_ref_iso extends uvm_component;
                     else begin
                         counter = 0;
                         count_VBLANK++; // Increment the VBLANK counter, the line is finished
-                        if(counter_SR == 512) begin
+                        if(counter_SR == 511) begin
                             cs = ISO_SR; // Transition to SR state
                         end
                         else
@@ -648,41 +867,41 @@ class dp_source_ref_iso extends uvm_component;
                 case(lane_id)
                     2'b00: begin // lane0
                         case(count_MSA)
-                            'd0: ISO_symbols_lanex = tl_item.Mvid[23:16]; // MSA symbol for lane 0, count 0
-                            'd1: ISO_symbols_lanex = tl_item.Mvid[15:8]; // MSA symbol for lane 0, count 1
-                            'd2: ISO_symbols_lanex = tl_item.Mvid[7:0]; // MSA symbol for lane 0, count 2
-                            'd3: ISO_symbols_lanex = tl_item.HTotal[15:8]; // MSA symbol for lane 0, count 3
-                            'd4: ISO_symbols_lanex = tl_item.HTotal[7:0]; // MSA symbol for lane 0, count 4
-                            'd5: ISO_symbols_lanex = tl_item.VTotal[15:8]; // MSA symbol for lane 0, count 5
-                            'd6: ISO_symbols_lanex = tl_item.VTotal[7:0]; // MSA symbol for lane 0, count 6
-                            'd7: ISO_symbols_lanex = {tl_item.HSP, tl_item.HSW[14:8]}; // MSA symbol for lane 0, count 7
-                            'd8: ISO_symbols_lanex = tl_item.HSW[7:0]; // MSA symbol for lane 0, count 8
+                            'd0: ISO_symbols_lanex = Mvid_q[0][23:16]; // MSA symbol for lane 0, count 0
+                            'd1: ISO_symbols_lanex = Mvid_q[0][15:8]; // MSA symbol for lane 0, count 1
+                            'd2: ISO_symbols_lanex = Mvid_q[0][7:0]; // MSA symbol for lane 0, count 2
+                            'd3: ISO_symbols_lanex = HTotal_q[0][15:8]; // MSA symbol for lane 0, count 3
+                            'd4: ISO_symbols_lanex = HTotal_q[0][7:0]; // MSA symbol for lane 0, count 4
+                            'd5: ISO_symbols_lanex = VTotal_q[0][15:8]; // MSA symbol for lane 0, count 5
+                            'd6: ISO_symbols_lanex = VTotal_q[0][7:0]; // MSA symbol for lane 0, count 6
+                            'd7: ISO_symbols_lanex = {HSP_q[0], HSW_q[0][14:8]}; // MSA symbol for lane 0, count 7
+                            'd8: ISO_symbols_lanex = HSW_q[0][7:0]; // MSA symbol for lane 0, count 8
                             default: `uvm_fatal("MSA_SYMBOLS_ERROR", "Invalid count_MSA in MSA_symbols task")
                         endcase
                     end
                     2'b01: begin // lane1
                         case(count_MSA)
-                            'd0: ISO_symbols_lanex = tl_item.Mvid[23:16];                   // MSA symbol for lane 1, count 0
-                            'd1: ISO_symbols_lanex = tl_item.Mvid[15:8];                    // MSA symbol for lane 1, count 1
-                            'd2: ISO_symbols_lanex = tl_item.Mvid[7:0];                     // MSA symbol for lane 2, count 2
-                            'd3: ISO_symbols_lanex = tl_item.HStart[15:8];                  // MSA symbol for lane 1, count 3
-                            'd4: ISO_symbols_lanex = tl_item.HStart[7:0];                   // MSA symbol for lane 1, count 4
-                            'd5: ISO_symbols_lanex = tl_item.VStart[15:8];                  // MSA symbol for lane 1, count 5
-                            'd6: ISO_symbols_lanex = tl_item.VStart[7:0];                   // MSA symbol for lane 1, count 6
-                            'd7: ISO_symbols_lanex = {tl_item.VSP, tl_item.VSW[14:8]};      // MSA symbol for lane 1, count 7
-                            'd8: ISO_symbols_lanex = tl_item.VSW[7:0];                      // MSA symbol for lane 1, count 8
+                            'd0: ISO_symbols_lanex = Mvid_q[0][23:16];                   // MSA symbol for lane 1, count 0
+                            'd1: ISO_symbols_lanex = Mvid_q[0][15:8];                    // MSA symbol for lane 1, count 1
+                            'd2: ISO_symbols_lanex = Mvid_q[0][7:0];                     // MSA symbol for lane 2, count 2
+                            'd3: ISO_symbols_lanex = HStart_q[0][15:8];                  // MSA symbol for lane 1, count 3
+                            'd4: ISO_symbols_lanex = HStart_q[0][7:0];                   // MSA symbol for lane 1, count 4
+                            'd5: ISO_symbols_lanex = VStart_q[0][15:8];                  // MSA symbol for lane 1, count 5
+                            'd6: ISO_symbols_lanex = VStart_q[0][7:0];                   // MSA symbol for lane 1, count 6
+                            'd7: ISO_symbols_lanex = {VSP_q[0], VSW_q[0][14:8]};      // MSA symbol for lane 1, count 7
+                            'd8: ISO_symbols_lanex = VSW_q[0][7:0];                      // MSA symbol for lane 1, count 8
                             default: `uvm_fatal("MSA_SYMBOLS_ERROR", "Invalid count_MSA in MSA_symbols task")
                         endcase
                     end
                     2'b10: begin // lane2
                         case(count_MSA)
-                            'd0: ISO_symbols_lanex = tl_item.Mvid[23:16];       // MSA symbol for lane 2, count 0
-                            'd1: ISO_symbols_lanex = tl_item.Mvid[15:8];        // MSA symbol for lane 2, count 1
-                            'd2: ISO_symbols_lanex = tl_item.Mvid[7:0];         // MSA symbol for lane 2, count 2
-                            'd3: ISO_symbols_lanex = tl_item.HWidth[15:8];      // MSA symbol for lane 2, count 3
-                            'd4: ISO_symbols_lanex = tl_item.HWidth[7:0];       // MSA symbol for lane 2, count 4
-                            'd5: ISO_symbols_lanex = tl_item.VHeight[15:8];     // MSA symbol for lane 2, count 5
-                            'd6: ISO_symbols_lanex = tl_item.VHeight[7:0];      // MSA symbol for lane 2, count 6
+                            'd0: ISO_symbols_lanex = Mvid_q[0][23:16];       // MSA symbol for lane 2, count 0
+                            'd1: ISO_symbols_lanex = Mvid_q[0][15:8];        // MSA symbol for lane 2, count 1
+                            'd2: ISO_symbols_lanex = Mvid_q[0][7:0];         // MSA symbol for lane 2, count 2
+                            'd3: ISO_symbols_lanex = HWidth_q[0][15:8];      // MSA symbol for lane 2, count 3
+                            'd4: ISO_symbols_lanex = HWidth_q[0][7:0];       // MSA symbol for lane 2, count 4
+                            'd5: ISO_symbols_lanex = VHeight_q[0][15:8];     // MSA symbol for lane 2, count 5
+                            'd6: ISO_symbols_lanex = VHeight_q[0][7:0];      // MSA symbol for lane 2, count 6
                             'd7: ISO_symbols_lanex = 8'h00;                     // MSA symbol for lane 2, count 7
                             'd8: ISO_symbols_lanex = 8'h00;                     // MSA symbol for lane 2, count 8
                             default: `uvm_fatal("MSA_SYMBOLS_ERROR", "Invalid count_MSA in MSA_symbols task")
@@ -690,14 +909,14 @@ class dp_source_ref_iso extends uvm_component;
                     end
                     2'b11: begin // lane3
                         case(count_MSA)
-                            'd0: ISO_symbols_lanex = tl_item.Mvid[23:16];   // MSA symbol for lane 3, count 3
-                            'd1: ISO_symbols_lanex = tl_item.Mvid[15:8];    // MSA symbol for lane 3, count 1
-                            'd2: ISO_symbols_lanex = tl_item.Mvid[7:0];     // MSA symbol for lane 3, count 2
-                            'd3: ISO_symbols_lanex = tl_item.Nvid[23:16];   // MSA symbol for lane 3, count 3
-                            'd4: ISO_symbols_lanex = tl_item.Nvid[15:8];    // MSA symbol for lane 3, count 4
-                            'd5: ISO_symbols_lanex = tl_item.Nvid[7:0];     // MSA symbol for lane 3, count 5
-                            'd6: ISO_symbols_lanex = tl_item.MISC0;         // MSA symbol for lane 3, count 6
-                            'd7: ISO_symbols_lanex = tl_item.MISC1;         // MSA symbol for lane 3, count 7
+                            'd0: ISO_symbols_lanex = Mvid_q[0][23:16];   // MSA symbol for lane 3, count 3
+                            'd1: ISO_symbols_lanex = Mvid_q[0][15:8];    // MSA symbol for lane 3, count 1
+                            'd2: ISO_symbols_lanex = Mvid_q[0][7:0];     // MSA symbol for lane 3, count 2
+                            'd3: ISO_symbols_lanex = Nvid_q[0][23:16];   // MSA symbol for lane 3, count 3
+                            'd4: ISO_symbols_lanex = Nvid_q[0][15:8];    // MSA symbol for lane 3, count 4
+                            'd5: ISO_symbols_lanex = Nvid_q[0][7:0];     // MSA symbol for lane 3, count 5
+                            'd6: ISO_symbols_lanex = MISC0_q[0];         // MSA symbol for lane 3, count 6
+                            'd7: ISO_symbols_lanex = MISC1_q[0];         // MSA symbol for lane 3, count 7
                             'd8: ISO_symbols_lanex = 8'h00;     	        // MSA symbol for lane 3, count 8
                             default: `uvm_fatal("MSA_SYMBOLS_ERROR", "Invalid count_MSA in MSA_symbols task")
                         endcase
@@ -709,13 +928,13 @@ class dp_source_ref_iso extends uvm_component;
                     2'b00: begin // lane0
                         if(lane_num==2'b01) begin // if lane count is 2
                             case(count_MSA-9)
-                                'd0: ISO_symbols_lanex = tl_item.Mvid[23:16]; // MSA symbol for lane 0, count 0
-                                'd1: ISO_symbols_lanex = tl_item.Mvid[15:8]; // MSA symbol for lane 0, count 1
-                                'd2: ISO_symbols_lanex = tl_item.Mvid[7:0]; // MSA symbol for lane 0, count 2
-                                'd3: ISO_symbols_lanex = tl_item.HWidth[15:8]; // MSA symbol for lane 0, count 3
-                                'd4: ISO_symbols_lanex = tl_item.HWidth[7:0]; // MSA symbol for lane 0, count 4
-                                'd5: ISO_symbols_lanex = tl_item.VHeight[15:8]; // MSA symbol for lane 0, count 5
-                                'd6: ISO_symbols_lanex = tl_item.VHeight[7:0]; // MSA symbol for lane 0, count 6
+                                'd0: ISO_symbols_lanex = Mvid_q[0][23:16]; // MSA symbol for lane 0, count 0
+                                'd1: ISO_symbols_lanex = Mvid_q[0][15:8]; // MSA symbol for lane 0, count 1
+                                'd2: ISO_symbols_lanex = Mvid_q[0][7:0]; // MSA symbol for lane 0, count 2
+                                'd3: ISO_symbols_lanex = HWidth_q[0][15:8]; // MSA symbol for lane 0, count 3
+                                'd4: ISO_symbols_lanex = HWidth_q[0][7:0]; // MSA symbol for lane 0, count 4
+                                'd5: ISO_symbols_lanex = VHeight_q[0][15:8]; // MSA symbol for lane 0, count 5
+                                'd6: ISO_symbols_lanex = VHeight_q[0][7:0]; // MSA symbol for lane 0, count 6
                                 'd7: ISO_symbols_lanex = 8'h00; // MSA symbol for lane 0, count 7
                                 'd8: ISO_symbols_lanex = 8'h00; // MSA symbol for lane 0, count 8
                                 default: `uvm_fatal("MSA_SYMBOLS_ERROR", "Invalid count_MSA in MSA_symbols task")
@@ -723,29 +942,29 @@ class dp_source_ref_iso extends uvm_component;
                         end 
                         else begin  // if lane count is 4
                             case(count_MSA-9)
-                                'd0: ISO_symbols_lanex = tl_item.Mvid[23:16]; // MSA symbol for lane 0, count 0
-                                'd1: ISO_symbols_lanex = tl_item.Mvid[15:8]; // MSA symbol for lane 0, count 1
-                                'd2: ISO_symbols_lanex = tl_item.Mvid[7:0]; // MSA symbol for lane 0, count 2
-                                'd3: ISO_symbols_lanex = tl_item.HStart[15:8]; // MSA symbol for lane 0, count 3
-                                'd4: ISO_symbols_lanex = tl_item.HStart[7:0]; // MSA symbol for lane 0, count 4
-                                'd5: ISO_symbols_lanex = tl_item.VStart[15:8]; // MSA symbol for lane 0, count 5
-                                'd6: ISO_symbols_lanex = tl_item.VStart[7:0]; // MSA symbol for lane 0, count 6
-                                'd7: ISO_symbols_lanex = {tl_item.VSP, tl_item.VSW[14:8]}; // MSA symbol for lane 0, count 7
-                                'd8: ISO_symbols_lanex = tl_item.VSW[7:0]; // MSA symbol for lane 0, count 8
+                                'd0: ISO_symbols_lanex = Mvid_q[0][23:16]; // MSA symbol for lane 0, count 0
+                                'd1: ISO_symbols_lanex = Mvid_q[0][15:8]; // MSA symbol for lane 0, count 1
+                                'd2: ISO_symbols_lanex = Mvid_q[0][7:0]; // MSA symbol for lane 0, count 2
+                                'd3: ISO_symbols_lanex = HStart_q[0][15:8]; // MSA symbol for lane 0, count 3
+                                'd4: ISO_symbols_lanex = HStart_q[0][7:0]; // MSA symbol for lane 0, count 4
+                                'd5: ISO_symbols_lanex = VStart_q[0][15:8]; // MSA symbol for lane 0, count 5
+                                'd6: ISO_symbols_lanex = VStart_q[0][7:0]; // MSA symbol for lane 0, count 6
+                                'd7: ISO_symbols_lanex = {VSP_q[0], VSW_q[0][14:8]}; // MSA symbol for lane 0, count 7
+                                'd8: ISO_symbols_lanex = VSW_q[0][7:0]; // MSA symbol for lane 0, count 8
                                 default: `uvm_fatal("MSA_SYMBOLS_ERROR", "Invalid count_MSA in MSA_symbols task")
                             endcase
                         end
                     end
                     2'b01: begin // lane1
                         case(count_MSA-9)
-                                'd0: ISO_symbols_lanex = tl_item.Mvid[23:16]; // MSA symbol for lane 0, count 0
-                                'd1: ISO_symbols_lanex = tl_item.Mvid[15:8]; // MSA symbol for lane 0, count 1
-                                'd2: ISO_symbols_lanex = tl_item.Mvid[7:0]; // MSA symbol for lane 0, count 2
-                                'd3: ISO_symbols_lanex = tl_item.Nvid[23:16]; // MSA symbol for lane 0, count 3
-                                'd4: ISO_symbols_lanex = tl_item.Nvid[15:8]; // MSA symbol for lane 0, count 4
-                                'd5: ISO_symbols_lanex = tl_item.Nvid[7:0]; // MSA symbol for lane 0, count 5
-                                'd6: ISO_symbols_lanex = tl_item.MISC0; // MSA symbol for lane 0, count 6
-                                'd7: ISO_symbols_lanex = tl_item.MISC1; // MSA symbol for lane 0, count 7
+                                'd0: ISO_symbols_lanex = Mvid_q[0][23:16]; // MSA symbol for lane 0, count 0
+                                'd1: ISO_symbols_lanex = Mvid_q[0][15:8]; // MSA symbol for lane 0, count 1
+                                'd2: ISO_symbols_lanex = Mvid_q[0][7:0]; // MSA symbol for lane 0, count 2
+                                'd3: ISO_symbols_lanex = Nvid_q[0][23:16]; // MSA symbol for lane 0, count 3
+                                'd4: ISO_symbols_lanex = Nvid_q[0][15:8]; // MSA symbol for lane 0, count 4
+                                'd5: ISO_symbols_lanex = Nvid_q[0][7:0]; // MSA symbol for lane 0, count 5
+                                'd6: ISO_symbols_lanex = MISC0_q[0]; // MSA symbol for lane 0, count 6
+                                'd7: ISO_symbols_lanex = MISC1_q[0]; // MSA symbol for lane 0, count 7
                                 'd8: ISO_symbols_lanex = 8'h00; // MSA symbol for lane 0, count 8
                                 default: `uvm_fatal("MSA_SYMBOLS_ERROR", "Invalid count_MSA in MSA_symbols task")
                         endcase
@@ -755,13 +974,13 @@ class dp_source_ref_iso extends uvm_component;
             end
             2'b10: begin // Round 3 for lane 0
                 case(count_MSA-18)
-                    'd0: ISO_symbols_lanex = tl_item.Mvid[23:16]; // MSA symbol for lane 0, count 0
-                    'd1: ISO_symbols_lanex = tl_item.Mvid[15:8]; // MSA symbol for lane 0, count 1
-                    'd2: ISO_symbols_lanex = tl_item.Mvid[7:0]; // MSA symbol for lane 0, count 2
-                    'd3: ISO_symbols_lanex = tl_item.HWidth[15:8]; // MSA symbol for lane 0, count 3
-                    'd4: ISO_symbols_lanex = tl_item.HWidth[7:0]; // MSA symbol for lane 0, count 4
-                    'd5: ISO_symbols_lanex = tl_item.VHeight[15:8]; // MSA symbol for lane 0, count 5
-                    'd6: ISO_symbols_lanex = tl_item.VHeight[7:0]; // MSA symbol for lane 0, count 6
+                    'd0: ISO_symbols_lanex = Mvid_q[0][23:16]; // MSA symbol for lane 0, count 0
+                    'd1: ISO_symbols_lanex = Mvid_q[0][15:8]; // MSA symbol for lane 0, count 1
+                    'd2: ISO_symbols_lanex = Mvid_q[0][7:0]; // MSA symbol for lane 0, count 2
+                    'd3: ISO_symbols_lanex = HWidth_q[0][15:8]; // MSA symbol for lane 0, count 3
+                    'd4: ISO_symbols_lanex = HWidth_q[0][7:0]; // MSA symbol for lane 0, count 4
+                    'd5: ISO_symbols_lanex = VHeight_q[0][15:8]; // MSA symbol for lane 0, count 5
+                    'd6: ISO_symbols_lanex = VHeight_q[0][7:0]; // MSA symbol for lane 0, count 6
                     'd7: ISO_symbols_lanex = 8'h00; // MSA symbol for lane 0, count 7
                     'd8: ISO_symbols_lanex = 8'h00; // MSA symbol for lane 0, count 8
                     default: `uvm_fatal("MSA_SYMBOLS_ERROR", "Invalid count_MSA in MSA_symbols task")
@@ -769,14 +988,14 @@ class dp_source_ref_iso extends uvm_component;
             end
             2'b11: begin // Round 4 for lane 0
                 case(count_MSA-27)
-                    'd0: ISO_symbols_lanex = tl_item.Mvid[23:16]; // MSA symbol for lane 0, count 0
-                    'd1: ISO_symbols_lanex = tl_item.Mvid[15:8]; // MSA symbol for lane 0, count 1
-                    'd2: ISO_symbols_lanex = tl_item.Mvid[7:0]; // MSA symbol for lane 0, count 2
-                    'd3: ISO_symbols_lanex = tl_item.Nvid[23:16]; // MSA symbol for lane 0, count 3
-                    'd4: ISO_symbols_lanex = tl_item.Nvid[15:8]; // MSA symbol for lane 0, count 4
-                    'd5: ISO_symbols_lanex = tl_item.Nvid[7:0]; // MSA symbol for lane 0, count 5
-                    'd6: ISO_symbols_lanex = tl_item.MISC0; // MSA symbol for lane 0, count 6
-                    'd7: ISO_symbols_lanex = tl_item.MISC1; // MSA symbol for lane 0, count 7
+                    'd0: ISO_symbols_lanex = Mvid_q[0][23:16]; // MSA symbol for lane 0, count 0
+                    'd1: ISO_symbols_lanex = Mvid_q[0][15:8]; // MSA symbol for lane 0, count 1
+                    'd2: ISO_symbols_lanex = Mvid_q[0][7:0]; // MSA symbol for lane 0, count 2
+                    'd3: ISO_symbols_lanex = Nvid_q[0][23:16]; // MSA symbol for lane 0, count 3
+                    'd4: ISO_symbols_lanex = Nvid_q[0][15:8]; // MSA symbol for lane 0, count 4
+                    'd5: ISO_symbols_lanex = Nvid_q[0][7:0]; // MSA symbol for lane 0, count 5
+                    'd6: ISO_symbols_lanex = MISC0_q[0]; // MSA symbol for lane 0, count 6
+                    'd7: ISO_symbols_lanex = MISC1_q[0]; // MSA symbol for lane 0, count 7
                     'd8: ISO_symbols_lanex = 8'h00; // MSA symbol for lane 0, count 8
                     default: `uvm_fatal("MSA_SYMBOLS_ERROR", "Invalid count_MSA in MSA_symbols task")
                 endcase
@@ -790,31 +1009,32 @@ class dp_source_ref_iso extends uvm_component;
     // continuously sending the DUMMY pattern until the beginning of the Hactive period
     task ISO_HBLANK_PATTERN(input dp_tl_sequence_item tl_item);
         while (counter_0 < hblank_period) begin
-            if (!tl_item.rst_n || !tl_item.LT_Pass) begin
+            if (!tl_item.MS_rst_n) begin
+                entered = 0;
                 break; // Exit the loop if reset is active
             end
             else begin
                 case(tl_item.ISO_LC) // according to the actvie lane count, send HBLANK on all active lanes and remain with IDLE pattern on inactive lanes
                     2'b00: begin // // Data transmission on 1 lane
-                            send_hblank_symbols(tl_item, counter_SR_0, counter_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
-                            IDLE_PATTERN(tl_item, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
-                            IDLE_PATTERN(tl_item, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
-                            IDLE_PATTERN(tl_item, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
+                            send_hblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                            IDLE_PATTERN(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
+                            IDLE_PATTERN(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
+                            IDLE_PATTERN(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
                         end  
 
                     2'b01: begin // // Data transmission on 2 lanes
-                            send_hblank_symbols(tl_item, counter_SR_0, counter_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
-                            send_hblank_symbols(tl_item, counter_SR_1, counter_1, cs_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
-                            IDLE_PATTERN(tl_item, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
-                            IDLE_PATTERN(tl_item, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
+                            send_hblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                            send_hblank_symbols(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
+                            IDLE_PATTERN(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
+                            IDLE_PATTERN(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
                         end             
 
                     2'b11: begin // Data transmission on 4 lanes
                         // SEND VBLANK pattern to all lanes
-                        send_hblank_symbols(tl_item, counter_SR_0, counter_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_hblank_symbols(tl_item, counter_SR_1, counter_1, cs_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_hblank_symbols(tl_item, counter_SR_2, counter_2, cs_2, tl_item.ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_hblank_symbols(tl_item, counter_SR_3, counter_3, cs_3, tl_item.ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_hblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_hblank_symbols(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_hblank_symbols(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, tl_item.ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_hblank_symbols(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, tl_item.ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call VBLANK_PATTERN task to handle VBLANK state
                     end             
 
                     default:    // Default case to handle unexpected states
@@ -823,22 +1043,49 @@ class dp_source_ref_iso extends uvm_component;
             end
             // Send the expected transaction to the scoreboard
             `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
+            ref_vif.ref_expected_ISO_symbols_lane0 = expected_transaction.ISO_symbols_lane0;
+            ref_vif.ref_expected_ISO_symbols_lane1 = expected_transaction.ISO_symbols_lane1;
+            ref_vif.ref_expected_ISO_symbols_lane2 = expected_transaction.ISO_symbols_lane2;
+            ref_vif.ref_expected_ISO_symbols_lane3 = expected_transaction.ISO_symbols_lane3;
+
+            ref_vif.ref_expected_Control_sym_flag_lane0 = expected_transaction.Control_sym_flag_lane0;
+            ref_vif.ref_expected_Control_sym_flag_lane1 = expected_transaction.Control_sym_flag_lane1;
+            ref_vif.ref_expected_Control_sym_flag_lane2 = expected_transaction.Control_sym_flag_lane2;
+            ref_vif.ref_expected_Control_sym_flag_lane3 = expected_transaction.Control_sym_flag_lane3;
             send_expected_to_scoreboard();
             ref_tl_fifo.get(tl_item);
             `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
-            if(tl_item.MS_DE && tl_item.SPM_ISO_start)begin
-                case(tl_item.MISC0[7:5])
-                    3'b001: begin // 8bpc
-                        RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
-                        GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
-                        BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
-                    end
-                    3'b100: begin // 16bpc
-                        RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
-                        GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
-                        BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
-                    end
-                endcase
+            if (tl_item.SPM_ISO_start && tl_item.MS_rst_n) begin
+                if(tl_item.MS_DE) begin
+                    case(MISC0_q[0][7:5])
+                        3'b001: begin // 8bpc
+                            RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
+                            GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
+                            BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
+                        end
+                        3'b100: begin // 16bpc
+                            RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
+                            GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
+                            BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
+                        end
+                    endcase
+                end
+                else if (tl_item.SPM_MSA_VLD) begin
+                    Mvid_q.push_back(tl_item.SPM_Full_MSA[23:0]);
+                    Nvid_q.push_back(tl_item.SPM_Full_MSA[47:24]);
+                    HTotal_q.push_back(tl_item.SPM_Full_MSA[63:48]);
+                    VTotal_q.push_back(tl_item.SPM_Full_MSA[79:64]);
+                    HStart_q.push_back(tl_item.SPM_Full_MSA[95:80]);
+                    VStart_q.push_back(tl_item.SPM_Full_MSA[111:96]);
+                    HSP_q.push_back(tl_item.SPM_Full_MSA[112]);
+                    HSW_q.push_back(tl_item.SPM_Full_MSA[127:113]);
+                    VSP_q.push_back(tl_item.SPM_Full_MSA[128]);
+                    VSW_q.push_back(tl_item.SPM_Full_MSA[143:129]);
+                    HWidth_q.push_back(tl_item.SPM_Full_MSA[159:144]);
+                    VHeight_q.push_back(tl_item.SPM_Full_MSA[175:160]);
+                    MISC0_q.push_back(tl_item.SPM_Full_MSA[183:176]);
+                    MISC1_q.push_back(tl_item.SPM_Full_MSA[191:184]);
+                end
             end
         end
         // Clear Counters and flags for the next iteration
@@ -856,6 +1103,7 @@ class dp_source_ref_iso extends uvm_component;
     // This task creates the HBLANK pattern to be sent on each lane
     task send_hblank_symbols(
         input dp_tl_sequence_item tl_item,
+        ref bit SR_flag, BS_flag, BF_flag,
         ref int counter_SR, counter, // Counters for the number of symbols sent
         ref iso_idle_code cs, // Current and next state variables for the IDLE pattern
         input bit [1:0] lane_num, 
@@ -945,7 +1193,7 @@ class dp_source_ref_iso extends uvm_component;
                 else begin
                     Control_sym_flag_lanex = 1'b1;
                     ISO_symbols_lanex = BE; // Dummy symbol for IDLE state
-                    if(counter_SR == 512) begin
+                    if(counter_SR == 511) begin
                             cs = ISO_SR; // Transition to SR state
                         end
                         else begin
@@ -973,7 +1221,7 @@ class dp_source_ref_iso extends uvm_component;
         ceil_flag_0 =1; ceil_flag_1 =1; ceil_flag_2 =1; ceil_flag_3 =1; // Initialize the up flags to 1
         
         while(count_HACTIVE < hactive_period) begin
-            if (!tl_item.rst_n || !tl_item.LT_Pass) begin
+            if (!tl_item.MS_rst_n) begin
                 count_data_0 = 0; count_data_1 = 0; count_data_2 = 0; count_data_3= 0;
                 count_TU_0 = 0; count_TU_1 = 0; count_TU_2 = 0; count_TU_3 = 0; // Reset state and counters to initial values
                 remaining_symbols_0 = 0; remaining_symbols_1 = 0; remaining_symbols_2 = 0; remaining_symbols_3 = 0; // Reset remaining symbols to initial values    
@@ -984,15 +1232,15 @@ class dp_source_ref_iso extends uvm_component;
                 case(tl_item.ISO_LC) // according to the actvie lane count, send VBlank on all active lanes and remain with IDLE pattern on inactive lanes
                     2'b00: begin // // Data transmission on 1 lane    
                         send_hactive_symbols(tl_item, counter_0, count_TU_0, count_data_0, remaining_symbols_0, count_comp_0, ceil_flag_0, floor_flag_0, cs_0_TU, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call HACTIVE_PATTERN task to handle HACTIVE state
-                        IDLE_PATTERN(tl_item, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
-                        IDLE_PATTERN(tl_item, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
-                        IDLE_PATTERN(tl_item, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
+                        IDLE_PATTERN(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
+                        IDLE_PATTERN(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
+                        IDLE_PATTERN(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
                     end
                     2'b01: begin // // Data transmission on 2 lanes
                         send_hactive_symbols(tl_item, counter_0, count_TU_0, count_data_0, remaining_symbols_0, count_comp_0, ceil_flag_0, floor_flag_0, cs_0_TU, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call HACTIVE_PATTERN task to handle HACTIVE state
                         send_hactive_symbols(tl_item, counter_1, count_TU_1, count_data_1, remaining_symbols_1, count_comp_1, ceil_flag_1, floor_flag_1, cs_1_TU, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call HACTIVE_PATTERN task to handle HACTIVE state
-                        IDLE_PATTERN(tl_item, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
-                        IDLE_PATTERN(tl_item, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state          
+                        IDLE_PATTERN(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
+                        IDLE_PATTERN(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state          
                     end
                     2'b11: begin // Data transmission on 4 lanes
                         // SEND VBLANK pattern to all lanes
@@ -1008,22 +1256,49 @@ class dp_source_ref_iso extends uvm_component;
             end
             // Send the expected transaction to the scoreboard
             `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
+            ref_vif.ref_expected_ISO_symbols_lane0 = expected_transaction.ISO_symbols_lane0;
+            ref_vif.ref_expected_ISO_symbols_lane1 = expected_transaction.ISO_symbols_lane1;
+            ref_vif.ref_expected_ISO_symbols_lane2 = expected_transaction.ISO_symbols_lane2;
+            ref_vif.ref_expected_ISO_symbols_lane3 = expected_transaction.ISO_symbols_lane3;
+
+            ref_vif.ref_expected_Control_sym_flag_lane0 = expected_transaction.Control_sym_flag_lane0;
+            ref_vif.ref_expected_Control_sym_flag_lane1 = expected_transaction.Control_sym_flag_lane1;
+            ref_vif.ref_expected_Control_sym_flag_lane2 = expected_transaction.Control_sym_flag_lane2;
+            ref_vif.ref_expected_Control_sym_flag_lane3 = expected_transaction.Control_sym_flag_lane3;
             send_expected_to_scoreboard();
             ref_tl_fifo.get(tl_item);
             `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
-            if(tl_item.MS_DE && tl_item.SPM_ISO_start)begin
-                case(tl_item.MISC0[7:5])
-                    3'b001: begin // 8bpc
-                        RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
-                        GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
-                        BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
-                    end
-                    3'b100: begin // 16bpc
-                        RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
-                        GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
-                        BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
-                    end
-                endcase
+            if (tl_item.SPM_ISO_start && tl_item.MS_rst_n) begin
+                if(tl_item.MS_DE) begin
+                    case(MISC0_q[0][7:5])
+                        3'b001: begin // 8bpc
+                            RED_8.push_back(tl_item.MS_Pixel_Data[7:0]);
+                            GREEN_8.push_back(tl_item.MS_Pixel_Data[15:8]);
+                            BLUE_8.push_back(tl_item.MS_Pixel_Data[23:16]);
+                        end
+                        3'b100: begin // 16bpc
+                            RED_16.push_back(tl_item.MS_Pixel_Data[15:0]);
+                            GREEN_16.push_back(tl_item.MS_Pixel_Data[31:16]);
+                            BLUE_16.push_back(tl_item.MS_Pixel_Data[47:32]);
+                        end
+                    endcase
+                end
+                else if (tl_item.SPM_MSA_VLD) begin
+                    Mvid_q.push_back(tl_item.SPM_Full_MSA[23:0]);
+                    Nvid_q.push_back(tl_item.SPM_Full_MSA[47:24]);
+                    HTotal_q.push_back(tl_item.SPM_Full_MSA[63:48]);
+                    VTotal_q.push_back(tl_item.SPM_Full_MSA[79:64]);
+                    HStart_q.push_back(tl_item.SPM_Full_MSA[95:80]);
+                    VStart_q.push_back(tl_item.SPM_Full_MSA[111:96]);
+                    HSP_q.push_back(tl_item.SPM_Full_MSA[112]);
+                    HSW_q.push_back(tl_item.SPM_Full_MSA[127:113]);
+                    VSP_q.push_back(tl_item.SPM_Full_MSA[128]);
+                    VSW_q.push_back(tl_item.SPM_Full_MSA[143:129]);
+                    HWidth_q.push_back(tl_item.SPM_Full_MSA[159:144]);
+                    VHeight_q.push_back(tl_item.SPM_Full_MSA[175:160]);
+                    MISC0_q.push_back(tl_item.SPM_Full_MSA[183:176]);
+                    MISC1_q.push_back(tl_item.SPM_Full_MSA[191:184]);
+                end
             end
         end    
     endtask
@@ -1154,7 +1429,7 @@ class dp_source_ref_iso extends uvm_component;
         ref bit [15:0] RED, GREEN, BLUE,
         output logic [AUX_DATA_WIDTH-1:0] ISO_symbols_lanex
     ); 
-        case (tl_item.MISC0[7:5])
+        case (MISC0_q[0][7:5])
             3'b001: begin // 8bpc     
                 case(count_comp) 
                     'd0: ISO_symbols_lanex = RED_8.pop_front();
@@ -1212,22 +1487,6 @@ class dp_source_ref_iso extends uvm_component;
         output logic [3:0] tu_alternate_down,
         output logic alternate_valid
     );  
-        // seq_item.SPM_MSA[0]  = seq_item.Mvid[7:0];     seq_item.SPM_MSA[1]  = seq_item.Mvid[15:8];               seq_item.SPM_MSA[2] = seq_item.Mvid[23:16];
-        // seq_item.SPM_MSA[3]  = seq_item.Nvid[7:0];     seq_item.SPM_MSA[4]  = seq_item.Nvid[15:8];               seq_item.SPM_MSA[5] = seq_item.Nvid[23:16];
-        // seq_item.SPM_MSA[6]  = seq_item.HTotal[7:0];   seq_item.SPM_MSA[7]  = seq_item.HTotal[15:8];             seq_item.SPM_MSA[8] = seq_item.VTotal[7:0];
-        // seq_item.SPM_MSA[9]  = seq_item.VTotal[15:8];  seq_item.SPM_MSA[10] = seq_item.HStart[7:0];              seq_item.SPM_MSA[11] = seq_item.HStart[15:8];
-        // seq_item.SPM_MSA[12] = seq_item.VStart[7:0];   seq_item.SPM_MSA[13] = seq_item.VStart[15:8];             seq_item.SPM_MSA[14] = {seq_item.HSW[6:0], seq_item.HSP};
-        // seq_item.SPM_MSA[15] = seq_item.HSW[14:7];     seq_item.SPM_MSA[16] = {seq_item.VSW[6:0], seq_item.VSP}; seq_item.SPM_MSA[17] = seq_item.VSW[14:7];
-        // seq_item.SPM_MSA[18] = seq_item.HWidth[7:0];   seq_item.SPM_MSA[19] = seq_item.HWidth[15:8];             seq_item.SPM_MSA[20] = seq_item.VHeight[7:0];
-        // seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
-
-        // case (seq_item.ISO_BW)
-        //     8'h06: seq_item.SPM_BW_Sel = 2'b00;
-        //     8'h0A: seq_item.SPM_BW_Sel = 2'b01;
-        //     8'h14: seq_item.SPM_BW_Sel = 2'b10;
-        //     8'h1E: seq_item.SPM_BW_Sel = 2'b11;
-        // endcase  
-        
         // Define the parameters for the calculations
         logic [15:0] hwidth;
         logic [15:0] htotal;
@@ -1252,26 +1511,22 @@ class dp_source_ref_iso extends uvm_component;
         logic [15:0] FRACTIONAL_PART_SCALED, FIRST_DECIMAL, SECOND_DECIMAL, ROUNDED_FIRST_DECIMAL;
 
         // Wait for the next transaction
-        ref_tl_fifo.get(tl_item); 
+        // ref_tl_fifo.get(tl_item); 
         `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
 
         // Extract the parameters from the transaction item
-        htotal[7:0] = tl_item.SPM_MSA[6];
-        htotal[15:8] = tl_item.SPM_MSA[7];
-        vtotal[7:0] = tl_item.SPM_MSA[8];
-        vtotal[15:8] = tl_item.SPM_MSA[9];
-        hwidth[7:0] = tl_item.SPM_MSA[18];
-        hwidth[15:8] = tl_item.SPM_MSA[19];
-        vheight[7:0] = tl_item.SPM_MSA[20];
-        vheight[15:8] = tl_item.SPM_MSA[21];
+        htotal = HTotal_q[0];
+        vtotal = VTotal_q[0];
+        hwidth = HWidth_q[0];
+        vheight = VHeight_q[0];
         spm_lane_count = tl_item.SPM_Lane_Count;
         // not sure here
         spm_lane_bw = tl_item.SPM_Lane_BW;
         symbol_bit_size = 16'h0008; // 8 bits
-        if (tl_item.SPM_MSA[22][7:5] == 3'b001) begin
+        if (MISC0_q[0][7:5] == 3'b001) begin
             bpc = 16'h0008; // 8 bits per component
         end 
-        if (tl_item.SPM_MSA[22][7:5] == 3'b100) begin
+        if (MISC0_q[0][7:5] == 3'b100) begin
             bpc = 16'h0010; // 16 bits per component
         end 
         if (bpc == 16'h0008) begin // 8 bits per component
@@ -1284,7 +1539,7 @@ class dp_source_ref_iso extends uvm_component;
         end
     
         // Reset logic
-        if (!tl_item.rst_n) begin
+        if (!tl_item.MS_rst_n) begin
             hactive_period = 0;
             hblank_period = 0;
             vblank_period = 0;

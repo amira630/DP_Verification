@@ -51,6 +51,12 @@ module idle_pattern
   reg [7:0]   idle_symbols_comb;
   reg         idle_control_sym_flag_comb;
   reg         idle_activate_en_comb;
+  wire        start_idle_pattern;
+
+
+   ////////////////////////////////////
+   assign start_idle_pattern = (sched_idle_en == 1'b1) ?  1'b1 : 1'b0;
+   /////////////////////////////////////
 
   // State and counter management
   always @(posedge clk or negedge rst_n)
@@ -62,7 +68,7 @@ module idle_pattern
       last_dummy_symbol   <= 1'b0;
       first_idle_pattern  <= 1'b1;
      end 
-     else if (sched_idle_en) 
+     else if (start_idle_pattern) 
      begin
       current_state       <= next_state; 
 
@@ -109,7 +115,7 @@ module idle_pattern
     case (current_state)
     IDLE_STATE: 
           begin
-            if (sched_idle_en)
+            if (start_idle_pattern)
             begin
               next_state = BS1;
             end
