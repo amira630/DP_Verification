@@ -27,7 +27,7 @@ class dp_source_ref_iso extends uvm_component;
     bit BF_flag, MSA_done, FS_flag, FE_flag, calc_flag, entered; // Flags for ready and busy states
     bit BS_flag_0, BS_flag_1, BS_flag_2, BS_flag_3, SR_flag_0, SR_flag_1, SR_flag_2, SR_flag_3, BF_flag_0, BF_flag_1, BF_flag_2, BF_flag_3;
 
-    int counter, counter_0, counter_SR_0, counter_1, counter_SR_1, counter_2, counter_SR_2, counter_3, counter_SR_3, count_MSA_0, count_MSA_1, count_MSA_2, count_MSA_3; // Reset MSA counters to initial values; // Counters for the number of symbols sent
+    int counter_i, counter_0, counter_SR_0, counter_1, counter_SR_1, counter_2, counter_SR_2, counter_3, counter_SR_3, count_MSA_0, count_MSA_1, count_MSA_2, count_MSA_3; // Reset MSA counters to initial values; // Counters for the number of symbols sent
     int count_VBLANK, count_HBLANK_ACTIVE, count_HACTIVE; // Counter for the number of VBLANK  and HBLANK symbols sent
     
     logic [7:0] RED_8 [$];   logic [15:0] RED_16 [$];
@@ -35,6 +35,7 @@ class dp_source_ref_iso extends uvm_component;
     logic [7:0] BLUE_8 [$];  logic [15:0] BLUE_16 [$];
 
     bit [15:0] RED, GREEN, BLUE; // Variables to store pixel data
+    bit [2:0] ISO_LC;
 
     // Pixel clock and link parameters
     logic [23:0] Mvid_q[$];        // Replaces logic [23:0] Mvid
@@ -110,7 +111,7 @@ class dp_source_ref_iso extends uvm_component;
 
         // Wait for the next transaction
         ref_tl_fifo.get(tl_item);
-        counter++; // Increment the counter for the number of symbols sent
+        counter_i++; // Increment the counter for the number of symbols sent
 
         `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
 
@@ -154,7 +155,7 @@ class dp_source_ref_iso extends uvm_component;
                 send_expected_to_scoreboard();
                 //break;
             end
-            else if (tl_item.SPM_ISO_start && tl_item.MS_rst_n) begin // if reset is off and LT is passed
+            else if (tl_item.SPM_ISO_start) begin // if reset is off and LT is passed
                 entered = 1'b1; // Set entered flag to indicate that the reference model has entered the ISO operation  
                 if(tl_item.SPM_MSA_VLD) begin
                     Mvid_q.push_back(tl_item.SPM_Full_MSA[23:0]);
@@ -176,7 +177,9 @@ class dp_source_ref_iso extends uvm_component;
                     VStart_q.delete(0); HSP_q.delete(0); HSW_q.delete(0); VSP_q.delete(0); VSW_q.delete(0);
                     HWidth_q.delete(0); VHeight_q.delete(0); MISC0_q.delete(0); MISC1_q.delete(0);
                     `uvm_info(get_type_name(), "Calculated timing parameters for expected transaction", UVM_LOW)
+                    ISO_LC = tl_item.SPM_Lane_Count;
                 end
+                `uvm_info(get_type_name(), $sformatf("VBlank value %0d", vblank_period), UVM_LOW)
                 `uvm_info(get_type_name(), "Calling generate_expected_transaction()", UVM_LOW)
                 if(!tl_item.MS_rst_n)
                     expected_transaction.WFULL = 1'b0;
@@ -229,7 +232,7 @@ class dp_source_ref_iso extends uvm_component;
             end
             else if(entered && !tl_item.SPM_ISO_start) begin
                 ISO_IDLE_PATTERN(tl_item); // Call ISO_IDLE task to handle IDLE state
-                counter = 0;
+                counter_i = 0;
                 if(!tl_item.MS_rst_n) begin
                     entered = 0;
                     continue;
@@ -296,18 +299,18 @@ class dp_source_ref_iso extends uvm_component;
                         MISC1_q.push_back(tl_item.SPM_Full_MSA[191:184]);
                     end
                 end
-                cs = ISO_VBLANK; // Transition to VBLANK state
                 ISO_IDLE_PATTERN(tl_item); // Call ISO_IDLE task to handle IDLE state
-                counter = 0; // Reset counter after sending IDLE state for the current video
+                counter_i = 0; // Reset counter after sending IDLE state for the current video
+                cs = ISO_VBLANK; // Transition to VBLANK state
                 cs_0_TU = ISO_TU_PIXELS; cs_1_TU = ISO_TU_PIXELS; cs_2_TU = ISO_TU_PIXELS; cs_3_TU = ISO_TU_PIXELS;
                 //Optional
                 counter_0 = 0; // about to start a new video
                 cs_0 = ISO_BS; 
-                if(tl_item.ISO_LC == 2'b01) begin
+                if(ISO_LC == 3'b010) begin
                     counter_1 = 0;
                     cs_1 = ISO_BS; 
                 end
-                else if (tl_item.ISO_LC == 2'b11) begin
+                else if (ISO_LC == 3'b100) begin
                     counter_1 = 0; counter_2 = 0; counter_3 = 0;
                     cs_1 = ISO_BS; cs_2 = ISO_BS; cs_3 = ISO_BS;
                 end
@@ -345,8 +348,9 @@ class dp_source_ref_iso extends uvm_component;
                         MISC1_q.push_back(tl_item.SPM_Full_MSA[191:184]);
                     end
                 end
-                cs = ISO_HBLANK; // Transition to HBLANK state
+                `uvm_info(get_type_name(), $sformatf("INSIDE VVVVVVVVVVVVVVVVBLANK"), UVM_MEDIUM)
                 ISO_VBLANK_PATTERN(tl_item); // Call VBLANK task to handle VBLANK state
+                cs = ISO_HBLANK; // Transition to HBLANK state
                 MSA_done = 1'b0; // Reset MSA_done flag after sending VBLANK symbols for the current video frame
                 count_MSA_0 = 0; count_MSA_1 = 0; count_MSA_2 = 0; count_MSA_3 = 0;
                 count_VBLANK =0; // Reset VBLANK counter after sending VBLANK symbols for the current video frame
@@ -474,7 +478,7 @@ class dp_source_ref_iso extends uvm_component;
             ref_vif.ref_expected_Control_sym_flag_lane2 = expected_transaction.Control_sym_flag_lane2;
             ref_vif.ref_expected_Control_sym_flag_lane3 = expected_transaction.Control_sym_flag_lane3;
             send_expected_to_scoreboard();
-            counter++; // Increment the counter for the number of symbols sent
+            counter_i++; // Increment the counter for the number of symbols sent
             // Wait for the next transaction
             ref_tl_fifo.get(tl_item);
             `uvm_info(get_type_name(), $sformatf("Got TL item from FIFO: %s", tl_item.convert2string()), UVM_HIGH)
@@ -511,7 +515,7 @@ class dp_source_ref_iso extends uvm_component;
                 end
             end
             if(tl_item.SPM_ISO_start && tl_item.MS_rst_n) begin
-                if(counter < 408) begin // 408 Ls_clks need to go by for the IDLE pattern to stop sending
+                if(counter_i < 408) begin // 408 Ls_clks need to go by for the IDLE pattern to stop sending
                     ready = 1'b0; // Not ready to stop IDLE pattern
                 end
                 else begin
@@ -521,9 +525,10 @@ class dp_source_ref_iso extends uvm_component;
             else begin
                 if(!tl_item.MS_rst_n)
                     entered = 0;
-                counter = 0; // because there is no video stream to countdown to.
+                counter_i = 0; // because there is no video stream to countdown to.
                 ready = 1'b0; // Not ready to stop IDLE pattern
             end
+            `uvm_info(get_type_name(), $sformatf("STILL INSIDE IDLE: Counter_i = 0x%0d",  counter_i), UVM_MEDIUM)
         end             
     endtask
 
@@ -537,6 +542,7 @@ class dp_source_ref_iso extends uvm_component;
     );
         case (cs)
             ISO_SR: begin // Start with sending SR symbol instead of BS symbol
+                `uvm_info(get_type_name(), $sformatf("INSIDE SR STATE - IDLE"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b1;
                 ISO_symbols_lanex = SR;
                 counter_SR = 0; // Reset counter after sending SR symbols
@@ -549,6 +555,7 @@ class dp_source_ref_iso extends uvm_component;
                     cs = ISO_BF; // Transition to BF state
             end
             ISO_BS: begin // Send BS symbol 
+                `uvm_info(get_type_name(), $sformatf("INSIDE BS STATE - IDLE"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b1;
                 ISO_symbols_lanex = BS;
                 BS_flag = 1'b1; // Set BS_flag to indicate that a BS symbol has been sent
@@ -561,6 +568,7 @@ class dp_source_ref_iso extends uvm_component;
                     cs = ISO_BF; // Transition to BF state
             end
             ISO_BF: begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE BF STATE - IDLE"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b1;
                 ISO_symbols_lanex = BF;
                 if(!BF_flag) begin
@@ -575,9 +583,9 @@ class dp_source_ref_iso extends uvm_component;
                         cs = ISO_BS; // Reset count_SR after sending BS and BF symbols
                     end
                 end
-                counter++; // Increment the counter for the number of symbols sent
             end
             ISO_VB_ID:begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE VB-ID STATE - IDLE"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b0;
                 ISO_symbols_lanex = 8'b0_000_1000; // No Video or audio or active video stream this is VB-ID for an IDLE pattern
                 counter++; // Increment the counter for the number of symbols sent
@@ -587,21 +595,24 @@ class dp_source_ref_iso extends uvm_component;
                 SR_flag = 1'b0; // Reset SR_flag after sending VB_ID symbols
             end
             ISO_MVID:begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE Mvid STATE - IDLE"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b0;
                 ISO_symbols_lanex = 'b0;
                 counter++; // Increment the counter for the number of symbols sent
                 cs = ISO_MAUD; // Transition to MAUD state
             end
             ISO_MAUD:begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE Maud STATE - IDLE"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b0;
                 ISO_symbols_lanex = 'b0;
                 counter++; // Increment the counter for the number of symbols sent
                 cs = ISO_DUMMY; // Transition to IDLE state
             end
             ISO_DUMMY:begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE DUMMY STATE - IDLE"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b0;
                 ISO_symbols_lanex = 8'b0; // Dummy symbol for IDLE state
-                if(counter<8192) begin
+                if(counter<8189) begin
                     cs = ISO_DUMMY; // Stay in IDLE state
                     counter++; // Increment the counter for the number of symbols sent
                     `uvm_info(get_type_name(), $sformatf("INSIDE DUMMY AGAINNNNNNN: Counter = 0x%0d",  counter), UVM_MEDIUM)
@@ -623,29 +634,31 @@ class dp_source_ref_iso extends uvm_component;
 
     task ISO_VBLANK_PATTERN(input dp_tl_sequence_item tl_item);
         while(count_VBLANK < vblank_period) begin
+            `uvm_info(get_type_name(), $sformatf("INSIDE the WHILEEEEEEEEEEEE"), UVM_MEDIUM)
             if (!tl_item.MS_rst_n) begin
                 entered = 0;
                 break; // Exit the loop if reset is active
             end
             else begin
-                case(tl_item.ISO_LC) // according to the actvie lane count, send VBlank on all active lanes and remain with IDLE pattern on inactive lanes
-                    2'b00: begin // // Data transmission on 1 lane
-                        send_vblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                `uvm_info(get_type_name(), $sformatf("INSIDE VBLANK OUTSIDE CASEEEEEEEEEE"), UVM_MEDIUM)
+                case(ISO_LC) // according to the actvie lane count, send VBlank on all active lanes and remain with IDLE pattern on inactive lanes
+                    3'b001: begin // // Data transmission on 1 lane
+                        send_vblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
                         IDLE_PATTERN(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
                         IDLE_PATTERN(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
                         IDLE_PATTERN(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state 
                     end
-                    2'b01: begin // // Data transmission on 2 lanes
-                        send_vblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_vblank_symbols(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, count_MSA_1, cs_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
+                    3'b010: begin // // Data transmission on 2 lanes
+                        send_vblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_vblank_symbols(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, count_MSA_1, cs_1, ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
                         IDLE_PATTERN(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
                         IDLE_PATTERN(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state            
                     end
-                    2'b11: begin // Data transmission on 4 lanes
-                        send_vblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_vblank_symbols(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, count_MSA_1, cs_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_vblank_symbols(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, count_MSA_2, cs_2, tl_item.ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_vblank_symbols(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, count_MSA_3, cs_3, tl_item.ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call VBLANK_PATTERN task to handle VBLANK state           
+                    3'b100: begin // Data transmission on 4 lanes
+                        send_vblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_vblank_symbols(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, count_MSA_1, cs_1, ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_vblank_symbols(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, count_MSA_2, cs_2, ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_vblank_symbols(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, count_MSA_3, cs_3, ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call VBLANK_PATTERN task to handle VBLANK state           
                     end
                     default:    // Default case to handle unexpected states
                         `uvm_fatal("ISO_LANE_NUM_ERROR", "Invalid lane number in ISO operation! Lane Count cannot be 3!")
@@ -706,7 +719,7 @@ class dp_source_ref_iso extends uvm_component;
         ref bit SR_flag, BS_flag, BF_flag,
         ref int counter_SR, counter, count_MSA, // Counters for the number of symbols sent
         ref iso_idle_code cs, // Current and next state variables for the IDLE pattern
-        input bit [1:0] lane_num, 
+        input bit [2:0] lane_num, 
         input bit [1:0] lane_id,
         output logic [AUX_DATA_WIDTH-1:0] ISO_symbols_lanex,
         output logic Control_sym_flag_lanex
@@ -714,6 +727,7 @@ class dp_source_ref_iso extends uvm_component;
         int count_lc; // to count which round of VB-ID, Mvid adn Maud is this 
         case (cs)
             ISO_SR: begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE SR STATE - VBLANK"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b1;
                 ISO_symbols_lanex = SR;
                 counter_SR = 0; // Reset counter after sending SR symbols
@@ -726,6 +740,7 @@ class dp_source_ref_iso extends uvm_component;
                     cs = ISO_BF; // Transition to BF state
             end
             ISO_BS: begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE BS STATE - VBLANK"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b1;
                 ISO_symbols_lanex = BS;
                 BS_flag = 1'b1;
@@ -738,6 +753,7 @@ class dp_source_ref_iso extends uvm_component;
                     cs = ISO_BF; // Transition to BF state
             end
             ISO_BF: begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE BF STATE - VBLANK"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b1;
                 ISO_symbols_lanex = BF;
                 if(!BF_flag) begin
@@ -754,6 +770,7 @@ class dp_source_ref_iso extends uvm_component;
                 end
             end
             ISO_VB_ID:begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE VB-ID STATE - VBLANK"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b0;
                 ISO_symbols_lanex = 8'b0000_0001; 
                 counter++; // Increment the counter for the number of symbols sent
@@ -763,17 +780,19 @@ class dp_source_ref_iso extends uvm_component;
                 SR_flag = 1'b0; // Reset SR_flag after sending VB_ID symbols
             end
             ISO_MVID:begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE Mvid STATE - VBLANK"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b0;
                 ISO_symbols_lanex = 8'h00;
                 counter++; // Increment the counter for the number of symbols sent
                 cs = ISO_MAUD; // Transition to MAUD state
             end
             ISO_MAUD:begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE Maud STATE - VBLANK"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b0;
                 ISO_symbols_lanex = 8'h00;
                 counter++; // Increment the counter for the number of symbols sent
                 
-                if((lane_num== 2'b00 && count_lc < 4) || (lane_num== 2'b01 && count_lc < 2)) begin // if not done with iterations repeat
+                if((lane_num== 3'b001 && count_lc < 4) || (lane_num== 3'b010 && count_lc < 2)) begin // if not done with iterations repeat
                     cs = ISO_VB_ID; // Rpeat from VB-ID
                     count_lc++; // Increment
                 end
@@ -788,9 +807,10 @@ class dp_source_ref_iso extends uvm_component;
                 end  
             end
             ISO_DUMMY:begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE DUMMY STATE - VBLANK"), UVM_MEDIUM)
                 Control_sym_flag_lanex = 1'b0;
                 ISO_symbols_lanex = 'b0; // Dummy symbol for IDLE state
-                if(counter < htotal_period) begin
+                if(counter < htotal_period-3) begin
                     cs = ISO_DUMMY; // Stay in IDLE state
                     counter++; // Increment the counter for the number of symbols sent
                 end
@@ -805,6 +825,7 @@ class dp_source_ref_iso extends uvm_component;
                 end
             end
             ISO_MSA:begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE MSA STATE - VBLANK"), UVM_MEDIUM)
                 if(count_MSA== 0 || count_MSA== 1) begin
                     ISO_symbols_lanex = SS;
                     Control_sym_flag_lanex = 1'b1;
@@ -812,7 +833,7 @@ class dp_source_ref_iso extends uvm_component;
                     count_MSA++; // Increment the counter for the number of symbols sent
                     counter++; // Increment the counter for the number of symbols sent
                 end
-                else if((lane_num== 2'b11 && count_MSA < 11) || (lane_num== 2'b01 && count_MSA < 20) || (lane_num== 2'b00 && count_MSA < 38)) begin // how much time needed for MSA transmission depending on lane count
+                else if((lane_num== 3'b100 && count_MSA < 11) || (lane_num== 3'b010 && count_MSA < 20) || (lane_num== 3'b001 && count_MSA < 38)) begin // how much time needed for MSA transmission depending on lane count
                     Control_sym_flag_lanex = 1'b0;
                     count_MSA = count_MSA-2;
                     MSA_symbols(tl_item, lane_num, lane_id, count_MSA, ISO_symbols_lanex); // Call MSA_symbols task to handle MSA state
@@ -848,7 +869,7 @@ class dp_source_ref_iso extends uvm_component;
     // This task is used specifically to transmit MSA symbols across each active lane
     task MSA_symbols(
         input dp_tl_sequence_item tl_item,
-        input bit [1:0] lane_num, // lane count
+        input bit [2:0] lane_num, // lane count
         input bit [1:0] lane_id, // lane number
         ref int count_MSA,
         output logic [AUX_DATA_WIDTH-1:0] ISO_symbols_lanex
@@ -926,7 +947,7 @@ class dp_source_ref_iso extends uvm_component;
             2'b01: begin // Round 2 for lane 0, lane 1
                 case(lane_id) 
                     2'b00: begin // lane0
-                        if(lane_num==2'b01) begin // if lane count is 2
+                        if(lane_num==3'b010) begin // if lane count is 2
                             case(count_MSA-9)
                                 'd0: ISO_symbols_lanex = Mvid_q[0][23:16]; // MSA symbol for lane 0, count 0
                                 'd1: ISO_symbols_lanex = Mvid_q[0][15:8]; // MSA symbol for lane 0, count 1
@@ -1014,27 +1035,27 @@ class dp_source_ref_iso extends uvm_component;
                 break; // Exit the loop if reset is active
             end
             else begin
-                case(tl_item.ISO_LC) // according to the actvie lane count, send HBLANK on all active lanes and remain with IDLE pattern on inactive lanes
-                    2'b00: begin // // Data transmission on 1 lane
-                            send_hblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                case(ISO_LC) // according to the actvie lane count, send HBLANK on all active lanes and remain with IDLE pattern on inactive lanes
+                    3'b001: begin // // Data transmission on 1 lane
+                            send_hblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, cs_0, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
                             IDLE_PATTERN(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
                             IDLE_PATTERN(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
                             IDLE_PATTERN(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
                         end  
 
-                    2'b01: begin // // Data transmission on 2 lanes
-                            send_hblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
-                            send_hblank_symbols(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
+                    3'b010: begin // // Data transmission on 2 lanes
+                            send_hblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, cs_0, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                            send_hblank_symbols(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
                             IDLE_PATTERN(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
                             IDLE_PATTERN(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
                         end             
 
-                    2'b11: begin // Data transmission on 4 lanes
+                    3'b100: begin // Data transmission on 4 lanes
                         // SEND VBLANK pattern to all lanes
-                        send_hblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, cs_0, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_hblank_symbols(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_hblank_symbols(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, tl_item.ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_hblank_symbols(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, tl_item.ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_hblank_symbols(tl_item, SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, cs_0, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_hblank_symbols(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_hblank_symbols(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call VBLANK_PATTERN task to handle VBLANK state
+                        send_hblank_symbols(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call VBLANK_PATTERN task to handle VBLANK state
                     end             
 
                     default:    // Default case to handle unexpected states
@@ -1090,10 +1111,10 @@ class dp_source_ref_iso extends uvm_component;
         end
         // Clear Counters and flags for the next iteration
         counter_0 = 0;
-        if(tl_item.ISO_LC == 2'b01) begin
+        if(ISO_LC == 3'b010) begin
             counter_1 = 0;
         end
-        else if (tl_item.ISO_LC == 2'b11) begin
+        else if (ISO_LC == 3'b100) begin
             counter_1 = 0;
             counter_2 = 0;
             counter_3 = 0;
@@ -1106,7 +1127,7 @@ class dp_source_ref_iso extends uvm_component;
         ref bit SR_flag, BS_flag, BF_flag,
         ref int counter_SR, counter, // Counters for the number of symbols sent
         ref iso_idle_code cs, // Current and next state variables for the IDLE pattern
-        input bit [1:0] lane_num, 
+        input bit [2:0] lane_num, 
         input bit [1:0] lane_id,
         output logic [AUX_DATA_WIDTH-1:0] ISO_symbols_lanex,
         output logic Control_sym_flag_lanex
@@ -1175,7 +1196,7 @@ class dp_source_ref_iso extends uvm_component;
                 ISO_symbols_lanex = 8'h00;
                 counter++; // Increment the counter for the number of symbols sent
                 
-                if((lane_num== 2'b00 && count_lc < 4) || (lane_num== 2'b01 && count_lc < 2)) begin // if not done with iterations repeat
+                if((lane_num== 3'b001 && count_lc < 4) || (lane_num== 3'b010 && count_lc < 2)) begin // if not done with iterations repeat
                     cs = ISO_VB_ID; // Rpeat from VB-ID
                     count_lc++; // Increment
                 end
@@ -1229,25 +1250,25 @@ class dp_source_ref_iso extends uvm_component;
                 break; // Exit the loop if reset is active
             end
             else begin
-                case(tl_item.ISO_LC) // according to the actvie lane count, send VBlank on all active lanes and remain with IDLE pattern on inactive lanes
-                    2'b00: begin // // Data transmission on 1 lane    
-                        send_hactive_symbols(tl_item, counter_0, count_TU_0, count_data_0, remaining_symbols_0, count_comp_0, ceil_flag_0, floor_flag_0, cs_0_TU, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call HACTIVE_PATTERN task to handle HACTIVE state
+                case(ISO_LC) // according to the actvie lane count, send VBlank on all active lanes and remain with IDLE pattern on inactive lanes
+                    3'b001: begin // // Data transmission on 1 lane    
+                        send_hactive_symbols(tl_item, counter_0, count_TU_0, count_data_0, remaining_symbols_0, count_comp_0, ceil_flag_0, floor_flag_0, cs_0_TU, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call HACTIVE_PATTERN task to handle HACTIVE state
                         IDLE_PATTERN(tl_item, SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
                         IDLE_PATTERN(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
                         IDLE_PATTERN(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
                     end
-                    2'b01: begin // // Data transmission on 2 lanes
-                        send_hactive_symbols(tl_item, counter_0, count_TU_0, count_data_0, remaining_symbols_0, count_comp_0, ceil_flag_0, floor_flag_0, cs_0_TU, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call HACTIVE_PATTERN task to handle HACTIVE state
-                        send_hactive_symbols(tl_item, counter_1, count_TU_1, count_data_1, remaining_symbols_1, count_comp_1, ceil_flag_1, floor_flag_1, cs_1_TU, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call HACTIVE_PATTERN task to handle HACTIVE state
+                    3'b010: begin // // Data transmission on 2 lanes
+                        send_hactive_symbols(tl_item, counter_0, count_TU_0, count_data_0, remaining_symbols_0, count_comp_0, ceil_flag_0, floor_flag_0, cs_0_TU, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call HACTIVE_PATTERN task to handle HACTIVE state
+                        send_hactive_symbols(tl_item, counter_1, count_TU_1, count_data_1, remaining_symbols_1, count_comp_1, ceil_flag_1, floor_flag_1, cs_1_TU, ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call HACTIVE_PATTERN task to handle HACTIVE state
                         IDLE_PATTERN(tl_item, SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
                         IDLE_PATTERN(tl_item, SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state          
                     end
-                    2'b11: begin // Data transmission on 4 lanes
+                    3'b100: begin // Data transmission on 4 lanes
                         // SEND VBLANK pattern to all lanes
-                        send_hactive_symbols(tl_item, counter_0, count_data_0, count_TU_0, remaining_symbols_0, count_comp_0, ceil_flag_0, floor_flag_0, cs_0_TU, tl_item.ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call HACTIVE_PATTERN task to handle HACTIVE state
-                        send_hactive_symbols(tl_item, counter_1, count_data_1, count_TU_1, remaining_symbols_1, count_comp_1, ceil_flag_1, floor_flag_1, cs_1_TU, tl_item.ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call HACTIVE_PATTERN task to handle HACTIVE state
-                        send_hactive_symbols(tl_item, counter_2, count_data_2, count_TU_2, remaining_symbols_2, count_comp_2, ceil_flag_2, floor_flag_2, cs_2_TU, tl_item.ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call HACTIVE_PATTERN task to handle HACTIVE state
-                        send_hactive_symbols(tl_item, counter_3, count_data_3, count_TU_3, remaining_symbols_3, count_comp_3, ceil_flag_3, floor_flag_3, cs_3_TU, tl_item.ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call HACTIVE_PATTERN task to handle HACTIVE state 
+                        send_hactive_symbols(tl_item, counter_0, count_data_0, count_TU_0, remaining_symbols_0, count_comp_0, ceil_flag_0, floor_flag_0, cs_0_TU, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call HACTIVE_PATTERN task to handle HACTIVE state
+                        send_hactive_symbols(tl_item, counter_1, count_data_1, count_TU_1, remaining_symbols_1, count_comp_1, ceil_flag_1, floor_flag_1, cs_1_TU, ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call HACTIVE_PATTERN task to handle HACTIVE state
+                        send_hactive_symbols(tl_item, counter_2, count_data_2, count_TU_2, remaining_symbols_2, count_comp_2, ceil_flag_2, floor_flag_2, cs_2_TU, ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call HACTIVE_PATTERN task to handle HACTIVE state
+                        send_hactive_symbols(tl_item, counter_3, count_data_3, count_TU_3, remaining_symbols_3, count_comp_3, ceil_flag_3, floor_flag_3, cs_3_TU, ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call HACTIVE_PATTERN task to handle HACTIVE state 
                     end
                     default:    // Default case to handle unexpected states
                         `uvm_fatal("ISO_LANE_NUM_ERROR", "Invalid lane number in ISO operation! Lane Count cannot be 3!")
@@ -1310,7 +1331,7 @@ class dp_source_ref_iso extends uvm_component;
         ref int counter, count_TU, count_data, remaining_symbols, count_comp, // Counts the number of symbols sent in a single TU
         ref bit ceil_flag, floor_flag, // Flags for the up and down values
         ref iso_TU_code cs, // Current and next state variables for the IDLE pattern
-        input bit [1:0] lane_num, // lane count
+        input bit [2:0] lane_num, // lane count
         input bit [1:0] lane_id,  // lane number
         output logic [AUX_DATA_WIDTH-1:0] ISO_symbols_lanex,
         output logic Control_sym_flag_lanex

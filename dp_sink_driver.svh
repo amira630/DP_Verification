@@ -62,7 +62,7 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
                                 default: @(posedge dp_sink_vif.clk_RBR);
                             endcase
                         dp_sink_vif.ISO_sink(stim_seq_item.Control_sym_flag_lane0, stim_seq_item.Control_sym_flag_lane1, stim_seq_item.Control_sym_flag_lane2, stim_seq_item.Control_sym_flag_lane3,
-                                        stim_seq_item.ISO_symbols_lane0, stim_seq_item.ISO_symbols_lane1, stim_seq_item.ISO_symbols_lane2, stim_seq_item.ISO_symbols_lane3);                   
+                                        stim_seq_item.ISO_symbols_lane0, stim_seq_item.ISO_symbols_lane1, stim_seq_item.ISO_symbols_lane2, stim_seq_item.ISO_symbols_lane3, stim_seq_item.Final_BW);                   
                         end
                     join
                     if (stim_seq_item.AUX_START_STOP) begin

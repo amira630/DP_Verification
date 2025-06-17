@@ -97,7 +97,6 @@ class dp_tl_monitor extends uvm_monitor;
           rsp_seq_item.LPM_CR_Apply_New_BW_LC = dp_tl_vif.LPM_CR_Apply_New_BW_LC;
           rsp_seq_item.LPM_CR_Apply_New_Driving_Param = dp_tl_vif.LPM_CR_Apply_New_Driving_Param;
           rsp_seq_item.EQ_FSM_Repeat = dp_tl_vif.EQ_FSM_Repeat;
-
       end
       begin
         @(negedge dp_tl_vif.MS_Stm_CLK);  
@@ -119,9 +118,9 @@ class dp_tl_monitor extends uvm_monitor;
         rsp_seq_item.MS_VSYNC = dp_tl_vif.MS_VSYNC;
         rsp_seq_item.MS_HSYNC = dp_tl_vif.MS_HSYNC;
         rsp_seq_item.WFULL = dp_tl_vif.WFULL;
+        mon_ap.write(rsp_seq_item);
       end
     join
-    mon_ap.write(rsp_seq_item);
     `uvm_info("run_phase", rsp_seq_item.convert2string_RQST(), UVM_LOW) 
    end
   endtask
