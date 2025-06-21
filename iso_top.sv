@@ -87,18 +87,67 @@ wire             fifo_almost_empty;
 wire             mbs_empty_regs;
 
 
+wire            sync_spm_msa_vld;
+wire            sync_spm_iso_start;
+wire            sync_ms_stm_bw_valid;
+wire            sync_ms_de;
+wire            sync_ms_vsync;
+wire            sync_ms_hsync;
+////////////////////////////////////////////////////////////////
+DF_SYNC #(.NUM_STAGES(2), .PTR_WIDTH(1)) DF0(
+.clk(ls_clk),
+.rst_n(rst_n),
+.async_ptr(spm_msa_vld),
+.sync_ptr(sync_spm_msa_vld)
+);
+
+DF_SYNC #(.NUM_STAGES(3), .PTR_WIDTH(1)) DF1(
+.clk(ls_clk),
+.rst_n(rst_n),
+.async_ptr(spm_iso_start),
+.sync_ptr(sync_spm_iso_start)
+);
+
+DF_SYNC #(.NUM_STAGES(2), .PTR_WIDTH(1)) DF2(
+.clk(ls_clk),
+.rst_n(rst_n),
+.async_ptr(ms_stm_bw_valid),
+.sync_ptr(sync_ms_stm_bw_valid)
+);
+
+DF_SYNC #(.NUM_STAGES(2), .PTR_WIDTH(1)) DF3(
+.clk(ls_clk),
+.rst_n(rst_n),
+.async_ptr(ms_de),
+.sync_ptr(sync_ms_de)
+);
+
+DF_SYNC #(.NUM_STAGES(2), .PTR_WIDTH(1)) DF4(
+.clk(ls_clk),
+.rst_n(rst_n),
+.async_ptr(ms_vsync),
+.sync_ptr(sync_ms_vsync)
+);
+
+DF_SYNC #(.NUM_STAGES(2), .PTR_WIDTH(1)) DF5(
+.clk(ls_clk),
+.rst_n(rst_n),
+.async_ptr(ms_hsync),
+.sync_ptr(sync_ms_hsync)
+);
+
 ////////////////////////////////////////////////////////////////
 
 iso_ctrl_top iso_ctrl_top_0 (
 .clk(ls_clk),
 .rst_n(rst_n),
-.ms_de(ms_de),
+.ms_de(sync_ms_de),
 .ms_stm_bw(ms_stm_bw),
-.ms_stm_bw_valid(ms_stm_bw_valid),
+.ms_stm_bw_valid(sync_ms_stm_bw_valid),
 .td_vld_data(td_vld_data),
-.ms_vsync(ms_vsync),
-.ms_hsync(ms_hsync),
-.spm_iso_start(spm_iso_start),
+.ms_vsync(sync_ms_vsync),
+.ms_hsync(sync_ms_hsync),
+.spm_iso_start(sync_spm_iso_start),
 .spm_lane_count(spm_lane_count),
 .spm_lane_bw(spm_lane_bw),
 .htotal(spm_msa[63:48]),             // total horizontal pixels
@@ -110,7 +159,7 @@ iso_ctrl_top iso_ctrl_top_0 (
 .h_sync_polarity(spm_msa[112]),    // horizontal sync polarity
 .v_sync_polarity(spm_msa[128]),    // vertical sync polarity
 //.spm_msa(spm_msa),
-.spm_msa_vld(spm_msa_vld),
+.spm_msa_vld(sync_spm_msa_vld),
 .idle_activate_en_lane0(idle_activate_en_lane0),
 .idle_activate_en_lane1(idle_activate_en_lane1),
 .idle_activate_en_lane2(idle_activate_en_lane2),
@@ -147,13 +196,13 @@ iso_lanes_top iso_lanes_top_0(
 .main_steered(main_steered_lane0),
 .sec_steered(sec_steered_lane0),
 .sec_steered_vld(sec_steered_vld),
-.td_lane_count(td_lane_count),
+//.td_lane_count(td_lane_count),
 .sched_stream_state(sched_stream_state),
 .sched_stream_en(sched_stream_en_lane0),
 .sched_blank_id(sched_blank_id),
 .sched_blank_state(sched_blank_state),
 .sched_blank_en(sched_blank_en_lane0),
-.sched_idle_en(spm_iso_start),
+.sched_idle_en(sync_spm_iso_start),
 .idle_activate_en(idle_activate_en_lane0),
 .sched_stream_idle_sel(sched_stream_idle_sel_lane0),
 .iso_symbols(iso_symbols_lane0),
@@ -169,13 +218,13 @@ iso_lanes_top iso_lanes_top_1(
 .main_steered(main_steered_lane1),
 .sec_steered(sec_steered_lane1),
 .sec_steered_vld(sec_steered_vld),
-.td_lane_count(td_lane_count),
+//.td_lane_count(td_lane_count),
 .sched_stream_state(sched_stream_state),
 .sched_stream_en(sched_stream_en_lane1),
 .sched_blank_id(sched_blank_id),
 .sched_blank_state(sched_blank_state),
 .sched_blank_en(sched_blank_en_lane1),
-.sched_idle_en(spm_iso_start),
+.sched_idle_en(sync_spm_iso_start),
 .idle_activate_en(idle_activate_en_lane1),
 .sched_stream_idle_sel(sched_stream_idle_sel_lane1),
 .iso_symbols(iso_symbols_lane1),
@@ -191,13 +240,13 @@ iso_lanes_top iso_lanes_top_2(
 .main_steered(main_steered_lane2),
 .sec_steered(sec_steered_lane2),
 .sec_steered_vld(sec_steered_vld),
-.td_lane_count(td_lane_count),
+//.td_lane_count(td_lane_count),
 .sched_stream_state(sched_stream_state),
 .sched_stream_en(sched_stream_en_lane2),
 .sched_blank_id(sched_blank_id),
 .sched_blank_state(sched_blank_state),
 .sched_blank_en(sched_blank_en_lane2),
-.sched_idle_en(spm_iso_start),
+.sched_idle_en(sync_spm_iso_start),
 .idle_activate_en(idle_activate_en_lane2),
 .sched_stream_idle_sel(sched_stream_idle_sel_lane2),
 .iso_symbols(iso_symbols_lane2),
@@ -213,13 +262,13 @@ iso_lanes_top iso_lanes_top_3(
 .main_steered(main_steered_lane3),
 .sec_steered(sec_steered_lane3),
 .sec_steered_vld(sec_steered_vld),
-.td_lane_count(td_lane_count),
+//.td_lane_count(td_lane_count),
 .sched_stream_state(sched_stream_state),
 .sched_stream_en(sched_stream_en_lane3),
 .sched_blank_id(sched_blank_id),
 .sched_blank_state(sched_blank_state),
 .sched_blank_en(sched_blank_en_lane3),
-.sched_idle_en(spm_iso_start),
+.sched_idle_en(sync_spm_iso_start),
 .idle_activate_en(idle_activate_en_lane3),
 .sched_stream_idle_sel(sched_stream_idle_sel_lane3),
 .iso_symbols(iso_symbols_lane3),

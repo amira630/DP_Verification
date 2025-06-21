@@ -96,8 +96,9 @@ module timing_decision_block
     reg  [6:0]  hactive_pipeline_counter; // Pipeline counter for tracking stages
     
     // Hblank equivalent period calculation registers
-    reg  [19:0] hblank_stage1_result;    // Result of (HTotal - HWidth) * SPM_Lane_BW
-    reg  [13:0] hblank_width_equivalent; // blankibg period calculation 
+    reg  [19:0] hblank_stage1_result;    // Result of (HTotal - HWidth)
+    reg  [19:0] hblank_stage2_result;     // Result of hblank_stage1_result * spm_lane_bw_sync
+    reg  [13:0] hblank_width_equivalent; // blanking period calculation 
     reg         hblank_valid;            // Valid flag for hblank calculation
     reg  [6:0]  hblank_pipeline_counter; // Pipeline counter for tracking stages
 
@@ -142,6 +143,7 @@ module timing_decision_block
     reg [19:0] total_stuffing_stage2 ;
     reg [19:0] tu_alternate_down_stage1 ;
     reg [19:0] tu_alternate_down_stage2 ;
+    reg [19:0] tu_alternate_down_stage3 ;
     reg [15:0] tu_alternate_down ; // total number of times to alternate down in active period
     reg [15:0] tu_alternate_up ;  // total number of times to alternate up in active period
     reg [9:0]  alternate_counter; // counter to count number of cycles the calculation for up and down transition is done
@@ -304,7 +306,7 @@ module timing_decision_block
     (
         .clk(clk),
         .rst(rst_n),
-        .dividend(hblank_stage1_result),
+        .dividend(hblank_stage2_result),
         .divisor(ms_stm_bw4),
         .start(div_start4),
         .quotient(hblank_width_equivalent),
@@ -473,7 +475,6 @@ module timing_decision_block
             vtotal_sync                    <= 16'b0;
             vheight_sync                   <= 16'b0;
             misc0_1_sync                   <= 9'b0;
-
         end
     end
     //==================================================================
@@ -550,57 +551,55 @@ module timing_decision_block
 //==============================================================================
 // definning color format (RGB or YCbCr) and bpc (number of bits per component)
 //==============================================================================
-always_comb begin
-    // default values
-    bpc               = 16'd0;
-    symbols_per_pixel = 16'd0;
-    symbol_bit_size   = 16'd0;
-    bpp               = 16'd0; 
-    if (all_saved_flag == 1'b1) begin
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        bpc               <= 16'd0;
+        symbols_per_pixel <= 16'd0;
+        symbol_bit_size   <= 16'd0;
+        bpp               <= 16'd0;
+    end 
+    else 
+    if (all_saved_flag == 1'b1) 
+    begin
         case (misc0_1_sync)
-            9'b000010000: // RGB 8 bpc
-            begin
-                bpc               = 16'd8;
-                symbols_per_pixel = 16'd3;
-                symbol_bit_size   = 16'd8;
-                bpp               = 16'd24; // bits per pixel
+            9'b000010000: begin // RGB 8 bpc
+                bpc               <= 16'd8;
+                symbols_per_pixel <= 16'd3;
+                symbol_bit_size   <= 16'd8;
+                bpp               <= 16'd24;
             end
-            9'b001000000: // RGB 16 bpc
-            begin
-                bpc               = 16'd16;
-                symbols_per_pixel = 16'd6;
-                symbol_bit_size   = 16'd8;
-                bpp               = 16'd48; // bits per pixel
+            9'b001000000: begin // RGB 16 bpc
+                bpc               <= 16'd16;
+                symbols_per_pixel <= 16'd6;
+                symbol_bit_size   <= 16'd8;
+                bpp               <= 16'd48;
             end
-            9'b000010110: // YCbCr 4:4:4 8 bpc
-            begin
-                bpc               = 16'd8;
-                symbols_per_pixel = 16'd3;
-                symbol_bit_size   = 16'd8;
-                bpp               = 16'd24;
+            9'b000010110: begin // YCbCr 4:4:4 8 bpc
+                bpc               <= 16'd8;
+                symbols_per_pixel <= 16'd3;
+                symbol_bit_size   <= 16'd8;
+                bpp               <= 16'd24;
             end
-            9'b001000110: // YCbCr 4:4:4 16 bpc
-            begin
-                bpc               = 16'd16;
-                symbols_per_pixel = 16'd6;
-                symbol_bit_size   = 16'd8;
-                bpp               = 16'd48; // bits per pixel
+            9'b001000110: begin // YCbCr 4:4:4 16 bpc
+                bpc               <= 16'd16;
+                symbols_per_pixel <= 16'd6;
+                symbol_bit_size   <= 16'd8;
+                bpp               <= 16'd48;
             end
-            default:
-            begin
-                bpc               = 16'd10;
-                symbols_per_pixel = 16'd3;
-                symbol_bit_size   = 16'd8;
-                bpp               = 16'd30; // bits per pixel
+            default: begin
+                bpc               <= 16'd10;
+                symbols_per_pixel <= 16'd3;
+                symbol_bit_size   <= 16'd8;
+                bpp               <= 16'd30;
             end
         endcase
     end 
     else 
     begin
-        bpc               = 16'd0;
-        symbols_per_pixel = 16'd0;
-        symbol_bit_size   = 16'd0;
-        bpp               = 16'd0;
+        bpc               <= 16'd0;
+        symbols_per_pixel <= 16'd0;
+        symbol_bit_size   <= 16'd0;
+        bpp               <= 16'd0;
     end
 end
 // calculating hwidth module number of lanes
@@ -801,6 +800,7 @@ always @(posedge clk or negedge rst_n) begin
         hblank_valid              <= 0;
         hblank_pipeline_counter   <= 0;
         div_start4                <= 0; // Reset division start signal
+        hblank_stage2_result      <= 0; // Reset hblank stage 2 result
     end 
     else 
     if(all_saved_flag == 1'b1)
@@ -808,7 +808,8 @@ always @(posedge clk or negedge rst_n) begin
         // ** 1) hblank equivalent calculation **
 
         // Stage 1: 
-        hblank_stage1_result <= (htotal_sync - hwidth_sync) * spm_lane_bw_sync;
+        hblank_stage1_result <= (htotal_sync - hwidth_sync) ;
+        hblank_stage2_result <= hblank_stage1_result * spm_lane_bw_sync;
         // Stage 2: 
         if(hblank_pipeline_counter == 5)
         begin
@@ -840,6 +841,7 @@ always @(posedge clk or negedge rst_n) begin
         hblank_valid              <= 0;
         hblank_pipeline_counter   <= 0;
         div_start4                <= 0; // Reset division start signal
+        hblank_stage2_result      <= 0; // Reset hblank stage 2 result
     end
 end
 
@@ -942,14 +944,15 @@ end
             //second_decimal                <= 0;
             //rounded_first_decimal         <= 0;
             div_start8                    <= 0;
+            div_start6                    <= 0; // Reset division start signal
         end 
         else
         if(all_saved_flag == 1'b1) 
         begin
-            // Stage 1: bits/sec = pixel_clock × bpp
+            // Stage 1: bits/sec = pixel_clock * bpp
             stage1_total_bits <= ms_stm_bw_sync * bpp;
 
-            // Stage 2: symbols/sec (8b/10b encoding → divide by 8)
+            // Stage 2: symbols/sec (8b/10b encoding ? divide by 8)
             //stage2_total_symbols <= stage1_total_bits / symbol_bit_size;
             if(stuffing_pipeline_counter == 4)
             begin
@@ -964,13 +967,12 @@ end
             
             //stage3_symbols_per_lane <= stage2_total_symbols / spm_lane_count_sync;
 
-            // Stage 4: Fixed-point shift TU size → TU × 2^N
+            // Stage 4: Fixed-point shift TU size ? TU * 2^N
             if(div_done7 == 1'b1)
             begin
                 stage4_symbols_per_TU <= stage3_symbols_per_lane * TU_SIZE ;
             end
 
-            // Stage 5: Multiply TU_shifted × symbols_per_lane
             stage5_mult_result <= stage4_symbols_per_TU << FP_PRECISION;
 
             // Stage 6: Divide by link symbol rate
@@ -1036,6 +1038,7 @@ end
             stuffing_pipeline_counter     <= 0;
             stuffing_valid                <= 0;
             div_start8                    <= 0; // Reset division start signal
+            div_start6                    <= 0; // Reset division start signal
         end
     end
 
@@ -1061,6 +1064,8 @@ end
             //tu_number                   <= 0; 
             stage7_scaled_valid_symbols <= 0;
             div_start9                  <= 0; // Reset division start signal
+            tu_alternate_down_stage3    <= 0;
+            div_start10                 <= 0; // Reset division start signal
         end 
         else
         if(stuffing_valid == 1'b1) 
@@ -1088,9 +1093,17 @@ end
             // total stuffing required % transfer unit number 
             if(tu_number != 0)
             begin
-                tu_alternate_down_stage1           <= total_stuffing_req + tu_number  ; 
-                tu_alternate_down_stage2           <= (TU_SIZE - valid_symbols_integer)*tu_number;
-                tu_alternate_down                  <=  tu_alternate_down_stage1 - tu_alternate_down_stage2 ; // calculating alternating down number of times 
+                tu_alternate_down_stage1           <= total_stuffing_req + tu_number; 
+                tu_alternate_down_stage2           <= TU_SIZE - valid_symbols_integer;
+                tu_alternate_down_stage3           <= tu_alternate_down_stage2 * tu_number;
+                if (tu_alternate_down_stage1 >= tu_alternate_down_stage3)
+                begin
+                    tu_alternate_down <= tu_alternate_down_stage1 - tu_alternate_down_stage3;// calculating alternating down number of times 
+                end
+                else
+                begin
+                    tu_alternate_down <= 0;
+                end
                 // calculating alternating up number of times 
                 tu_alternate_up                    <= tu_number - tu_alternate_down ;
             end
@@ -1124,6 +1137,8 @@ end
             //tu_number                   <= 0; 
             stage7_scaled_valid_symbols <= 0;
             div_start9                  <= 0; // Reset division start signal
+            tu_alternate_down_stage3    <= 0;
+            div_start10                 <= 0; // Reset division start signal
         end
     end
 

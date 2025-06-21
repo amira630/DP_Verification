@@ -59,7 +59,7 @@ module Divider
                 remainder_reg <= subtract ? subtracted_remainder : next_remainder;
                 quotient_reg  <= {quotient_reg[WIDTH-2:0], subtract};
                 temp_dividend <= {temp_dividend[WIDTH-2:0], 1'b0};
-                count <= count - 1;
+                count         <= count - 1;
             end 
             else 
             begin

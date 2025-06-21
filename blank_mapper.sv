@@ -17,7 +17,7 @@ module blank_mapper (
     input wire        sched_blank_en         ,
     input wire        sched_blank_id         ,
     input wire [1:0]  sched_blank_state      ,
-    input wire [1:0]  td_lane_count          ,    
+    //input wire [1:0]  td_lane_count          ,    
     input wire [7:0]  sec_steered_out        , 
 	  input wire        sec_steered_vld        ,
     
