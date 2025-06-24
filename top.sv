@@ -6,7 +6,7 @@
 // add wave -r /top/sink_if/*
 // add wave -r /top/*
 
-`timescale 1us / 1ns
+`timescale 1us / 1fs
 
 // Standard UVM import & include:
 import uvm_pkg::*;
@@ -14,6 +14,7 @@ import uvm_pkg::*;
 
 // Any further package imports:
 import dp_source_test_pkg::*;
+import test_parameters_pkg::*;
 
 module top();
     bit clk_AUX, clk_RBR, clk_HBR, clk_HBR2, clk_HBR3, MS_Stm_CLK;
@@ -38,28 +39,33 @@ module top();
             end
             begin
                 forever
-                    #0.003 clk_RBR = ~clk_RBR; // will round to 3.086420ns
+                    #(rbr_CLK_PERIOD/2000) clk_RBR = ~clk_RBR; // will round to 3.086420ns
                     // #3.086419753
             end
             begin
                 forever
-                    #0.002 clk_HBR = ~clk_HBR; // will round to 1.851852ns
+                    #(hbr_CLK_PERIOD/2000) clk_HBR = ~clk_HBR; // will round to 1.851852ns
                     // #1.851851852
             end
             begin
                 forever
-                    #0.001 clk_HBR2 = ~clk_HBR2; // will round to 0.925926ns
+                    #(hbr2_CLK_PERIOD/2000) clk_HBR2 = ~clk_HBR2; // will round to 0.925926ns
                     // #0.925925926
             end
             begin
                 forever
-                    #0.001 clk_HBR3 = ~clk_HBR3; // will round to 0.061728ns
+                    #(hbr3_CLK_PERIOD/2000) clk_HBR3 = ~clk_HBR3; // will round to 0.061728ns
                     // #0.06172839505
             end
             begin
                 forever
-                    #(0.00625) MS_Stm_CLK = ~MS_Stm_CLK; // Pixel Stream Clock 
+                    #0.01 MS_Stm_CLK = ~MS_Stm_CLK; // Pixel Stream Clock 
+                    // #(0.00625) 80MHz
+                    // #(0.019841269) 25.2MHz
+                    // #(0.003125) 160MHz
+                    // #(0.004167) 120MHz
                     // #3.086419753
+                    // #(0.005) 100MHz
                     // #(tl_if.CLOCK_PERIOD/2)
             end
         join

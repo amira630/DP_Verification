@@ -93,6 +93,8 @@ wire            sync_ms_stm_bw_valid;
 wire            sync_ms_de;
 wire            sync_ms_vsync;
 wire            sync_ms_hsync;
+
+wire            sched_mbs_flag;
 ////////////////////////////////////////////////////////////////
 DF_SYNC #(.NUM_STAGES(2), .PTR_WIDTH(1)) DF0(
 .clk(ls_clk),
@@ -185,7 +187,8 @@ iso_ctrl_top iso_ctrl_top_0 (
 .sched_stream_idle_sel_lane0(sched_stream_idle_sel_lane0),
 .sched_stream_idle_sel_lane1(sched_stream_idle_sel_lane1),
 .sched_stream_idle_sel_lane2(sched_stream_idle_sel_lane2),
-.sched_stream_idle_sel_lane3(sched_stream_idle_sel_lane3)
+.sched_stream_idle_sel_lane3(sched_stream_idle_sel_lane3),
+.sched_active_line(sched_mbs_flag)
 );
 
 ////////////////////////////////////////////////////////////////
@@ -293,7 +296,8 @@ main_stream_bus_steering main_stream_bus_steering_0(
 .main_steered_lane0(main_steered_lane0),
 .main_steered_lane1(main_steered_lane1),
 .main_steered_lane2(main_steered_lane2),
-.main_steered_lane3(main_steered_lane3)
+.main_steered_lane3(main_steered_lane3),
+.blank_indicator(sched_mbs_flag)
 );
 
 ////////////////////////////////////////////////////////////////

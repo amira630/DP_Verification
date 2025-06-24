@@ -138,6 +138,9 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         HWidth inside {[640 : 3840]};            // Horizontal: VGA to 4K
         VHeight inside {[480 : 2160]};           // Vertical: VGA to 4K
 
+        // HWidth == 640;            // Horizontal: VGA to 4K
+        // VHeight == 480;           // Vertical: VGA to 4K
+
         // 3. Sync pulse widths (typical non-zero values)
         HSW inside {[8 : 255]};
         VSW inside {[1 : 127]};
@@ -165,6 +168,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
         // 9. Reasonable total bounds
         HTotal inside {[800 : 4096]};            // HDMI/DVI/DP-friendly ranges
         VTotal inside {[500 : 3000]};
+        // HTotal == 800;            // HDMI/DVI/DP-friendly ranges
+        // VTotal == 500;
         HStart <= HTotal;
         VStart <= VTotal;
 

@@ -20,6 +20,11 @@
     parameter int HBR3 = 8100;          // 8.1 Gbps/lane, meaning 810MHz, which means a clock period of 0.1234567901 ns
     parameter int AUX_RATE = 100000;    // 100 KHz for AUX_CH, which means a clock period of 10us 
 
+    parameter hbr3_CLK_PERIOD = 1.234567901;    // ~810MHz
+    parameter hbr2_CLK_PERIOD = 1.851851852;    // 540MHz
+    parameter hbr_CLK_PERIOD  = 3.703703704;     // 270MHz
+    parameter rbr_CLK_PERIOD  = 6.172839506;     // 162MHz
+  
 // Lane Count
     parameter int LANE_1 = 1;
     parameter int LANE_2 = 2;

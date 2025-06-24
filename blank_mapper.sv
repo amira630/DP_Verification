@@ -165,9 +165,10 @@ always @(posedge clk or negedge rst_n)
           bs_symbols_ctr <= 'b0;	
 		        end	
         //============================================================================================================//
-        //                                          BE + BF + BF + BE                                                 //
+        //                                                    BE                                                      //
         //============================================================================================================//				
         2'b11:  begin // BE
+        /*
 				  if (bs_symbols_ctr == 'b00 || bs_symbols_ctr == 'b11)
 				    begin
                       blank_symbols <= 'hBE ; //BE					  
@@ -176,12 +177,13 @@ always @(posedge clk or negedge rst_n)
 				    begin
                       blank_symbols <= 'hBD ; //BF 					  
 					end
-					
-				  bs_symbols_ctr <= bs_symbols_ctr + 'b1;	
+				*/
+          blank_symbols <= 'hBE ; //BE	
+				  //bs_symbols_ctr <= bs_symbols_ctr + 'b1;	
 				  blank_steering_state <= 'b0; //idle	
-                  blank_control_sym_flag <= 'b1;
-                  start_symbols_ctr <= 'b0;				  
-                end		
+          blank_control_sym_flag <= 'b1;
+          start_symbols_ctr <= 'b0;				  
+          end		
         endcase   
       end
 	else

@@ -11,6 +11,8 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
 
     bit in_CR_EQ; // flag to know if we came back to CR from EQ or not
 
+    logic [15:0] VBlank, HBlank;
+
     function new(string name = "dp_tl_base_sequence");
         super.new(name);
     endfunction //new()
@@ -219,13 +221,18 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                                         seq_item.operation = ISO;
                                     finish_item(seq_item);
                                     get_response(seq_item);
-                                    ISO_INIT();
-                                    Main_Stream(1);
-                                    repeat(50) begin
+                                    ISO_INIT_basic();
+                                    Main_Stream_basic(1);
+                                    repeat(100000) begin
                                         start_item(seq_item);
                                         finish_item(seq_item);
                                         get_response(seq_item);
                                     end
+                                    start_item(seq_item);
+                                    seq_item.SPM_MSA_VLD = 1'b0;
+                                    seq_item.SPM_ISO_start = 1'b0; 
+                                    finish_item(seq_item);
+                                    get_response(seq_item);
                                     `uvm_fatal("TL_BASE_SEQ", "DOOOOOOOOOOOOOOOONE")
                                 end
                             join
@@ -1613,7 +1620,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         else
             seq_item.MS_VSYNC = 1'b0; // VSP is active low, so set MS_VSYNC to 0
         seq_item.MS_Stm_BW = 10'd80; // 80MHz for now, should be randomized
-        seq_item.MS_Pixel_Data = 'b1;
+        // seq_item.MS_Pixel_Data = 'b1;
         seq_item.CLOCK_PERIOD = (1/seq_item.MS_Stm_BW);
         finish_item(seq_item);
         get_response(seq_item);
@@ -1715,9 +1722,157 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         // seq_item.rand_mode(0);
         seq_item.SPM_Transaction_VLD = 1'b0;
         seq_item.SPM_MSA_VLD = 1'b0;
-        seq_item.SPM_ISO_start = 1'b0; // NEED TO ADD A CONDITION FOR ERROR THAT RELATES TO THE HPD_IRQ // I think I will need to add a flag in the IRQ task that I will check here
+        // seq_item.SPM_ISO_start = 1'b0; // NEED TO ADD A CONDITION FOR ERROR THAT RELATES TO THE HPD_IRQ // I think I will need to add a flag in the IRQ task that I will check here
         finish_item(seq_item);
         get_response(seq_item);
     endtask
 
+
+    task ISO_INIT_basic();
+        if(seq_item == null)
+            seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+
+        seq_item.rand_mode(0);
+
+        start_item(seq_item);
+
+        seq_item.SPM_Transaction_VLD = 1'b0;
+        seq_item.LPM_Transaction_VLD = 1'b0;
+        seq_item.SPM_MSA_VLD = 1'b1;
+        seq_item.SPM_ISO_start = 1'b1;
+        seq_item.operation = ISO;
+
+        seq_item.SPM_BW_Sel = 2'b00;
+        seq_item.SPM_Lane_BW = 16'd162; // 1.62 Gbps/lane
+        seq_item.SPM_Lane_Count = 3'b001; // 1 lane
+
+        seq_item.Mvid     = 24'd1000;
+        seq_item.Nvid     = 24'd100000;
+        // seq_item.HTotal   = 16'd320;
+        // seq_item.HWidth   = 16'd256;
+        // seq_item.HStart   = 16'd28;
+        // seq_item.HSW      = 16'd6;
+
+        // seq_item.HTotal   = 16'd2200;
+        // seq_item.HWidth   = 16'd1920;
+        // seq_item.HStart   = 16'd192;
+        // seq_item.HSW      = 16'd44;
+        
+        // 640x480 @ 60Hz
+        seq_item.HTotal   = 16'd800;
+        seq_item.HWidth   = 16'd640;
+        seq_item.HStart   = '0;
+        seq_item.HSW      = 16'd64;
+
+        seq_item.VTotal   = 16'd500;
+        seq_item.VHeight  = 16'd480;
+        seq_item.VStart   = '0;
+        seq_item.VSW      = 16'd4;
+
+        // seq_item.HTotal   = 16'd1760;
+        // seq_item.HWidth   = 16'd1280;
+        // seq_item.HStart   = 16'd192;
+        // seq_item.HSW      = 16'd80;
+
+        seq_item.HSP      = 1'b1; // HSW = 1 not on, HSW = 0 on 
+        
+        // seq_item.VTotal   = 16'd45;
+        // seq_item.VHeight  = 16'd36;
+        // seq_item.VStart   = 16'd4;
+        // seq_item.VSW      = 16'd1;
+
+        // seq_item.VTotal   = 16'd1125;
+        // seq_item.VHeight  = 16'd1080;
+        // seq_item.VStart   = 16'd41;
+        // seq_item.VSW      = 16'd5;
+
+        // seq_item.VTotal   = 16'd750;
+        // seq_item.VHeight  = 16'd720;
+        // seq_item.VStart   = 16'd41;
+        // seq_item.VSW      = 16'd10;
+
+        seq_item.VSP      = 1'b1; // VSW = 1 not on, VSW=0 on 
+        seq_item.MISC0    = 8'b001_00000; // 8bpc
+        seq_item.MISC1    = 8'h00;
+
+        seq_item.SPM_MSA[0]  = seq_item.Mvid[7:0];     seq_item.SPM_MSA[1]  = seq_item.Mvid[15:8];               seq_item.SPM_MSA[2] = seq_item.Mvid[23:16];
+        seq_item.SPM_MSA[3]  = seq_item.Nvid[7:0];     seq_item.SPM_MSA[4]  = seq_item.Nvid[15:8];               seq_item.SPM_MSA[5] = seq_item.Nvid[23:16];
+        seq_item.SPM_MSA[6]  = seq_item.HTotal[7:0];   seq_item.SPM_MSA[7]  = seq_item.HTotal[15:8];             seq_item.SPM_MSA[8] = seq_item.VTotal[7:0];
+        seq_item.SPM_MSA[9]  = seq_item.VTotal[15:8];  seq_item.SPM_MSA[10] = seq_item.HStart[7:0];              seq_item.SPM_MSA[11] = seq_item.HStart[15:8];
+        seq_item.SPM_MSA[12] = seq_item.VStart[7:0];   seq_item.SPM_MSA[13] = seq_item.VStart[15:8];             seq_item.SPM_MSA[14] = {seq_item.HSW[6:0], seq_item.HSP};
+        seq_item.SPM_MSA[15] = seq_item.HSW[14:7];     seq_item.SPM_MSA[16] = {seq_item.VSW[6:0], seq_item.VSP}; seq_item.SPM_MSA[17] = seq_item.VSW[14:7];
+        seq_item.SPM_MSA[18] = seq_item.HWidth[7:0];   seq_item.SPM_MSA[19] = seq_item.HWidth[15:8];             seq_item.SPM_MSA[20] = seq_item.VHeight[7:0];
+        seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
+        // Concatenate all 24 bytes of MSA data into SPM_Full_MSA
+        seq_item.SPM_Full_MSA = {seq_item.SPM_MSA[23], seq_item.SPM_MSA[22], seq_item.SPM_MSA[21], seq_item.SPM_MSA[20],
+                    seq_item.SPM_MSA[19], seq_item.SPM_MSA[18], seq_item.SPM_MSA[17], seq_item.SPM_MSA[16],
+                    seq_item.SPM_MSA[15], seq_item.SPM_MSA[14], seq_item.SPM_MSA[13], seq_item.SPM_MSA[12],
+                    seq_item.SPM_MSA[11], seq_item.SPM_MSA[10], seq_item.SPM_MSA[9],  seq_item.SPM_MSA[8],
+                    seq_item.SPM_MSA[7],  seq_item.SPM_MSA[6],  seq_item.SPM_MSA[5],  seq_item.SPM_MSA[4],
+                    seq_item.SPM_MSA[3],  seq_item.SPM_MSA[2],  seq_item.SPM_MSA[1],  seq_item.SPM_MSA[0]};
+
+        seq_item.MS_Stm_BW = 10'd50; // MHz
+        seq_item.MS_Stm_BW_VLD = 1'b1;
+        seq_item.MS_DE = 0;
+
+        seq_item.CLOCK_PERIOD = (1.0 / seq_item.MS_Stm_BW);
+
+        seq_item.MS_VSYNC = 1'b1;
+        seq_item.MS_HSYNC = 1'b1; // Both are off
+        finish_item(seq_item);
+        get_response(seq_item);
+        VBlank = seq_item.VTotal - seq_item.VHeight; // Calculate the VBlank
+        HBlank = seq_item.HTotal - seq_item.HWidth;
+    endtask
+
+    task Main_Stream_basic(input [15:0] frames);
+        int countv = 0;
+        int counth = 1;
+        bit is_firstframe = 1;
+        bit new_frame;
+
+        repeat(frames) begin
+            new_frame = 1;
+
+            repeat(seq_item.VTotal) begin
+                repeat(seq_item.HTotal) begin
+                    start_item(seq_item);
+                    seq_item.rand_mode(0);
+                    seq_item.MS_Stm_BW_VLD = 1'b0;
+                    seq_item.SPM_Transaction_VLD = 1'b0;
+                    seq_item.SPM_MSA_VLD = (is_firstframe || new_frame);
+                    new_frame = 0;
+                    is_firstframe = 0;
+
+                    if((countv >= VBlank) && (counth >= HBlank)) begin
+                        seq_item.MS_DE = 1;
+                        seq_item.MS_Pixel_Data.rand_mode(0);
+                        seq_item.MS_Pixel_Data = 48'h000000_EFCDAB; // valid, small value
+                    end else begin
+                        seq_item.MS_DE = 0;
+                        seq_item.MS_Pixel_Data.rand_mode(0);
+                        seq_item.MS_Pixel_Data = 48'h0;
+                    end
+
+                    // Sync logic (VSYNC/HSYNC)
+                    seq_item.MS_VSYNC = (countv > 8 && countv < 8 + seq_item.VSW) ? ~seq_item.VSP : seq_item.VSP;
+                    seq_item.MS_HSYNC = (counth > 60 && counth < 60 + seq_item.HSW) ? ~seq_item.HSP : seq_item.HSP;
+
+                    finish_item(seq_item);
+                    get_response(seq_item);
+                    counth++;
+                end
+                counth = 0;
+                countv++;
+            end
+            countv = 0;
+        end
+
+        start_item(seq_item);
+        seq_item.SPM_Transaction_VLD = 0;
+        seq_item.SPM_MSA_VLD = 0;
+        seq_item.MS_DE = 0;
+        finish_item(seq_item);
+        get_response(seq_item);
+    endtask
 endclass //dp_tl_base_sequence extends superClass

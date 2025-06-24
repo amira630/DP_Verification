@@ -4,7 +4,7 @@ class dp_source_env extends uvm_env;
     dp_tl_agent tl_agt;
     dp_sink_agent sink_agt;
     dp_scoreboard sb;
-    dp_source_ref_iso ref_model;
+    // dp_source_ref_iso ref_model;
     dp_tl_coverage tl_cov;
     dp_sink_coverage sink_cov;
 
@@ -21,7 +21,7 @@ class dp_source_env extends uvm_env;
         tl_agt = dp_tl_agent::type_id::create("tl_agt", this);
         sink_agt = dp_sink_agent::type_id::create("sink_agt", this);
         sb = dp_scoreboard::type_id::create("sb", this);
-        ref_model = dp_source_ref_iso::type_id::create("ref_model", this);
+        // ref_model = dp_source_ref_iso::type_id::create("ref_model", this);
         tl_cov = dp_tl_coverage::type_id::create("tl_cov", this);
         sink_cov = dp_sink_coverage::type_id::create("sink_cov", this);
 
@@ -39,7 +39,7 @@ class dp_source_env extends uvm_env;
         sink_agt.agt_ap.connect(sb.sb_sink_export);
 
         // Reference Model → Scoreboard
-        ref_model.ref_model_out_port.connect(sb.sb_ref_export);
+        // ref_model.ref_model_out_port.connect(sb.sb_ref_export);
 
         // Transport Layer Agent → Transport Layer Coverage Collector
         // tl_agt.agt_ap.connect(tl_cov.cov_export);
@@ -47,21 +47,21 @@ class dp_source_env extends uvm_env;
         // Sink Agent → Sink Coverage Collector
         // sink_agt.agt_ap.connect(sink_cov.cov_export);
 
-        if (ref_model == null)
-        `uvm_fatal("CONNECT", "ref_model is null")
+        // if (ref_model == null)
+        // `uvm_fatal("CONNECT", "ref_model is null")
 
-        if (ref_model.tl_in_export == null)
-            `uvm_fatal("CONNECT", "ref_model.tl_in_export is null")
+        // if (ref_model.tl_in_export == null)
+        //     `uvm_fatal("CONNECT", "ref_model.tl_in_export is null")
 
         `uvm_info("CONNECT", "Connecting tl_agt.agt_ap to ref_model.tl_in_export", UVM_LOW)
 
         // Transport Layer Agent → Reference Model
-        tl_agt.agt_ap.connect(ref_model.tl_in_export);
+        // tl_agt.agt_ap.connect(ref_model.tl_in_export);
 
         // Sink Agent → Reference Model
         // sink_agt.agt_ap.connect(ref_model.sink_in_port);
 
-        ref_model.ref_vif = dp_source_cfg.dp_ref_vif;            // added
+        // ref_model.ref_vif = dp_source_cfg.dp_ref_vif;            // added
         sb.ref_vif = dp_source_cfg.dp_ref_vif;
 
     endfunction

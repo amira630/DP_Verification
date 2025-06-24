@@ -46,7 +46,8 @@ output	 wire           sched_blank_en_lane3,
 output	 wire   [1:0]   sched_stream_idle_sel_lane0,
 output	 wire   [1:0]   sched_stream_idle_sel_lane1,
 output	 wire	[1:0]   sched_stream_idle_sel_lane2,
-output	 wire   [1:0]   sched_stream_idle_sel_lane3
+output	 wire   [1:0]   sched_stream_idle_sel_lane3,
+output	 wire           sched_active_line
 );
 
 
@@ -165,7 +166,8 @@ iso_scheduler iso_scheduler_0(
 .sched_stream_idle_sel_lane1(sched_stream_idle_sel_lane1),
 .sched_stream_idle_sel_lane2(sched_stream_idle_sel_lane2),
 .sched_stream_idle_sel_lane3(sched_stream_idle_sel_lane3),
-.total_stuffing_req(total_stuffing_req_reg)
+.total_stuffing_req(total_stuffing_req_reg),
+.sched_active_line(sched_active_line)
 );
 
 endmodule

@@ -21,6 +21,7 @@ module main_stream_bus_steering
   input wire [95:0] fifo_pixel_data,
   input wire        rd_data_valid,
   input wire        fifo_almost_empty,
+  input wire        blank_indicator,
 
   output reg        mbs_empty_regs,
   output reg [7:0]  main_steered_lane0,
@@ -279,7 +280,11 @@ typedef enum reg [6:0]
     // 8-bpc (4 Lanes) - (6 states) 
     FIRST_LEVEL_RED_8BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN_8BPC_4LANES; 
             end
@@ -290,7 +295,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN_8BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE_8BPC_4LANES; 
             end
@@ -301,7 +310,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE_8BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED_8BPC_4LANES;       
             end 
@@ -312,7 +325,11 @@ typedef enum reg [6:0]
           end      
     SECOND_LEVEL_RED_8BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN_8BPC_4LANES;       
             end 
@@ -323,7 +340,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN_8BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE_8BPC_4LANES;       
             end 
@@ -334,7 +355,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE_8BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED_8BPC_4LANES;    
             end 
@@ -346,7 +371,11 @@ typedef enum reg [6:0]
     // 16-bpc (4 Lanes) - (12 states)      
     FIRST_LEVEL_RED1_16BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED2_16BPC_4LANES;      
             end 
@@ -357,7 +386,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED2_16BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN1_16BPC_4LANES;      
             end 
@@ -368,7 +401,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN1_16BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN2_16BPC_4LANES;      
             end 
@@ -379,7 +416,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN2_16BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE1_16BPC_4LANES;      
             end 
@@ -390,7 +431,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE1_16BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE2_16BPC_4LANES;      
             end 
@@ -401,7 +446,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE2_16BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED1_16BPC_4LANES;      
             end 
@@ -412,7 +461,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED1_16BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED2_16BPC_4LANES;      
             end 
@@ -423,7 +476,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED2_16BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN1_16BPC_4LANES;      
             end 
@@ -434,7 +491,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN1_16BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN2_16BPC_4LANES;      
             end 
@@ -445,7 +506,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN2_16BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE1_16BPC_4LANES;      
             end 
@@ -456,7 +521,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE1_16BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE2_16BPC_4LANES;      
             end 
@@ -467,7 +536,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE2_16BPC_4LANES: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED1_16BPC_4LANES;      
             end 
@@ -479,7 +552,11 @@ typedef enum reg [6:0]
     // 8-bpc (2 Lanes) - (12 states)
     FIRST_LEVEL_RED_8BPC_2LANES_REG1_2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN_8BPC_2LANES_REG1_2;      
             end 
@@ -490,7 +567,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN_8BPC_2LANES_REG1_2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE_8BPC_2LANES_REG1_2;      
             end 
@@ -501,7 +582,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE_8BPC_2LANES_REG1_2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED_8BPC_2LANES_REG3_4;      
             end 
@@ -512,7 +597,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED_8BPC_2LANES_REG3_4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN_8BPC_2LANES_REG3_4;      
             end 
@@ -523,7 +612,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN_8BPC_2LANES_REG3_4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE_8BPC_2LANES_REG3_4;      
             end 
@@ -534,7 +627,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE_8BPC_2LANES_REG3_4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED_8BPC_2LANES_REG5_6;      
             end 
@@ -545,7 +642,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED_8BPC_2LANES_REG5_6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN_8BPC_2LANES_REG5_6;      
             end 
@@ -556,7 +657,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN_8BPC_2LANES_REG5_6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE_8BPC_2LANES_REG5_6;      
             end 
@@ -567,7 +672,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE_8BPC_2LANES_REG5_6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED_8BPC_2LANES_REG7_8;      
             end 
@@ -578,7 +687,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED_8BPC_2LANES_REG7_8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN_8BPC_2LANES_REG7_8;      
             end 
@@ -589,7 +702,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN_8BPC_2LANES_REG7_8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE_8BPC_2LANES_REG7_8;      
             end 
@@ -600,7 +717,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE_8BPC_2LANES_REG7_8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED_8BPC_2LANES_REG1_2;      
             end 
@@ -612,7 +733,11 @@ typedef enum reg [6:0]
     // 16-bpc (2 Lanes) - (24 states)
     FIRST_LEVEL_RED1_16BPC_2LANES_REG1_2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED2_16BPC_2LANES_REG1_2;      
             end 
@@ -623,7 +748,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED2_16BPC_2LANES_REG1_2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN1_16BPC_2LANES_REG1_2;      
             end 
@@ -634,7 +763,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN1_16BPC_2LANES_REG1_2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN2_16BPC_2LANES_REG1_2;      
             end 
@@ -645,7 +778,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN2_16BPC_2LANES_REG1_2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE1_16BPC_2LANES_REG1_2;      
             end 
@@ -656,7 +793,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE1_16BPC_2LANES_REG1_2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE2_16BPC_2LANES_REG1_2;      
             end 
@@ -667,7 +808,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE2_16BPC_2LANES_REG1_2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED1_16BPC_2LANES_REG3_4;      
             end 
@@ -678,7 +823,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED1_16BPC_2LANES_REG3_4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED2_16BPC_2LANES_REG3_4;      
             end 
@@ -689,7 +838,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED2_16BPC_2LANES_REG3_4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN1_16BPC_2LANES_REG3_4;      
             end 
@@ -700,7 +853,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN1_16BPC_2LANES_REG3_4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN2_16BPC_2LANES_REG3_4;      
             end 
@@ -711,7 +868,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN2_16BPC_2LANES_REG3_4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE1_16BPC_2LANES_REG3_4;      
             end 
@@ -722,7 +883,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE1_16BPC_2LANES_REG3_4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE2_16BPC_2LANES_REG3_4;      
             end 
@@ -733,7 +898,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE2_16BPC_2LANES_REG3_4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED1_16BPC_2LANES_REG5_6;      
             end 
@@ -744,7 +913,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED1_16BPC_2LANES_REG5_6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED2_16BPC_2LANES_REG5_6;      
             end 
@@ -755,7 +928,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED2_16BPC_2LANES_REG5_6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN1_16BPC_2LANES_REG5_6;      
             end 
@@ -766,7 +943,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN1_16BPC_2LANES_REG5_6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN2_16BPC_2LANES_REG5_6;      
             end 
@@ -777,7 +958,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN2_16BPC_2LANES_REG5_6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE1_16BPC_2LANES_REG5_6;      
             end 
@@ -788,7 +973,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE1_16BPC_2LANES_REG5_6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE2_16BPC_2LANES_REG5_6;      
             end 
@@ -799,7 +988,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE2_16BPC_2LANES_REG5_6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED1_16BPC_2LANES_REG7_8;      
             end 
@@ -810,7 +1003,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED1_16BPC_2LANES_REG7_8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED2_16BPC_2LANES_REG7_8;      
             end 
@@ -821,7 +1018,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED2_16BPC_2LANES_REG7_8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN1_16BPC_2LANES_REG7_8;      
             end 
@@ -832,7 +1033,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN1_16BPC_2LANES_REG7_8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN2_16BPC_2LANES_REG7_8;      
             end 
@@ -843,7 +1048,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN2_16BPC_2LANES_REG7_8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE1_16BPC_2LANES_REG7_8;      
             end 
@@ -854,7 +1063,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE1_16BPC_2LANES_REG7_8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE2_16BPC_2LANES_REG7_8;      
             end 
@@ -865,7 +1078,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE2_16BPC_2LANES_REG7_8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED1_16BPC_2LANES_REG1_2;      
             end 
@@ -877,7 +1094,11 @@ typedef enum reg [6:0]
     // 8-bpc (1 Lane) - (24 states)
     FIRST_LEVEL_RED_8BPC_1LANE_REG1: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN_8BPC_1LANE_REG1;      
             end 
@@ -888,7 +1109,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN_8BPC_1LANE_REG1: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE_8BPC_1LANE_REG1;      
             end 
@@ -899,7 +1124,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE_8BPC_1LANE_REG1: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED_8BPC_1LANE_REG2;      
             end 
@@ -910,7 +1139,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED_8BPC_1LANE_REG2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN_8BPC_1LANE_REG2;      
             end 
@@ -921,7 +1154,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN_8BPC_1LANE_REG2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE_8BPC_1LANE_REG2;      
             end 
@@ -932,7 +1169,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE_8BPC_1LANE_REG2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED_8BPC_1LANE_REG3;      
             end 
@@ -943,7 +1184,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED_8BPC_1LANE_REG3: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN_8BPC_1LANE_REG3;      
             end 
@@ -954,7 +1199,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN_8BPC_1LANE_REG3: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE_8BPC_1LANE_REG3;      
             end 
@@ -965,7 +1214,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE_8BPC_1LANE_REG3: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED_8BPC_1LANE_REG4;      
             end 
@@ -976,7 +1229,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED_8BPC_1LANE_REG4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN_8BPC_1LANE_REG4;      
             end 
@@ -987,7 +1244,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN_8BPC_1LANE_REG4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE_8BPC_1LANE_REG4;      
             end 
@@ -998,7 +1259,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE_8BPC_1LANE_REG4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED_8BPC_1LANE_REG5;      
             end 
@@ -1009,7 +1274,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED_8BPC_1LANE_REG5: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN_8BPC_1LANE_REG5;      
             end 
@@ -1020,7 +1289,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN_8BPC_1LANE_REG5: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE_8BPC_1LANE_REG5;      
             end 
@@ -1031,7 +1304,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE_8BPC_1LANE_REG5: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED_8BPC_1LANE_REG6;      
             end 
@@ -1042,7 +1319,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED_8BPC_1LANE_REG6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN_8BPC_1LANE_REG6;      
             end 
@@ -1053,7 +1334,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN_8BPC_1LANE_REG6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE_8BPC_1LANE_REG6;      
             end 
@@ -1064,7 +1349,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE_8BPC_1LANE_REG6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED_8BPC_1LANE_REG7;      
             end 
@@ -1075,7 +1364,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED_8BPC_1LANE_REG7: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN_8BPC_1LANE_REG7;      
             end 
@@ -1086,7 +1379,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN_8BPC_1LANE_REG7: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE_8BPC_1LANE_REG7;      
             end 
@@ -1097,7 +1394,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE_8BPC_1LANE_REG7: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED_8BPC_1LANE_REG8;      
             end 
@@ -1108,7 +1409,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED_8BPC_1LANE_REG8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN_8BPC_1LANE_REG8;      
             end 
@@ -1119,7 +1424,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN_8BPC_1LANE_REG8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE_8BPC_1LANE_REG8;      
             end 
@@ -1130,7 +1439,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE_8BPC_1LANE_REG8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED_8BPC_1LANE_REG1;      
             end 
@@ -1142,7 +1455,11 @@ typedef enum reg [6:0]
     // 16-bpc (1 Lanes) - (48 states) 
     FIRST_LEVEL_RED1_16BPC_1LANE_REG1: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED2_16BPC_1LANE_REG1;      
             end 
@@ -1153,7 +1470,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED2_16BPC_1LANE_REG1: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN1_16BPC_1LANE_REG1;      
             end 
@@ -1164,7 +1485,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN1_16BPC_1LANE_REG1: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN2_16BPC_1LANE_REG1;      
             end 
@@ -1175,7 +1500,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN2_16BPC_1LANE_REG1: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE1_16BPC_1LANE_REG1;      
             end 
@@ -1186,7 +1515,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE1_16BPC_1LANE_REG1: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE2_16BPC_1LANE_REG1;      
             end 
@@ -1197,7 +1530,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE2_16BPC_1LANE_REG1: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED1_16BPC_1LANE_REG2;      
             end 
@@ -1208,7 +1545,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED1_16BPC_1LANE_REG2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED2_16BPC_1LANE_REG2;      
             end 
@@ -1219,7 +1560,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED2_16BPC_1LANE_REG2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN1_16BPC_1LANE_REG2;      
             end 
@@ -1230,7 +1575,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN1_16BPC_1LANE_REG2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN2_16BPC_1LANE_REG2;      
             end 
@@ -1241,7 +1590,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN2_16BPC_1LANE_REG2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE1_16BPC_1LANE_REG2;      
             end 
@@ -1252,7 +1605,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE1_16BPC_1LANE_REG2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE2_16BPC_1LANE_REG2;      
             end 
@@ -1263,7 +1620,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE2_16BPC_1LANE_REG2: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED1_16BPC_1LANE_REG3;      
             end 
@@ -1274,7 +1635,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED1_16BPC_1LANE_REG3: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED2_16BPC_1LANE_REG3;      
             end 
@@ -1285,7 +1650,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED2_16BPC_1LANE_REG3: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN1_16BPC_1LANE_REG3;      
             end 
@@ -1296,7 +1665,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN1_16BPC_1LANE_REG3: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN2_16BPC_1LANE_REG3;      
             end 
@@ -1307,7 +1680,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN2_16BPC_1LANE_REG3: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE1_16BPC_1LANE_REG3;      
             end 
@@ -1318,7 +1695,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE1_16BPC_1LANE_REG3: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE2_16BPC_1LANE_REG3;      
             end 
@@ -1329,7 +1710,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE2_16BPC_1LANE_REG3: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED1_16BPC_1LANE_REG4;      
             end 
@@ -1340,7 +1725,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED1_16BPC_1LANE_REG4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED2_16BPC_1LANE_REG4;      
             end 
@@ -1351,7 +1740,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_RED2_16BPC_1LANE_REG4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN1_16BPC_1LANE_REG4;      
             end 
@@ -1362,7 +1755,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN1_16BPC_1LANE_REG4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_GREAN2_16BPC_1LANE_REG4;      
             end 
@@ -1373,7 +1770,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_GREAN2_16BPC_1LANE_REG4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE1_16BPC_1LANE_REG4;      
             end 
@@ -1384,7 +1785,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE1_16BPC_1LANE_REG4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_BLUE2_16BPC_1LANE_REG4;      
             end 
@@ -1395,7 +1800,11 @@ typedef enum reg [6:0]
           end
     FIRST_LEVEL_BLUE2_16BPC_1LANE_REG4: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED1_16BPC_1LANE_REG5;      
             end 
@@ -1406,7 +1815,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED1_16BPC_1LANE_REG5: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED2_16BPC_1LANE_REG5;      
             end 
@@ -1417,7 +1830,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED2_16BPC_1LANE_REG5: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN1_16BPC_1LANE_REG5;      
             end 
@@ -1428,7 +1845,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN1_16BPC_1LANE_REG5: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN2_16BPC_1LANE_REG5;      
             end 
@@ -1439,7 +1860,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN2_16BPC_1LANE_REG5: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE1_16BPC_1LANE_REG5;      
             end 
@@ -1450,7 +1875,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE1_16BPC_1LANE_REG5: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE2_16BPC_1LANE_REG5;      
             end 
@@ -1461,7 +1890,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE2_16BPC_1LANE_REG5: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED1_16BPC_1LANE_REG6;      
             end 
@@ -1472,7 +1905,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED1_16BPC_1LANE_REG6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED2_16BPC_1LANE_REG6;      
             end 
@@ -1483,7 +1920,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED2_16BPC_1LANE_REG6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN1_16BPC_1LANE_REG6;      
             end 
@@ -1494,7 +1935,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN1_16BPC_1LANE_REG6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN2_16BPC_1LANE_REG6;      
             end 
@@ -1505,7 +1950,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN2_16BPC_1LANE_REG6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE1_16BPC_1LANE_REG6;      
             end 
@@ -1516,7 +1965,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE1_16BPC_1LANE_REG6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE2_16BPC_1LANE_REG6;      
             end 
@@ -1527,7 +1980,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE2_16BPC_1LANE_REG6: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED1_16BPC_1LANE_REG7;      
             end 
@@ -1538,7 +1995,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED1_16BPC_1LANE_REG7: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED2_16BPC_1LANE_REG7;      
             end 
@@ -1549,7 +2010,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED2_16BPC_1LANE_REG7: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN1_16BPC_1LANE_REG7;      
             end 
@@ -1560,7 +2025,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN1_16BPC_1LANE_REG7: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN2_16BPC_1LANE_REG7;      
             end 
@@ -1571,7 +2040,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN2_16BPC_1LANE_REG7: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE1_16BPC_1LANE_REG7;      
             end 
@@ -1582,7 +2055,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE1_16BPC_1LANE_REG7: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE2_16BPC_1LANE_REG7;      
             end 
@@ -1593,7 +2070,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE2_16BPC_1LANE_REG7: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED1_16BPC_1LANE_REG8;      
             end 
@@ -1604,7 +2085,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED1_16BPC_1LANE_REG8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_RED2_16BPC_1LANE_REG8;      
             end 
@@ -1615,7 +2100,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_RED2_16BPC_1LANE_REG8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN1_16BPC_1LANE_REG8;      
             end 
@@ -1626,7 +2115,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN1_16BPC_1LANE_REG8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_GREAN2_16BPC_1LANE_REG8;      
             end 
@@ -1637,7 +2130,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_GREAN2_16BPC_1LANE_REG8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE1_16BPC_1LANE_REG8;      
             end 
@@ -1648,7 +2145,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE1_16BPC_1LANE_REG8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = SECOND_LEVEL_BLUE2_16BPC_1LANE_REG8;      
             end 
@@ -1659,7 +2160,11 @@ typedef enum reg [6:0]
           end
     SECOND_LEVEL_BLUE2_16BPC_1LANE_REG8: 
           begin
-            if ((sched_steering_en) && (empty_count != 4'd8))
+            if ((fifo_almost_empty) && (!blank_indicator))
+            begin
+                next_state = IDLE_STATE; 
+            end
+            else if ((sched_steering_en) && (empty_count != 4'd8))
             begin
                 next_state = FIRST_LEVEL_RED1_16BPC_1LANE_REG1;      
             end 

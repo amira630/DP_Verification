@@ -80,7 +80,9 @@ module iso_scheduler (
     output    reg    [1:0]   sched_stream_idle_sel_lane0,
     output    reg    [1:0]   sched_stream_idle_sel_lane1,
     output    reg    [1:0]   sched_stream_idle_sel_lane2,
-    output    reg    [1:0]   sched_stream_idle_sel_lane3
+    output    reg    [1:0]   sched_stream_idle_sel_lane3,
+
+    output    reg            sched_active_line    
 );
 
 
@@ -410,7 +412,8 @@ always @ (*)
                         begin
                           next_state = BS;
                         end
-                      else if((v_blank_ctr_reg == td_v_blank_ctr_max) && (h_total_ctr_reg == td_h_blank_ctr_max - 'b101))					  
+                      //else if((v_blank_ctr_reg == td_v_blank_ctr_max) && (h_total_ctr_reg == td_h_blank_ctr_max - 'b101))	
+                      else if((v_blank_ctr_reg == td_v_blank_ctr_max) && (h_total_ctr_reg == td_h_blank_ctr_max - 'b010))				  
                         begin
                            next_state = BE;                         
                         end  
@@ -421,7 +424,8 @@ always @ (*)
                     end
                     
     HBLANK:         begin
-                      if(h_blank_ctr_reg == td_h_blank_ctr_max - 'b110) // max -4(for BE symbols) -1
+                      //if(h_blank_ctr_reg == td_h_blank_ctr_max - 'b110) // max -4(for BE symbols) -1
+                      if(h_blank_ctr_reg == td_h_blank_ctr_max - 'b011) // max -4(for BE symbols) -1
                         begin
                           next_state = BE;
                         end
@@ -432,14 +436,14 @@ always @ (*)
                     end
                     
     BE:             begin
-                      if((h_blank_ctr_reg == td_h_blank_ctr_max - 'd2)||(h_total_ctr_reg == td_h_blank_ctr_max - 'b1))
-                        begin
+                      //if((h_blank_ctr_reg == td_h_blank_ctr_max - 'd2)||(h_total_ctr_reg == td_h_blank_ctr_max - 'b1))
+                      //  begin
                           next_state = ACTIVE_VLD;
-                        end
-                      else
-                        begin
-                          next_state = BE;
-                        end
+                      //  end
+                      //else
+                      //  begin
+                      //    next_state = BE;
+                      //  end
                     end 
                     
     ACTIVE_VLD:     begin
@@ -599,6 +603,8 @@ always @ (*)
                       tu_vld_data_ctr = 'b0;
                       alternate_up_ctr = alternate_up_ctr_reg;
                       alternate_down_ctr = alternate_down_ctr_reg; 
+
+                      sched_active_line = 'b0;
     //===================================================================//                      
   
     case(current_state)
@@ -618,7 +624,7 @@ always @ (*)
                       sched_blank_en_lane2        = 'b0;
                       sched_blank_en_lane3        = 'b0;
     //-------------------------------------------------------------------//                    
-                      //sched_idle_en_lane0         = 'b0; //!! ==========================================***+++***+++***+++***+++***+++___________________
+                      //sched_idle_en_lane0         = 'b0;
                       //sched_idle_en_lane1         = 'b0;
                       //sched_idle_en_lane2         = 'b0;
                       //sched_idle_en_lane3         = 'b0;    
@@ -637,7 +643,9 @@ always @ (*)
                       h_active_ctr = 'b0;    
                       tu_vld_data_ctr = 'b0;
                       alternate_up_ctr = 'b0;
-                      alternate_down_ctr = 'b0;                      
+                      alternate_down_ctr = 'b0;  
+
+                      sched_active_line = 'b0;                    
                     end
     //===================================================================//
 	
@@ -753,7 +761,8 @@ always @ (*)
                       total_stuffing_ctr = 'b0;
                       alternate_up_ctr = alternate_up_ctr_reg;
                       alternate_down_ctr = alternate_down_ctr_reg;                
-                      //bs_be_size_ctr = bs_be_size_ctr_reg + 'b1;                      
+                      //bs_be_size_ctr = bs_be_size_ctr_reg + 'b1;
+                      sched_active_line = 'b0;                      
                     end
 	//===================================================================//				
                     
@@ -867,12 +876,22 @@ always @ (*)
                       tu_stuffed_data_ctr = 'b0;
                       total_stuffing_ctr = 'b0;
                       alternate_up_ctr = alternate_up_ctr_reg;
-                      alternate_down_ctr = alternate_down_ctr_reg;                     
+                      alternate_down_ctr = alternate_down_ctr_reg;  
+                      sched_active_line = 'b0;                   
                     end
 	//===================================================================//				
                     
     VBLANK:         begin
-                      sched_steering_en           = 'b0;
+
+                      if((v_blank_ctr_reg == td_v_blank_ctr_max) && (h_total_ctr_reg == td_h_blank_ctr_max - 'b010))				  
+                        begin
+                           sched_steering_en      = 'b1;                         
+                        end  
+                      else
+                        begin
+                           sched_steering_en      = 'b0;                          
+                        end	
+                      //sched_steering_en           = 'b0;
                       // active_mapper 
                       sched_stream_state          = 'b0;
                       sched_stream_en_lane0       = 'b0;
@@ -942,7 +961,8 @@ always @ (*)
                           v_blank_ctr = v_blank_ctr_reg + 'b1;
                           h_total_ctr = 'b0;
                         end
-                      else if((v_blank_ctr_reg == td_v_blank_ctr_max) && (h_total_ctr_reg == td_h_blank_ctr_max - 'b101))
+                      //else if((v_blank_ctr_reg == td_v_blank_ctr_max) && (h_total_ctr_reg == td_h_blank_ctr_max - 'b101))
+                      else if((v_blank_ctr_reg == td_v_blank_ctr_max) && (h_total_ctr_reg == td_h_blank_ctr_max - 'b010))
                         begin
                           v_blank_ctr = v_blank_ctr_reg + 'b1;
                           h_total_ctr = h_total_ctr_reg + 'b1;
@@ -968,12 +988,21 @@ always @ (*)
                       tu_stuffed_data_ctr = 'b0;
                       total_stuffing_ctr = 'b0;
                       alternate_up_ctr = alternate_up_ctr_reg;
-                      alternate_down_ctr = alternate_down_ctr_reg;                       
+                      alternate_down_ctr = alternate_down_ctr_reg; 
+                      sched_active_line = 'b0;                      
                     end
 	//===================================================================//				
                     
     HBLANK:         begin
-                      sched_steering_en           = 'b0;
+                      if(h_blank_ctr_reg == td_h_blank_ctr_max - 'b011) // max -4(for BE symbols) -1
+                        begin
+                          sched_steering_en       = 'b1;
+                        end
+                      else
+                        begin
+                           sched_steering_en      = 'b0;                        
+                        end
+                      //sched_steering_en           = 'b0;
                       // active_mapper 
                       sched_stream_state          = 'b0;
                       sched_stream_en_lane0       = 'b0;
@@ -1056,19 +1085,20 @@ always @ (*)
                       //alternate_up_ctr = alternate_up_ctr_reg;
                       //alternate_down_ctr = alternate_down_ctr_reg; 
                       alternate_up_ctr = 'b0;
-                      alternate_down_ctr = 'b0;                                                                  
+                      alternate_down_ctr = 'b0;     
+                      sched_active_line = 'b0;                                                             
                     end 
     //===================================================================//					
                     
     BE:             begin
-                      if((h_blank_ctr == td_h_blank_ctr_max - 'b10) || (h_total_ctr == td_h_blank_ctr_max - 'b10) || (h_blank_ctr == td_h_blank_ctr_max - 'b1) || (h_total_ctr == td_h_blank_ctr_max - 'b1))
-                        begin
+                    //  if((h_blank_ctr == td_h_blank_ctr_max - 'b10) || (h_total_ctr == td_h_blank_ctr_max - 'b10) || (h_blank_ctr == td_h_blank_ctr_max - 'b1) || (h_total_ctr == td_h_blank_ctr_max - 'b1))
+                    //    begin
                           sched_steering_en           = 'b1;                        
-                        end
-                      else
-                        begin
-                          sched_steering_en           = 'b0;                        
-                        end
+                    //    end
+                    //  else
+                    //    begin
+                    //      sched_steering_en           = 'b0;                        
+                    //    end
                         
                       // active_mapper 
                       sched_stream_state          = 'b0;
@@ -1162,7 +1192,8 @@ always @ (*)
                       tu_stuffed_data_ctr = 'b0;
                       total_stuffing_ctr = 'b0;
                       alternate_up_ctr = alternate_up_ctr_reg;
-                      alternate_down_ctr = alternate_down_ctr_reg;                     
+                      alternate_down_ctr = alternate_down_ctr_reg; 
+                      sched_active_line = 'b0;                    
                     end
     //===================================================================//					
                     
@@ -1264,7 +1295,8 @@ always @ (*)
                       h_total_ctr = 'b0;
                       h_blank_ctr = 'b0;
                       tu_stuffed_data_ctr = 'b0; 
-                      total_stuffing_ctr = total_stuffing_ctr_reg;                        
+                      total_stuffing_ctr = total_stuffing_ctr_reg;
+                      sched_active_line = 'b1;                        
                     end 
     //===================================================================//					
                     
@@ -1333,7 +1365,8 @@ always @ (*)
                       h_active_ctr = h_active_ctr_reg;
     //-------------------------------------------------------------------//
                       alternate_up_ctr = alternate_up_ctr_reg;
-                      alternate_down_ctr = alternate_down_ctr_reg;                      
+                      alternate_down_ctr = alternate_down_ctr_reg;   
+                      sched_active_line = 'b1;                   
                     end
 	//===================================================================//				
                     
@@ -1404,11 +1437,20 @@ always @ (*)
     //-------------------------------------------------------------------//
                       alternate_up_ctr = alternate_up_ctr_reg;
                       alternate_down_ctr = alternate_down_ctr_reg;
+                      sched_active_line = 'b1;
                     end
 	//===================================================================//				
                     
     FE:             begin
-                      sched_steering_en           = 'b1;
+                      if((total_stuffing_ctr_reg == total_stuffing_req_reg - 1)&&(h_active_ctr_reg == td_h_active_ctr_max))
+                        begin
+                          sched_steering_en           = 'b0;
+                        end
+                        else
+                        begin
+                          sched_steering_en           = 'b1;
+                        end  
+                      //sched_steering_en           = 'b1;
 
                       // blank_mapper
                       sched_blank_id              = 'b0; // VBlank
@@ -1485,7 +1527,8 @@ always @ (*)
                       begin
                         alternate_down_ctr = alternate_down_ctr_reg;
                         alternate_up_ctr = alternate_up_ctr_reg;                        
-                      end                      
+                      end 
+                      sched_active_line = 'b1;                     
                     end
 	//===================================================================//				
                     
@@ -1523,7 +1566,8 @@ always @ (*)
                       h_active_ctr = h_active_ctr_reg;   
                       //------------------------------//
                       alternate_up_ctr = alternate_up_ctr_reg;
-                      alternate_down_ctr = alternate_down_ctr_reg;                      
+                      alternate_down_ctr = alternate_down_ctr_reg;   
+                      sched_active_line = 'b0;                   
                     end
     endcase    
 

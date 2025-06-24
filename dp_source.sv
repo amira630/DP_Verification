@@ -482,6 +482,7 @@ module dp_source(dp_tl_if.DUT tl_if, dp_sink_if.DUT sink_if);
     wire            sync_ms_vsync;
     wire            sync_ms_hsync;
 
+    wire            sched_mbs_flag;
     /////////////////////////////////////////////////////
     /////////////////////////////////////////////////////
     /////////////////////////////////////////////////////
@@ -839,7 +840,8 @@ iso_ctrl_top iso_ctrl_top_0 (
 .sched_stream_idle_sel_lane0(sched_stream_idle_sel_lane0),
 .sched_stream_idle_sel_lane1(sched_stream_idle_sel_lane1),
 .sched_stream_idle_sel_lane2(sched_stream_idle_sel_lane2),
-.sched_stream_idle_sel_lane3(sched_stream_idle_sel_lane3)
+.sched_stream_idle_sel_lane3(sched_stream_idle_sel_lane3),
+.sched_active_line(sched_mbs_flag)
 );
 
 ////////////////////////////////////////////////////////////////
@@ -947,7 +949,8 @@ main_stream_bus_steering main_stream_bus_steering_0(
 .main_steered_lane0(main_steered_lane0),
 .main_steered_lane1(main_steered_lane1),
 .main_steered_lane2(main_steered_lane2),
-.main_steered_lane3(main_steered_lane3)
+.main_steered_lane3(main_steered_lane3),
+.blank_indicator(sched_mbs_flag)
 );
 
 ////////////////////////////////////////////////////////////////
@@ -973,7 +976,7 @@ sec_bus_steering sec_bus_steering_0(
 ////////////////////////////////////////////////////////////////
 
 
-ASYNC_FIFO_TOP #(.DATA_WIDTH(48), .FIFO_DEPTH(128), .WPTR_WIDTH(8), .RPTR_WIDTH(8), .NUM_STAGES(2), .ADDR_WIDTH(7)) ASYNC_FIFO_TOP_0 (
+ASYNC_FIFO_TOP #(.DATA_WIDTH(48), .FIFO_DEPTH(256), .WPTR_WIDTH(9), .RPTR_WIDTH(9), .NUM_STAGES(2), .ADDR_WIDTH(8)) ASYNC_FIFO_TOP_0 (
 .wr_data(ms_pixel_data),
 .winc(ms_de),
 .rinc(mbs_empty_regs),
