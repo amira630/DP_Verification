@@ -223,7 +223,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                                     get_response(seq_item);
                                     ISO_INIT_basic();
                                     Main_Stream_basic(1);
-                                    repeat(100000) begin
+                                    repeat(59) begin
                                         start_item(seq_item);
                                         finish_item(seq_item);
                                         get_response(seq_item);
@@ -1038,7 +1038,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
             seq_item.Config_Param_VLD = 1'b1;      // Config parameters are valid
             seq_item.MAX_TPS_SUPPORTED_VLD = 1'b1; // Indicate change of max TPS
             seq_item.MAX_TPS_SUPPORTED = TPS4;     // Set the max TPS to 4
-            seq_item.Link_BW_CR = BW_HBR3;
+            seq_item.Link_BW_CR = BW_HBR;
             seq_item.Link_LC_CR = 2'b11;
             seq_item.CR_DONE = 4'b1111;
             seq_item.Lane_Align = 8'h81;
@@ -1727,7 +1727,6 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         get_response(seq_item);
     endtask
 
-
     task ISO_INIT_basic();
         if(seq_item == null)
             seq_item = dp_tl_sequence_item::type_id::create("seq_item");
@@ -1742,8 +1741,8 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         seq_item.SPM_ISO_start = 1'b1;
         seq_item.operation = ISO;
 
-        seq_item.SPM_BW_Sel = 2'b00;
-        seq_item.SPM_Lane_BW = 16'd162; // 1.62 Gbps/lane
+        seq_item.SPM_BW_Sel = 2'b01; // HBR
+        seq_item.SPM_Lane_BW = 16'd270; // 2.7 Gbps/lane
         seq_item.SPM_Lane_Count = 3'b001; // 1 lane
 
         seq_item.Mvid     = 24'd1000;
@@ -1758,23 +1757,46 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         // seq_item.HStart   = 16'd192;
         // seq_item.HSW      = 16'd44;
         
-        // 640x480 @ 60Hz
+        // 640x480
         seq_item.HTotal   = 16'd800;
         seq_item.HWidth   = 16'd640;
         seq_item.HStart   = '0;
-        seq_item.HSW      = 16'd64;
+        seq_item.HSW      = 16'd32;
 
-        seq_item.VTotal   = 16'd500;
+        seq_item.VTotal   = 16'd494;
         seq_item.VHeight  = 16'd480;
         seq_item.VStart   = '0;
         seq_item.VSW      = 16'd4;
+
+
+        // 1920x1080 
+        // seq_item.HTotal   = 16'd2080;
+        // seq_item.HWidth   = 16'd1920;
+        // seq_item.HStart   = '0;
+        // seq_item.HSW      = 16'd32;
+
+        // seq_item.VTotal   = 16'd1095;
+        // seq_item.VHeight  = 16'd1080;
+        // seq_item.VStart   = '0;
+        // seq_item.VSW      = 16'd5;
+
+        // 1280x720 
+        // seq_item.HTotal   = 16'd1440;
+        // seq_item.HWidth   = 16'd1280;
+        // seq_item.HStart   = '0;
+        // seq_item.HSW      = 16'd32;
+
+        // seq_item.VTotal   = 16'd741;
+        // seq_item.VHeight  = 16'd720;
+        // seq_item.VStart   = '0;
+        // seq_item.VSW      = 16'd5;
 
         // seq_item.HTotal   = 16'd1760;
         // seq_item.HWidth   = 16'd1280;
         // seq_item.HStart   = 16'd192;
         // seq_item.HSW      = 16'd80;
 
-        seq_item.HSP      = 1'b1; // HSW = 1 not on, HSW = 0 on 
+        seq_item.HSP      = 1'b1; // HSYNC = 1 not on, HSYNC = 0 on 
         
         // seq_item.VTotal   = 16'd45;
         // seq_item.VHeight  = 16'd36;
@@ -1791,7 +1813,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         // seq_item.VStart   = 16'd41;
         // seq_item.VSW      = 16'd10;
 
-        seq_item.VSP      = 1'b1; // VSW = 1 not on, VSW=0 on 
+        seq_item.VSP      = 1'b1; // VSYNC = 1 not on, VSYNC = 0 on 
         seq_item.MISC0    = 8'b001_00000; // 8bpc
         seq_item.MISC1    = 8'h00;
 
@@ -1815,7 +1837,7 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         seq_item.MS_Stm_BW_VLD = 1'b1;
         seq_item.MS_DE = 0;
 
-        seq_item.CLOCK_PERIOD = (1.0 / seq_item.MS_Stm_BW);
+        seq_item.CLOCK_PERIOD = (1.0 / (seq_item.MS_Stm_BW*1000000));
 
         seq_item.MS_VSYNC = 1'b1;
         seq_item.MS_HSYNC = 1'b1; // Both are off
@@ -1855,8 +1877,15 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                     end
 
                     // Sync logic (VSYNC/HSYNC)
-                    seq_item.MS_VSYNC = (countv > 8 && countv < 8 + seq_item.VSW) ? ~seq_item.VSP : seq_item.VSP;
-                    seq_item.MS_HSYNC = (counth > 60 && counth < 60 + seq_item.HSW) ? ~seq_item.HSP : seq_item.HSP;
+
+                    // 640x480
+                    seq_item.MS_VSYNC = (countv > 5 && countv <= 5 + seq_item.VSW) ? ~seq_item.VSP : seq_item.VSP;
+                    seq_item.MS_HSYNC = (counth >= 64 && counth < 64 + seq_item.HSW) ? ~seq_item.HSP : seq_item.HSP;
+                    
+                    
+                    // 1280x720
+                    // seq_item.MS_VSYNC = (countv > 8 && countv <= 8 + seq_item.VSW) ? ~seq_item.VSP : seq_item.VSP;
+                    // seq_item.MS_HSYNC = (counth >= 64 && counth < 64 + seq_item.HSW) ? ~seq_item.HSP : seq_item.HSP;
 
                     finish_item(seq_item);
                     get_response(seq_item);

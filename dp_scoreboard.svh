@@ -105,23 +105,23 @@ class dp_scoreboard extends uvm_scoreboard;
                 // `uvm_info(get_type_name(), $sformatf("ISO_symbols_lane0 = %0h",sink_item.ISO_symbols_lane0), UVM_LOW)
             end
             if(sink_item.ISO_symbols_lane0 == BE && sink_item.Control_sym_flag_lane0) begin
-                // `uvm_info(get_type_name(), "Inside BE to FS - should compare", UVM_LOW)
+                `uvm_info(get_type_name(), "Inside BE to FS - should compare", UVM_LOW)
                 comp_pixels = 1'b1; 
                 continue;
             end
             else if (sink_item.ISO_symbols_lane0 == FS && sink_item.Control_sym_flag_lane0) begin
                 comp_pixels = 1'b0; 
-                // `uvm_info(get_type_name(), "Inside FS to FE - should not compare", UVM_LOW)
+                `uvm_info(get_type_name(), "Inside FS to FE - should not compare", UVM_LOW)
                 continue;
             end
             else if (sink_item.ISO_symbols_lane0 == FE && sink_item.Control_sym_flag_lane0) begin
                 comp_pixels = 1'b1;
-                // `uvm_info(get_type_name(), "Inside FE to FS/BS - should compare", UVM_LOW)
+                `uvm_info(get_type_name(), "Inside FE to FS/BS - should compare", UVM_LOW)
                 continue;
             end
             else if ((sink_item.ISO_symbols_lane0 == BS || sink_item.ISO_symbols_lane0 == SR)  && sink_item.Control_sym_flag_lane0) begin
                 comp_pixels = 1'b0; 
-                // `uvm_info(get_type_name(), "Inside BS to BE - should not compare", UVM_LOW)
+                `uvm_info(get_type_name(), "Inside BS to BE - should not compare", UVM_LOW)
                 continue;
             end
             if (comp_pixels) begin
@@ -147,11 +147,11 @@ class dp_scoreboard extends uvm_scoreboard;
                 pixels_symbols(count_comp0, RED, GREEN, BLUE, ISO_symbols_lane0); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
                 if (ISO_symbols_lane0 !== sink_item.ISO_symbols_lane0) begin
                     `uvm_error(get_type_name(), $sformatf("Mismatch in ISO_symbols_lane0: expected=%0h, actual=%0h", ISO_symbols_lane0, sink_item.ISO_symbols_lane0))
-                    // `uvm_fatal(get_type_name(),"Mismatch in ISO_symbols_lane0")
+                    `uvm_fatal(get_type_name(),"Mismatch in ISO_symbols_lane0")
                     error_count++;
                 end
                 else begin
-                    // `uvm_info(get_type_name(),  $sformatf("ISO_symbols_lane0 match: expected=%0h, actual=%0h", ISO_symbols_lane0, sink_item.ISO_symbols_lane0), UVM_LOW)
+                    `uvm_info(get_type_name(),  $sformatf("ISO_symbols_lane0 match: expected=%0h, actual=%0h", ISO_symbols_lane0, sink_item.ISO_symbols_lane0), UVM_LOW)
                     correct_count++;
                     // `uvm_fatal("SCOREBOARD", "ISO_symbols_lane0 match")
                 end

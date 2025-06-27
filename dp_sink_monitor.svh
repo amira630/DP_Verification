@@ -37,13 +37,13 @@ class dp_sink_monitor extends uvm_monitor;
       begin
         forever begin
           iso_sink_seq_item = dp_sink_sequence_item::type_id::create("iso_sink_seq_item");
-          case (dp_sink_vif.Final_BW)
-              BW_RBR:  @(negedge dp_sink_vif.clk_RBR);
-              BW_HBR:  @(negedge dp_sink_vif.clk_HBR);
-              BW_HBR2: @(negedge dp_sink_vif.clk_HBR2);
-              BW_HBR3: @(negedge dp_sink_vif.clk_HBR3);
-              default: @(negedge dp_sink_vif.clk_RBR);
-          endcase
+          // case (dp_sink_vif.Final_BW)
+          //     BW_RBR:  @(negedge dp_sink_vif.clk_RBR);
+             /* BW_HBR: */ @(negedge dp_sink_vif.clk_HBR);
+          //     BW_HBR2: @(negedge dp_sink_vif.clk_HBR2);
+          //     BW_HBR3: @(negedge dp_sink_vif.clk_HBR3);
+          //     default: @(negedge dp_sink_vif.clk_RBR);
+          // endcase
 
           // `uvm_info(get_type_name(), $sformatf("INSIDE ISO THREAD w/ LS_CLK ISO_symbols_lane0: %h, ISO_symbols_lane1: %h, ISO_symbols_lane2: %h, ISO_symbols_lane3: %h", dp_sink_vif.ISO_symbols_lane0, dp_sink_vif.ISO_symbols_lane1, dp_sink_vif.ISO_symbols_lane2, dp_sink_vif.ISO_symbols_lane3), UVM_MEDIUM)
           // ISO signals
