@@ -146,9 +146,6 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
         finish_item(seq_item);                          // Send the sequence item to the driver
         `uvm_info(get_type_name(), "finish_item for ready state", UVM_MEDIUM)
         get_response(seq_item);
-        if(seq_item.PHY_Instruct_VLD) begin
-            seq_item.Final_BW = link_bw_cr_e'(seq_item.PHY_ADJ_BW);
-        end
 
         if (seq_item.AUX_START_STOP) begin
              `uvm_info(get_type_name(), "AUX_START_STOP is high, capturing first byte", UVM_MEDIUM)
@@ -160,9 +157,6 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                 finish_item(seq_item);                          // Send the sequence item to the driver
                 `uvm_info(get_type_name(), "finish_item for ready state", UVM_MEDIUM)
                 get_response(seq_item);
-                if(seq_item.PHY_Instruct_VLD) begin
-                    seq_item.Final_BW = link_bw_cr_e'(seq_item.PHY_ADJ_BW);
-                end
             end
 
             foreach (seq_item.aux_in_out[i]) begin
@@ -188,9 +182,6 @@ class dp_sink_base_sequence extends uvm_sequence #(dp_sink_sequence_item);
                 finish_item(reply_seq_item);                                // Send the sequence item to the driver
                 `uvm_info(get_type_name(), "finish_item for reply transaction", UVM_MEDIUM)
                 get_response(seq_item);
-                if(seq_item.PHY_Instruct_VLD) begin
-                    seq_item.Final_BW = link_bw_cr_e'(seq_item.PHY_ADJ_BW);
-                end
             end
         end 
         else begin

@@ -6,6 +6,8 @@ class dp_sink_monitor extends uvm_monitor;
   dp_sink_sequence_item iso_sink_seq_item;
   uvm_analysis_port #(dp_sink_sequence_item) mon_ap;
 
+  logic [1:0] SPM_BW_Sel;
+
   function new(string name = "dp_sink_monitor", uvm_component parent = null);
     super.new(name, parent);
   endfunction
@@ -37,12 +39,12 @@ class dp_sink_monitor extends uvm_monitor;
       begin
         forever begin
           iso_sink_seq_item = dp_sink_sequence_item::type_id::create("iso_sink_seq_item");
-          // case (dp_sink_vif.Final_BW)
-          //     BW_RBR:  @(negedge dp_sink_vif.clk_RBR);
-             /* BW_HBR: */ @(negedge dp_sink_vif.clk_HBR);
-          //     BW_HBR2: @(negedge dp_sink_vif.clk_HBR2);
-          //     BW_HBR3: @(negedge dp_sink_vif.clk_HBR3);
-          //     default: @(negedge dp_sink_vif.clk_RBR);
+          @(negedge dp_sink_vif.clk_HBR3);
+          // case (SPM_BW_Sel)
+          //   2'd0: @(negedge dp_sink_vif.clk_RBR);
+          //   2'd1: @(negedge dp_sink_vif.clk_HBR);
+          //   2'd2: @(negedge dp_sink_vif.clk_HBR2);
+          //   2'd3: @(negedge dp_sink_vif.clk_HBR3);
           // endcase
 
           // `uvm_info(get_type_name(), $sformatf("INSIDE ISO THREAD w/ LS_CLK ISO_symbols_lane0: %h, ISO_symbols_lane1: %h, ISO_symbols_lane2: %h, ISO_symbols_lane3: %h", dp_sink_vif.ISO_symbols_lane0, dp_sink_vif.ISO_symbols_lane1, dp_sink_vif.ISO_symbols_lane2, dp_sink_vif.ISO_symbols_lane3), UVM_MEDIUM)

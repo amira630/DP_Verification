@@ -19,6 +19,7 @@ class dp_source_test extends uvm_test;
 
     dp_tl_flow_fsm_sequence dp_tl_seq;
     dp_tl_basic_flow_sequence dp_tl_basic_seq;
+    dp_tl_iso_sequence dp_tl_iso_seq;
     dp_tl_reset_seq dp_tl_rst_seq;
     dp_tl_lt_sequence dp_tl_lt_seq;
     dp_tl_i2c_sequence dp_tl_i2c_seq;
@@ -49,6 +50,7 @@ class dp_source_test extends uvm_test;
         // TL Sequences creation
         dp_tl_seq = dp_tl_flow_fsm_sequence::type_id::create("dp_tl_seq", this);
         dp_tl_basic_seq = dp_tl_basic_flow_sequence::type_id::create("dp_tl_basic_seq", this);
+        dp_tl_iso_seq = dp_tl_iso_sequence::type_id::create("dp_tl_iso_seq", this);
         dp_tl_rst_seq = dp_tl_reset_seq::type_id::create("dp_tl_rst_seq", this);
         dp_tl_i2c_seq = dp_tl_i2c_sequence::type_id::create("dp_tl_i2c_seq", this);
         dp_tl_lt_seq = dp_tl_lt_sequence::type_id::create("dp_tl_lt_seq", this);
@@ -115,9 +117,15 @@ class dp_source_test extends uvm_test;
             //     `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
             // end
 
+            // begin
+            //     `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
+            //     dp_tl_basic_seq.start(env.tl_agt.sqr);
+            //     `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
+            // end
+
             begin
                 `uvm_info("run_phase", "TL stimulus generation started", UVM_LOW);
-                dp_tl_basic_seq.start(env.tl_agt.sqr);
+                dp_tl_iso_seq.start(env.tl_agt.sqr);
                 `uvm_info("run_phase", "TL stimulus generation ended", UVM_LOW);
             end
 

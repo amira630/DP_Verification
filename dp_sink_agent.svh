@@ -35,6 +35,9 @@ class dp_sink_agent extends uvm_agent;
         drv.dp_sink_vif = dp_source_cfg.dp_sink_vif;
         mon.dp_sink_vif = dp_source_cfg.dp_sink_vif;
 
+        drv.SPM_BW_Sel = dp_source_cfg.SPM_BW_Sel;
+        mon.SPM_BW_Sel = dp_source_cfg.SPM_BW_Sel;
+
         //connecting the drive TLM port to the sequencer TLM export
         drv.seq_item_port.connect(sqr.seq_item_export);
 

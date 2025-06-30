@@ -31,7 +31,6 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
     assign AUX_IN_OUT = PHY_START_STOP ? aux_data : 8'bz; // The AUX_IN_OUT signal is driven by the PHY_START_STOP signal. When PHY_START_STOP is high, the aux_data is driven onto the AUX_IN_OUT line. Otherwise, it is in high impedance state (8'bz).
 
     // aux_in_out_tb = phy_start_stop_tb ? aux_in_value : 8'bz;
-    logic [AUX_DATA_WIDTH-1:0] Final_BW; // to know which clock to use
 
     ///////////////////////////////////////////////////////////////
     //////////////////////// MODPORTS /////////////////////////////
@@ -95,7 +94,7 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
         end
     endtask
 
-    task ISO_sink(output logic control_sym_flag_lane0, control_sym_flag_lane1, control_sym_flag_lane2, control_sym_flag_lane3, [7:0] iso_symbols_lane0, iso_symbols_lane1, iso_symbols_lane2, iso_symbols_lane3, input link_bw_cr_e bw);
+    task ISO_sink(output logic control_sym_flag_lane0, control_sym_flag_lane1, control_sym_flag_lane2, control_sym_flag_lane3, [7:0] iso_symbols_lane0, iso_symbols_lane1, iso_symbols_lane2, iso_symbols_lane3);
         // Return the ISO symbols flags of the ISO symbols to be checked if they take any values in the Link Training steps
         iso_symbols_lane0 = ISO_symbols_lane0;
         iso_symbols_lane1 = ISO_symbols_lane1; 
@@ -107,7 +106,6 @@ interface dp_sink_if #(parameter AUX_ADDRESS_WIDTH = 20, AUX_DATA_WIDTH = 8) (in
         control_sym_flag_lane1 = Control_sym_flag_lane1;
         control_sym_flag_lane2 = Control_sym_flag_lane2;
         control_sym_flag_lane3 = Control_sym_flag_lane3;
-        Final_BW = bw;
     endtask
 
     // TASK: drive_aux_in_out

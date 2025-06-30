@@ -12,6 +12,7 @@ package dp_source_test_pkg;
     `include "dp_tl_base_sequence.svh"
     `include "dp_tl_flow_fsm_sequence.svh"
     `include "dp_tl_basic_flow_sequence.svh"
+    `include "dp_tl_iso_sequence.svh"
     `include "dp_tl_lt_sequence.svh"
     `include "dp_tl_reset_seq.svh"
     `include "dp_tl_i2c_sequence.svh"

@@ -99,7 +99,7 @@ class dp_source_ref_iso extends uvm_component;
         `uvm_info(get_type_name(), "Ref model connect_phase completed", UVM_LOW)
     endfunction
 
-    bit RESET, in_ISO;
+    bit RESET, in_ISO, delay;
 // Run phase
     task run_phase(uvm_phase phase);
         super.run_phase(phase);
@@ -121,6 +121,7 @@ class dp_source_ref_iso extends uvm_component;
                     if (!tl_item.MS_rst_n) begin
                         RESET = 1;
                         entered = 0;
+                        delay = 0;
                     end
                     else if(tl_item.SPM_ISO_start) begin
                         ISO_LC = tl_item.SPM_Lane_Count;
@@ -142,29 +143,30 @@ class dp_source_ref_iso extends uvm_component;
                             endcase
                         end
                         else if (tl_item.SPM_MSA_VLD) begin
-                        Mvid_q.push_back(tl_item.SPM_Full_MSA[23:0]);
-                        Nvid_q.push_back(tl_item.SPM_Full_MSA[47:24]);
-                        HTotal_q.push_back(tl_item.SPM_Full_MSA[63:48]);
-                        VTotal_q.push_back(tl_item.SPM_Full_MSA[79:64]);
-                        HStart_q.push_back(tl_item.SPM_Full_MSA[95:80]);
-                        VStart_q.push_back(tl_item.SPM_Full_MSA[111:96]);
-                        HSP_q.push_back(tl_item.SPM_Full_MSA[112]);
-                        HSW_q.push_back(tl_item.SPM_Full_MSA[127:113]);
-                        VSP_q.push_back(tl_item.SPM_Full_MSA[128]);
-                        VSW_q.push_back(tl_item.SPM_Full_MSA[143:129]);
-                        HWidth_q.push_back(tl_item.SPM_Full_MSA[159:144]);
-                        VHeight_q.push_back(tl_item.SPM_Full_MSA[175:160]);
-                        MISC0_q.push_back(tl_item.SPM_Full_MSA[183:176]);
-                        MISC1_q.push_back(tl_item.SPM_Full_MSA[191:184]);
-                        calculate_timing_parameters(hactive_period, hblank_period, vblank_period, htotal_period, valid_symbols_integer, valid_symbols_fraction, tu_alternate_up, tu_alternate_down, alternate_valid);
-                        // Mvid_q.delete(0); Nvid_q.delete(0); HTotal_q.delete(0); VTotal_q.delete(0); HStart_q.delete(0);
-                        // VStart_q.delete(0); HSP_q.delete(0); HSW_q.delete(0); VSP_q.delete(0); VSW_q.delete(0);
-                        // HWidth_q.delete(0); VHeight_q.delete(0); MISC0_q.delete(0); MISC1_q.delete(0);
-                        `uvm_info(get_type_name(), "Calculated timing parameters for expected transaction", UVM_LOW)
+                            Mvid_q.push_back(tl_item.SPM_Full_MSA[23:0]);
+                            Nvid_q.push_back(tl_item.SPM_Full_MSA[47:24]);
+                            HTotal_q.push_back(tl_item.SPM_Full_MSA[63:48]);
+                            VTotal_q.push_back(tl_item.SPM_Full_MSA[79:64]);
+                            HStart_q.push_back(tl_item.SPM_Full_MSA[95:80]);
+                            VStart_q.push_back(tl_item.SPM_Full_MSA[111:96]);
+                            HSP_q.push_back(tl_item.SPM_Full_MSA[112]);
+                            HSW_q.push_back(tl_item.SPM_Full_MSA[127:113]);
+                            VSP_q.push_back(tl_item.SPM_Full_MSA[128]);
+                            VSW_q.push_back(tl_item.SPM_Full_MSA[143:129]);
+                            HWidth_q.push_back(tl_item.SPM_Full_MSA[159:144]);
+                            VHeight_q.push_back(tl_item.SPM_Full_MSA[175:160]);
+                            MISC0_q.push_back(tl_item.SPM_Full_MSA[183:176]);
+                            MISC1_q.push_back(tl_item.SPM_Full_MSA[191:184]);
+                            calculate_timing_parameters(hactive_period, hblank_period, vblank_period, htotal_period, valid_symbols_integer, valid_symbols_fraction, tu_alternate_up, tu_alternate_down, alternate_valid);
+                            // Mvid_q.delete(0); Nvid_q.delete(0); HTotal_q.delete(0); VTotal_q.delete(0); HStart_q.delete(0);
+                            // VStart_q.delete(0); HSP_q.delete(0); HSW_q.delete(0); VSP_q.delete(0); VSW_q.delete(0);
+                            // HWidth_q.delete(0); VHeight_q.delete(0); MISC0_q.delete(0); MISC1_q.delete(0);
+                            `uvm_info(get_type_name(), "Calculated timing parameters for expected transaction", UVM_LOW)
                         end
                     end
                     else begin
                         in_ISO = 0;
+                        delay = 0;
                         RESET = 0;
                     end
                 end
@@ -203,15 +205,35 @@ class dp_source_ref_iso extends uvm_component;
                         ref_vif.ref_expected_Control_sym_flag_lane1 = expected_transaction.Control_sym_flag_lane1;
                         ref_vif.ref_expected_Control_sym_flag_lane2 = expected_transaction.Control_sym_flag_lane2;
                         ref_vif.ref_expected_Control_sym_flag_lane3 = expected_transaction.Control_sym_flag_lane3;
-                        // send_expected_to_scoreboard();
+                        send_expected_to_scoreboard();
                     end
                     else if (in_ISO) begin // if reset is off and LT is passed
                         // `uvm_info(get_type_name(), $sformatf("VBlank value %0d", vblank_period), UVM_LOW)
+                        if(!delay) begin
+                            delay = 1;
+                            repeat(4) begin
+                                ref_vif.ref_expected_ISO_symbols_lane0 = expected_transaction.ISO_symbols_lane0;
+                                ref_vif.ref_expected_ISO_symbols_lane1 = expected_transaction.ISO_symbols_lane1;
+                                ref_vif.ref_expected_ISO_symbols_lane2 = expected_transaction.ISO_symbols_lane2;
+                                ref_vif.ref_expected_ISO_symbols_lane3 = expected_transaction.ISO_symbols_lane3;
+
+                                ref_vif.ref_expected_Control_sym_flag_lane0 = expected_transaction.Control_sym_flag_lane0;
+                                ref_vif.ref_expected_Control_sym_flag_lane1 = expected_transaction.Control_sym_flag_lane1;
+                                ref_vif.ref_expected_Control_sym_flag_lane2 = expected_transaction.Control_sym_flag_lane2;
+                                ref_vif.ref_expected_Control_sym_flag_lane3 = expected_transaction.Control_sym_flag_lane3;
+                                send_expected_to_scoreboard();
+                            end
+                        end
                         `uvm_info(get_type_name(), "Calling generate_expected_transaction()", UVM_LOW)
                         generate_expected_transaction(); // Generate expected transaction based on TL item
-                        if(!RESET && !in_ISO) begin
-                            ISO_IDLE_PATTERN(); // Call ISO_IDLE task to handle IDLE state
-                        end
+                        // if(!RESET && !in_ISO) begin
+                        //     IDLE_PATTERN(SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, cs_0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call IDLE_PATTERN task to handle IDLE state
+                        //     IDLE_PATTERN(SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
+                        //     IDLE_PATTERN(SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
+                        //     IDLE_PATTERN(SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
+                        //     counter_i = 0;
+                        //     send_expected_to_scoreboard();
+                        // end
                     end
                     else if (!entered || RESET) begin
                         `uvm_info(get_type_name(), "LT not passed", UVM_HIGH)
@@ -249,11 +271,15 @@ class dp_source_ref_iso extends uvm_component;
                         ref_vif.ref_expected_Control_sym_flag_lane1 = expected_transaction.Control_sym_flag_lane1;
                         ref_vif.ref_expected_Control_sym_flag_lane2 = expected_transaction.Control_sym_flag_lane2;
                         ref_vif.ref_expected_Control_sym_flag_lane3 = expected_transaction.Control_sym_flag_lane3;
-                        // send_expected_to_scoreboard();               
+                        send_expected_to_scoreboard();               
                     end
                     else if(entered && !in_ISO) begin
-                        ISO_IDLE_PATTERN(); // Call ISO_IDLE task to handle IDLE state
+                        IDLE_PATTERN(SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, cs_0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call IDLE_PATTERN task to handle IDLE state
+                        IDLE_PATTERN(SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
+                        IDLE_PATTERN(SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
+                        IDLE_PATTERN(SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state
                         counter_i = 0;
+                        send_expected_to_scoreboard();
                     end
                 end
             join
@@ -306,6 +332,7 @@ class dp_source_ref_iso extends uvm_component;
                 count_VBLANK =0; // Reset VBLANK counter after sending VBLANK symbols for the current video frame
             end 
             ISO_HBLANK: begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE HHHHHHHHHHHHHHHHBLANK"), UVM_MEDIUM)
                 ISO_HBLANK_PATTERN(); // Call HBLANK task to handle HBLANK state
                 cs = ISO_ACTIVE;
             end 
@@ -481,50 +508,55 @@ class dp_source_ref_iso extends uvm_component;
     endtask
 
     task ISO_VBLANK_PATTERN();
-        while(count_VBLANK < vblank_period) begin
-            `uvm_info(get_type_name(), $sformatf("INSIDE the WHILEEEEEEEEEEEE"), UVM_MEDIUM)
+        repeat(VTotal_q[0] - VHeight_q[0]) begin
+            `uvm_info(get_type_name(), $sformatf("INSIDE the OUTER REPEAT, vblank_period = %0h", vblank_period), UVM_MEDIUM)
+            repeat (HTotal_q[0]) begin
+                `uvm_info(get_type_name(), $sformatf("INSIDE the INNER REPEAT, htotal_period = %0h", htotal_period), UVM_MEDIUM)
+                if (RESET) begin
+                    break; // Exit the loop if reset is active
+                end
+                else begin
+                    `uvm_info(get_type_name(), $sformatf("INSIDE VBLANK OUTSIDE CASEEEEEEEEEE"), UVM_MEDIUM)
+                    case(ISO_LC) // according to the actvie lane count, send VBlank on all active lanes and remain with IDLE pattern on inactive lanes
+                        3'b001: begin // // Data transmission on 1 lane
+                            send_vblank_symbols(SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                            IDLE_PATTERN(SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
+                            IDLE_PATTERN(SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
+                            IDLE_PATTERN(SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state 
+                        end
+                        3'b010: begin // // Data transmission on 2 lanes
+                            send_vblank_symbols(SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                            send_vblank_symbols(SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, count_MSA_1, cs_1, ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
+                            IDLE_PATTERN(SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
+                            IDLE_PATTERN(SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state            
+                        end
+                        3'b100: begin // Data transmission on 4 lanes
+                            send_vblank_symbols(SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
+                            send_vblank_symbols(SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, count_MSA_1, cs_1, ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
+                            send_vblank_symbols(SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, count_MSA_2, cs_2, ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call VBLANK_PATTERN task to handle VBLANK state
+                            send_vblank_symbols(SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, count_MSA_3, cs_3, ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call VBLANK_PATTERN task to handle VBLANK state           
+                        end
+                        default:    // Default case to handle unexpected states
+                            `uvm_fatal("ISO_LANE_NUM_ERROR", "Invalid lane number in ISO operation! Lane Count cannot be 3!")
+                    endcase
+                end
+                // Send the expected transaction to the scoreboard
+                `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
+                ref_vif.ref_expected_ISO_symbols_lane0 = expected_transaction.ISO_symbols_lane0;
+                ref_vif.ref_expected_ISO_symbols_lane1 = expected_transaction.ISO_symbols_lane1;
+                ref_vif.ref_expected_ISO_symbols_lane2 = expected_transaction.ISO_symbols_lane2;
+                ref_vif.ref_expected_ISO_symbols_lane3 = expected_transaction.ISO_symbols_lane3;
+
+                ref_vif.ref_expected_Control_sym_flag_lane0 = expected_transaction.Control_sym_flag_lane0;
+                ref_vif.ref_expected_Control_sym_flag_lane1 = expected_transaction.Control_sym_flag_lane1;
+                ref_vif.ref_expected_Control_sym_flag_lane2 = expected_transaction.Control_sym_flag_lane2;
+                ref_vif.ref_expected_Control_sym_flag_lane3 = expected_transaction.Control_sym_flag_lane3;
+                send_expected_to_scoreboard();
+            end 
             if (RESET) begin
                 break; // Exit the loop if reset is active
             end
-            else begin
-                `uvm_info(get_type_name(), $sformatf("INSIDE VBLANK OUTSIDE CASEEEEEEEEEE"), UVM_MEDIUM)
-                case(ISO_LC) // according to the actvie lane count, send VBlank on all active lanes and remain with IDLE pattern on inactive lanes
-                    3'b001: begin // // Data transmission on 1 lane
-                        send_vblank_symbols(SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
-                        IDLE_PATTERN(SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, cs_1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call IDLE_PATTERN task to handle IDLE state
-                        IDLE_PATTERN(SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
-                        IDLE_PATTERN(SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state 
-                    end
-                    3'b010: begin // // Data transmission on 2 lanes
-                        send_vblank_symbols(SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_vblank_symbols(SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, count_MSA_1, cs_1, ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
-                        IDLE_PATTERN(SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, cs_2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call IDLE_PATTERN task to handle IDLE state
-                        IDLE_PATTERN(SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, cs_3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call IDLE_PATTERN task to handle IDLE state            
-                    end
-                    3'b100: begin // Data transmission on 4 lanes
-                        send_vblank_symbols(SR_flag_0, BS_flag_0, BF_flag_0, counter_SR_0, counter_0, count_MSA_0, cs_0, ISO_LC, 2'd0, expected_transaction.ISO_symbols_lane0, expected_transaction.Control_sym_flag_lane0); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_vblank_symbols(SR_flag_1, BS_flag_1, BF_flag_1, counter_SR_1, counter_1, count_MSA_1, cs_1, ISO_LC, 2'd1, expected_transaction.ISO_symbols_lane1, expected_transaction.Control_sym_flag_lane1); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_vblank_symbols(SR_flag_2, BS_flag_2, BF_flag_2, counter_SR_2, counter_2, count_MSA_2, cs_2, ISO_LC, 2'd2, expected_transaction.ISO_symbols_lane2, expected_transaction.Control_sym_flag_lane2); // Call VBLANK_PATTERN task to handle VBLANK state
-                        send_vblank_symbols(SR_flag_3, BS_flag_3, BF_flag_3, counter_SR_3, counter_3, count_MSA_3, cs_3, ISO_LC, 2'd3, expected_transaction.ISO_symbols_lane3, expected_transaction.Control_sym_flag_lane3); // Call VBLANK_PATTERN task to handle VBLANK state           
-                    end
-                    default:    // Default case to handle unexpected states
-                        `uvm_fatal("ISO_LANE_NUM_ERROR", "Invalid lane number in ISO operation! Lane Count cannot be 3!")
-                endcase
-            end
-            // Send the expected transaction to the scoreboard
-            `uvm_info(get_type_name(), "Allocated expected_transaction object", UVM_MEDIUM)
-            ref_vif.ref_expected_ISO_symbols_lane0 = expected_transaction.ISO_symbols_lane0;
-            ref_vif.ref_expected_ISO_symbols_lane1 = expected_transaction.ISO_symbols_lane1;
-            ref_vif.ref_expected_ISO_symbols_lane2 = expected_transaction.ISO_symbols_lane2;
-            ref_vif.ref_expected_ISO_symbols_lane3 = expected_transaction.ISO_symbols_lane3;
-
-            ref_vif.ref_expected_Control_sym_flag_lane0 = expected_transaction.Control_sym_flag_lane0;
-            ref_vif.ref_expected_Control_sym_flag_lane1 = expected_transaction.Control_sym_flag_lane1;
-            ref_vif.ref_expected_Control_sym_flag_lane2 = expected_transaction.Control_sym_flag_lane2;
-            ref_vif.ref_expected_Control_sym_flag_lane3 = expected_transaction.Control_sym_flag_lane3;
-            send_expected_to_scoreboard();
-            count_VBLANK++; // Increment the VBLANK counter, the line is finished
-        end 
+        end
     endtask
 
     task send_vblank_symbols(

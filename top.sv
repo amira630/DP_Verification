@@ -59,7 +59,7 @@ module top();
             end
             begin
                 forever
-                    #0.01 MS_Stm_CLK = ~MS_Stm_CLK; // Pixel Stream Clock 
+                    #0.00625 MS_Stm_CLK = ~MS_Stm_CLK; // Pixel Stream Clock 
                     // #0.020833333 24MHz
                     // #0.01 50MHz
                     // #(0.00625) 80MHz

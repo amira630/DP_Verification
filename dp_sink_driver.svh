@@ -7,6 +7,8 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
 
     virtual dp_sink_if dp_sink_vif;
     dp_sink_sequence_item stim_seq_item;
+
+    logic [1:0] SPM_BW_Sel;
     
     function new(string name = "dp_sink_driver", uvm_component parent = null);
         super.new(name, parent);
@@ -54,15 +56,15 @@ class dp_sink_driver extends uvm_driver #(dp_sink_sequence_item);
                                         stim_seq_item.PHY_ADJ_BW, stim_seq_item.PHY_ADJ_LC, stim_seq_item.PHY_Instruct_VLD);
                         end
                         begin
-                            case (stim_seq_item.Final_BW)
-                                BW_RBR:  @(posedge dp_sink_vif.clk_RBR);
-                                BW_HBR:  @(posedge dp_sink_vif.clk_HBR);
-                                BW_HBR2: @(posedge dp_sink_vif.clk_HBR2);
-                                BW_HBR3: @(posedge dp_sink_vif.clk_HBR3);
-                                default: @(posedge dp_sink_vif.clk_RBR);
-                            endcase
-                        dp_sink_vif.ISO_sink(stim_seq_item.Control_sym_flag_lane0, stim_seq_item.Control_sym_flag_lane1, stim_seq_item.Control_sym_flag_lane2, stim_seq_item.Control_sym_flag_lane3,
-                                        stim_seq_item.ISO_symbols_lane0, stim_seq_item.ISO_symbols_lane1, stim_seq_item.ISO_symbols_lane2, stim_seq_item.ISO_symbols_lane3, stim_seq_item.Final_BW);                   
+                            @(posedge dp_sink_vif.clk_HBR3);
+                            // case (SPM_BW_Sel)
+                            //     2'd0: @(posedge dp_sink_vif.clk_RBR);
+                            //     2'd1: @(posedge dp_sink_vif.clk_HBR);
+                            //     2'd2: @(posedge dp_sink_vif.clk_HBR2);
+                            //     2'd3: @(posedge dp_sink_vif.clk_HBR3);
+                            // endcase
+                            dp_sink_vif.ISO_sink(stim_seq_item.Control_sym_flag_lane0, stim_seq_item.Control_sym_flag_lane1, stim_seq_item.Control_sym_flag_lane2, stim_seq_item.Control_sym_flag_lane3,
+                                        stim_seq_item.ISO_symbols_lane0, stim_seq_item.ISO_symbols_lane1, stim_seq_item.ISO_symbols_lane2, stim_seq_item.ISO_symbols_lane3);                   
                         end
                     join
                     if (stim_seq_item.AUX_START_STOP) begin

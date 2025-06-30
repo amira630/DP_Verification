@@ -21,7 +21,7 @@ class dp_scoreboard extends uvm_scoreboard;
     logic [7:0] RED_8 [$];   logic [15:0] RED_16 [$];
     logic [7:0] GREEN_8 [$]; logic [15:0] GREEN_16 [$];
     logic [7:0] BLUE_8 [$];  logic [15:0] BLUE_16 [$];
-    bit [15:0] RED, GREEN, BLUE; // Variables to store pixel data
+    bit [15:0] RED_0, GREEN_0, BLUE_0, RED_1, GREEN_1, BLUE_1, RED_2, GREEN_2, BLUE_2, RED_3, GREEN_3, BLUE_3; // Variables to store pixel data
     logic [2:0] ISO_LC;
     logic [2:0] bpc;
     int count_comp0, count_comp1, count_comp2, count_comp3;
@@ -90,15 +90,6 @@ class dp_scoreboard extends uvm_scoreboard;
                         end
                     end
                 end
-                // else begin
-                //     RED_8.delete(); GREEN_8.delete(); BLUE_8.delete();
-                //     RED_16.delete(); GREEN_16.delete(); BLUE_16.delete();
-                //     ISO_LC = 3'b000;
-                //     bpc = 3'b000;
-                //     count_comp0 = 0; count_comp1 = 0; count_comp2 = 0; count_comp3 = 0;
-                //     ISO_symbols_lane0 = 8'h00; ISO_symbols_lane1 = 8'h00; 
-                //     ISO_symbols_lane2 = 8'h00; ISO_symbols_lane3 = 8'h00;
-                // end
             end
             sb_sink_fifo.get(sink_item);
             if(sink_item.ISO_symbols_lane0 != 8'h00) begin
@@ -144,7 +135,20 @@ class dp_scoreboard extends uvm_scoreboard;
         case (ISO_LC) 
             3'b001: begin
                 // `uvm_error(get_type_name(), $sformatf("INSIDE LANE COUNT ONEEEEEEEEEEE"))
-                pixels_symbols(count_comp0, RED, GREEN, BLUE, ISO_symbols_lane0); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
+                pixels_symbols(count_comp0, RED_0, GREEN_0, BLUE_0, ISO_symbols_lane0); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
+                if (ISO_symbols_lane0 !== sink_item.ISO_symbols_lane0) begin
+                    `uvm_error(get_type_name(), $sformatf("Mismatch in ISO_symbols_lane0: expected=%0h, actual=%0h", ISO_symbols_lane0, sink_item.ISO_symbols_lane0))
+                    `uvm_fatal(get_type_name(),"Mismatch in ISO_symbols_lane0")
+                    error_count++;
+                end
+                else begin
+                    `uvm_info(get_type_name(), $sformatf("ISO_symbols_lane0 match: expected=%0h, actual=%0h", ISO_symbols_lane0, sink_item.ISO_symbols_lane0), UVM_LOW)
+                    correct_count++;
+                    // `uvm_fatal("SCOREBOARD", "ISO_symbols_lane0 match")
+                end
+            end
+            3'b010: begin
+                pixels_symbols(count_comp0, RED_0, GREEN_0, BLUE_0, ISO_symbols_lane0); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
                 if (ISO_symbols_lane0 !== sink_item.ISO_symbols_lane0) begin
                     `uvm_error(get_type_name(), $sformatf("Mismatch in ISO_symbols_lane0: expected=%0h, actual=%0h", ISO_symbols_lane0, sink_item.ISO_symbols_lane0))
                     `uvm_fatal(get_type_name(),"Mismatch in ISO_symbols_lane0")
@@ -153,70 +157,57 @@ class dp_scoreboard extends uvm_scoreboard;
                 else begin
                     `uvm_info(get_type_name(),  $sformatf("ISO_symbols_lane0 match: expected=%0h, actual=%0h", ISO_symbols_lane0, sink_item.ISO_symbols_lane0), UVM_LOW)
                     correct_count++;
-                    // `uvm_fatal("SCOREBOARD", "ISO_symbols_lane0 match")
                 end
-            end
-            3'b010: begin
-                pixels_symbols(count_comp0, RED, GREEN, BLUE, ISO_symbols_lane0); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
-                if (ISO_symbols_lane0 !== sink_item.ISO_symbols_lane0) begin
-                    `uvm_error(get_type_name(), $sformatf("Mismatch in ISO_symbols_lane0: expected=%0h, actual=%0h", ISO_symbols_lane0, sink_item.ISO_symbols_lane0))
-                    `uvm_fatal(get_type_name(),"Mismatch in ISO_symbols_lane0")
-                    error_count++;
-                end
-                else begin
-                    `uvm_info(get_type_name(), "ISO_symbols_lane0 match", UVM_LOW)
-                    correct_count++;
-                end
-                pixels_symbols(count_comp1, RED, GREEN, BLUE, ISO_symbols_lane1); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
+                pixels_symbols(count_comp1, RED_1, GREEN_1, BLUE_1, ISO_symbols_lane1); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
                 if (ISO_symbols_lane1 !== sink_item.ISO_symbols_lane1) begin
                     `uvm_error(get_type_name(), $sformatf("Mismatch in ISO_symbols_lane1: expected=%0h, actual=%0h", ISO_symbols_lane1, sink_item.ISO_symbols_lane1))
                     `uvm_fatal(get_type_name(),"Mismatch in ISO_symbols_lane1")
                     error_count++;
                 end
                 else begin
-                    `uvm_info(get_type_name(), "ISO_symbols_lane1 match", UVM_LOW)
+                    `uvm_info(get_type_name(),  $sformatf("ISO_symbols_lane1 match: expected=%0h, actual=%0h", ISO_symbols_lane1, sink_item.ISO_symbols_lane1), UVM_LOW)
                     correct_count++;
                 end
             end
             3'b100: begin
-                pixels_symbols(count_comp0, RED, GREEN, BLUE, ISO_symbols_lane0); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
+                pixels_symbols(count_comp0, RED_0, GREEN_0, BLUE_0, ISO_symbols_lane0); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
                 if (ISO_symbols_lane0 !== sink_item.ISO_symbols_lane0) begin
                     `uvm_error(get_type_name(), $sformatf("Mismatch in ISO_symbols_lane0: expected=%0h, actual=%0h", ISO_symbols_lane0, sink_item.ISO_symbols_lane0))
                     `uvm_fatal(get_type_name(),"Mismatch in ISO_symbols_lane0")
                     error_count++;
                 end
                 else begin
-                    `uvm_info(get_type_name(), "ISO_symbols_lane0 match", UVM_LOW)
+                    `uvm_info(get_type_name(),  $sformatf("ISO_symbols_lane0 match: expected=%0h, actual=%0h", ISO_symbols_lane0, sink_item.ISO_symbols_lane0), UVM_LOW)
                     correct_count++;
                 end
-                pixels_symbols(count_comp1, RED, GREEN, BLUE, ISO_symbols_lane1); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
+                pixels_symbols(count_comp1, RED_1, GREEN_1, BLUE_1, ISO_symbols_lane1); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
                 if (ISO_symbols_lane1 !== sink_item.ISO_symbols_lane1) begin
                     `uvm_error(get_type_name(), $sformatf("Mismatch in ISO_symbols_lane1: expected=%0h, actual=%0h", ISO_symbols_lane1, sink_item.ISO_symbols_lane1))
                     `uvm_fatal(get_type_name(),"Mismatch in ISO_symbols_lane1")
                     error_count++;
                 end
                 else begin
-                    `uvm_info(get_type_name(), "ISO_symbols_lane1 match", UVM_LOW)
+                    `uvm_info(get_type_name(), $sformatf("ISO_symbols_lane1 match: expected=%0h, actual=%0h", ISO_symbols_lane1, sink_item.ISO_symbols_lane1), UVM_LOW)
                     correct_count++;
                 end
-                pixels_symbols(count_comp2, RED, GREEN, BLUE, ISO_symbols_lane2); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
+                pixels_symbols(count_comp2, RED_2, GREEN_2, BLUE_2, ISO_symbols_lane2); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
                 if (ISO_symbols_lane2 !== sink_item.ISO_symbols_lane2) begin
                     `uvm_error(get_type_name(), $sformatf("Mismatch in ISO_symbols_lane2: expected=%0h, actual=%0h", ISO_symbols_lane2, sink_item.ISO_symbols_lane2))
                     `uvm_fatal(get_type_name(),"Mismatch in ISO_symbols_lane2")
                     error_count++;
                 end
                 else begin
-                    `uvm_info(get_type_name(), "ISO_symbols_lane2 match", UVM_LOW)
+                    `uvm_info(get_type_name(), $sformatf("ISO_symbols_lane2 match: expected=%0h, actual=%0h", ISO_symbols_lane2, sink_item.ISO_symbols_lane2), UVM_LOW)
                     correct_count++;
                 end
-                pixels_symbols(count_comp3, RED, GREEN, BLUE, ISO_symbols_lane3); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
+                pixels_symbols(count_comp3, RED_3, GREEN_3, BLUE_3, ISO_symbols_lane3); // Call pixels_symbols task to handle pixel transmission (valid data part of TU)
                 if (ISO_symbols_lane3 !== sink_item.ISO_symbols_lane3) begin
                     `uvm_error(get_type_name(), $sformatf("Mismatch in ISO_symbols_lane3: expected=%0h, actual=%0h", ISO_symbols_lane3, sink_item.ISO_symbols_lane3))
                     `uvm_fatal(get_type_name(),"Mismatch in ISO_symbols_lane3")
                     error_count++;
                 end
                 else begin
-                    `uvm_info(get_type_name(), "ISO_symbols_lane3 match", UVM_LOW)
+                    `uvm_info(get_type_name(), $sformatf("ISO_symbols_lane3 match: expected=%0h, actual=%0h", ISO_symbols_lane3, sink_item.ISO_symbols_lane3), UVM_LOW)
                     correct_count++;
                 end
             end

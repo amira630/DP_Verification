@@ -101,28 +101,28 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
                                     ISO_INIT();
                                     Main_Stream(1);
                                 end
-                                // begin 
-                                //     forever begin
-                                //         if(~seq_item.HPD_Detect) begin
-                                //             cs = DETECTING;
-                                //             seq_item.SPM_ISO_start = 1'b0; // Stop the ISO stream
-                                //             `uvm_info("TL_BASE_SEQ", $sformatf("HPD not detected, moving back to DETECTING state"), UVM_MEDIUM)
-                                //         end
-                                //         else if(seq_item.HPD_IRQ) begin
-                                //             // Call Interrput task
-                                //             HPD_IRQ_sequence();
-                                //             if(seq_item.error_flag) begin
-                                //                 cs = CR_STAGE;
-                                //                 seq_item.SPM_ISO_start = 1'b0; // Stop the ISO stream
-                                //                 `uvm_info("TL_BASE_SEQ", $sformatf("ISO stage completed, moving to IRQ state"), UVM_MEDIUM)
-                                //             end
-                                //             else begin
-                                //                 cs = ISO_STAGE;
-                                //                 `uvm_info("TL_BASE_SEQ", $sformatf("ISO stage not completed, staying in ISO stage"), UVM_MEDIUM)
-                                //             end
-                                //         end
-                                //     end
-                                // end
+                                begin 
+                                    forever begin
+                                        if(~seq_item.HPD_Detect) begin
+                                            cs = DETECTING;
+                                            seq_item.SPM_ISO_start = 1'b0; // Stop the ISO stream
+                                            `uvm_info("TL_BASE_SEQ", $sformatf("HPD not detected, moving back to DETECTING state"), UVM_MEDIUM)
+                                        end
+                                        else if(seq_item.HPD_IRQ) begin
+                                            // Call Interrput task
+                                            HPD_IRQ_sequence();
+                                            if(seq_item.error_flag) begin
+                                                cs = CR_STAGE;
+                                                seq_item.SPM_ISO_start = 1'b0; // Stop the ISO stream
+                                                `uvm_info("TL_BASE_SEQ", $sformatf("ISO stage completed, moving to IRQ state"), UVM_MEDIUM)
+                                            end
+                                            else begin
+                                                cs = ISO_STAGE;
+                                                `uvm_info("TL_BASE_SEQ", $sformatf("ISO stage not completed, staying in ISO stage"), UVM_MEDIUM)
+                                            end
+                                        end
+                                    end
+                                end
                             join
                         end
                         default: begin
@@ -1743,8 +1743,10 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
 
         seq_item.SPM_BW_Sel = 2'b01; // HBR
         seq_item.SPM_Lane_BW = 16'd270; // 2.7 Gbps/lane
-        seq_item.SPM_Lane_Count = 3'b001; // 1 lane
+        seq_item.SPM_Lane_Count = 3'b010; // 1 lane
 
+        seq_cfg.SPM_BW_Sel = seq_item.SPM_BW_Sel;
+        
         seq_item.Mvid     = 24'd1000;
         seq_item.Nvid     = 24'd100000;
         // seq_item.HTotal   = 16'd320;
@@ -1901,6 +1903,164 @@ class dp_tl_base_sequence extends uvm_sequence #(dp_tl_sequence_item);
         seq_item.SPM_Transaction_VLD = 0;
         seq_item.SPM_MSA_VLD = 0;
         seq_item.MS_DE = 0;
+        finish_item(seq_item);
+        get_response(seq_item);
+    endtask
+
+
+    task ISO_INIT_config(input logic [1:0] bw_sel, resolution, [15:0] lane_bw, [2:0] lane_count, bpc, R_Y, [9:0] stm_bw);
+        if(seq_item == null)
+            seq_item = dp_tl_sequence_item::type_id::create("seq_item");
+
+        seq_item.rand_mode(0);
+        seq_item.CLOCK_PERIOD = (1.0 / (24*1000000));
+        while (!seq_item.HPD_Detect)
+            detect_wait(seq_item.HPD_Detect);
+        
+        start_item(seq_item);
+        seq_item.SPM_Transaction_VLD = 1'b0;
+        seq_item.LPM_Transaction_VLD = 1'b0;
+        seq_item.SPM_MSA_VLD = 1'b1;
+        seq_item.SPM_ISO_start = 1'b1;
+        seq_item.operation = ISO;
+
+        seq_item.SPM_BW_Sel = bw_sel;
+        seq_item.SPM_Lane_BW = lane_bw;
+        seq_item.SPM_Lane_Count = lane_count;
+
+        seq_cfg.SPM_BW_Sel = seq_item.SPM_BW_Sel;
+
+        seq_item.Mvid     = 24'd1000;
+        seq_item.Nvid     = 24'd100000;
+
+        case(resolution) 
+        2'd0: begin
+            seq_item.HTotal = 800; seq_item.VTotal = 500;
+            seq_item.HWidth = 640; seq_item.VHeight = 480;
+            seq_item.HFront = 16; seq_item.HBack = 80;
+            seq_item.VFront = 3; seq_item.VBack = 13;
+            seq_item.HSW = 64; seq_item.VSW = 4;
+        end
+        2'd1: begin
+            seq_item.HTotal = 1440; seq_item.VTotal = 741;
+            seq_item.HWidth = 1280; seq_item.VHeight = 720;
+            seq_item.HFront = 64; seq_item.HBack = 192;
+            seq_item.VFront = 3; seq_item.VBack = 20;
+            seq_item.HSW = 32; seq_item.VSW = 5;
+        end
+        2'd2: begin
+            seq_item.HTotal = 2200; seq_item.VTotal = 1125;
+            seq_item.HWidth = 1920; seq_item.VHeight = 1080;
+            seq_item.HFront = 88; seq_item.HBack = 148;
+            seq_item.VFront = 4; seq_item.VBack = 36;
+            seq_item.HSW = 44; seq_item.VSW = 5;
+        end
+        2'd3: begin
+            seq_item.HTotal = 3488; seq_item.VTotal = 1493;
+            seq_item.HWidth = 2560; seq_item.VHeight = 1440;
+            seq_item.HFront = 192; seq_item.HBack = 464;
+            seq_item.VFront = 3; seq_item.VBack = 45;
+            seq_item.HSW = 272; seq_item.VSW = 5;  
+        end
+        endcase
+        seq_item.VStart   = 16'hFF_FF;
+        seq_item.HStart   = 16'hFF_FF;
+
+        seq_item.HSP      = 1'b1; // HSYNC = 1 not on, HSYNC = 0 on 
+        seq_item.VSP      = 1'b1; // VSYNC = 1 not on, VSYNC = 0 on 
+        seq_item.MISC0    = {bpc, 1'b0, R_Y, 1'b0}; // bpc & RBG/YCbCr
+        seq_item.MISC1    = 8'h00;
+
+        seq_item.SPM_MSA[0]  = seq_item.Mvid[7:0];     seq_item.SPM_MSA[1]  = seq_item.Mvid[15:8];               seq_item.SPM_MSA[2] = seq_item.Mvid[23:16];
+        seq_item.SPM_MSA[3]  = seq_item.Nvid[7:0];     seq_item.SPM_MSA[4]  = seq_item.Nvid[15:8];               seq_item.SPM_MSA[5] = seq_item.Nvid[23:16];
+        seq_item.SPM_MSA[6]  = seq_item.HTotal[7:0];   seq_item.SPM_MSA[7]  = seq_item.HTotal[15:8];             seq_item.SPM_MSA[8] = seq_item.VTotal[7:0];
+        seq_item.SPM_MSA[9]  = seq_item.VTotal[15:8];  seq_item.SPM_MSA[10] = seq_item.HStart[7:0];              seq_item.SPM_MSA[11] = seq_item.HStart[15:8];
+        seq_item.SPM_MSA[12] = seq_item.VStart[7:0];   seq_item.SPM_MSA[13] = seq_item.VStart[15:8];             seq_item.SPM_MSA[14] = {seq_item.HSW[6:0], seq_item.HSP};
+        seq_item.SPM_MSA[15] = seq_item.HSW[14:7];     seq_item.SPM_MSA[16] = {seq_item.VSW[6:0], seq_item.VSP}; seq_item.SPM_MSA[17] = seq_item.VSW[14:7];
+        seq_item.SPM_MSA[18] = seq_item.HWidth[7:0];   seq_item.SPM_MSA[19] = seq_item.HWidth[15:8];             seq_item.SPM_MSA[20] = seq_item.VHeight[7:0];
+        seq_item.SPM_MSA[21] = seq_item.VHeight[15:8]; seq_item.SPM_MSA[22] = seq_item.MISC0;                    seq_item.SPM_MSA[23] = seq_item.MISC1;
+        // Concatenate all 24 bytes of MSA data into SPM_Full_MSA
+        seq_item.SPM_Full_MSA = {seq_item.SPM_MSA[23], seq_item.SPM_MSA[22], seq_item.SPM_MSA[21], seq_item.SPM_MSA[20],
+                    seq_item.SPM_MSA[19], seq_item.SPM_MSA[18], seq_item.SPM_MSA[17], seq_item.SPM_MSA[16],
+                    seq_item.SPM_MSA[15], seq_item.SPM_MSA[14], seq_item.SPM_MSA[13], seq_item.SPM_MSA[12],
+                    seq_item.SPM_MSA[11], seq_item.SPM_MSA[10], seq_item.SPM_MSA[9],  seq_item.SPM_MSA[8],
+                    seq_item.SPM_MSA[7],  seq_item.SPM_MSA[6],  seq_item.SPM_MSA[5],  seq_item.SPM_MSA[4],
+                    seq_item.SPM_MSA[3],  seq_item.SPM_MSA[2],  seq_item.SPM_MSA[1],  seq_item.SPM_MSA[0]};
+
+        seq_item.MS_Stm_BW = stm_bw; // MHz
+        seq_item.MS_Stm_BW_VLD = 1'b1;
+        seq_item.MS_DE = 0;
+
+        seq_item.CLOCK_PERIOD = (1.0 / (seq_item.MS_Stm_BW*1000000));
+
+        seq_item.MS_VSYNC = 1'b1;
+        seq_item.MS_HSYNC = 1'b1; // Both are off
+        finish_item(seq_item);
+        get_response(seq_item);
+        VBlank = seq_item.VTotal - seq_item.VHeight; // Calculate the VBlank
+        HBlank = seq_item.HTotal - seq_item.HWidth;
+    endtask
+
+    
+    task Main_Stream_config(input [15:0] frames);
+        int countv = 0;
+        int counth = 1;
+        bit is_firstframe = 1;
+        bit new_frame;
+
+        repeat(frames) begin
+            new_frame = 1;
+
+            repeat(seq_item.VTotal) begin
+                repeat(seq_item.HTotal) begin
+                    start_item(seq_item);
+                    seq_item.rand_mode(0);
+                    seq_item.MS_Stm_BW_VLD = 1'b0;
+                    seq_item.SPM_Transaction_VLD = 1'b0;
+                    seq_item.SPM_MSA_VLD = (is_firstframe || new_frame);
+                    new_frame = 0;
+                    is_firstframe = 0;
+
+                    if((countv >= VBlank) && (counth >= HBlank)) begin
+                        seq_item.MS_DE = 1;
+                        seq_item.MS_Pixel_Data.rand_mode(0);
+                        if (seq_item.MISC0[7:5]== 3'b100) 
+                            seq_item.MS_Pixel_Data = 48'hCDEFEF_ABABCD; // for 16bpc
+                        else
+                            seq_item.MS_Pixel_Data = 48'h000000_EFCDAB; // for 8bpc
+                    end else begin
+                        seq_item.MS_DE = 0;
+                        seq_item.MS_Pixel_Data.rand_mode(0);
+                        seq_item.MS_Pixel_Data = 48'h0;
+                    end
+
+                    // Sync logic (VSYNC/HSYNC)
+
+                    seq_item.MS_VSYNC = (countv > ((VBlank - seq_item.VSW)/2) && countv <= ((VBlank - seq_item.VSW)/2) + seq_item.VSW) ? ~seq_item.VSP : seq_item.VSP;
+                    seq_item.MS_HSYNC = (counth >= ((HBlank - seq_item.HSW)/2) && counth < ((HBlank - seq_item.HSW)/2) + seq_item.HSW) ? ~seq_item.HSP : seq_item.HSP;
+
+                    finish_item(seq_item);
+                    get_response(seq_item);
+                    counth++;
+                end
+                counth = 0;
+                countv++;
+            end
+            countv = 0;
+        end
+        start_item(seq_item);
+        seq_item.SPM_Transaction_VLD = 0;
+        seq_item.SPM_MSA_VLD = 0;
+        seq_item.MS_DE = 0;
+        finish_item(seq_item);
+        get_response(seq_item);
+        repeat(50) begin
+            start_item(seq_item);
+            finish_item(seq_item);
+            get_response(seq_item);
+        end
+        start_item(seq_item);
+        seq_item.SPM_ISO_start = 1'b0; 
         finish_item(seq_item);
         get_response(seq_item);
     endtask

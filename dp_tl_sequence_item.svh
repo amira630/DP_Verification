@@ -84,6 +84,8 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     rand logic [7:0]  MISC1;        // for colorimetry and colorimetry range
 
     rand logic [15:0] HBack, VBack, HFront, VFront;
+
+    rand bit [1:0] resolution_sel;
     
     /////////////////// MAIN STREAM SOURCE ///////////////////////
 
@@ -128,55 +130,45 @@ class dp_tl_sequence_item extends uvm_sequence_item;
     //     SPM_CMD == AUX_I2C_READ; // Force SPM_CMD to always be AUX_I2C_READ
     // }
 
-    constraint video_timing_constraints {
+    constraint VTC_gen {
 
         // 1. Mvid / Nvid: Clock generation ratio
         Mvid inside {[10_000 : 999_999]};        // Reasonable numerator
         Nvid inside {[Mvid+1 : 1_000_000]};      // Ensure fractional ratio < 1
 
-        // 2. Active visible resolution
-        HWidth inside {[640 : 3840]};            // Horizontal: VGA to 4K
-        VHeight inside {[480 : 2160]};           // Vertical: VGA to 4K
-
-        // HWidth == 640;            // Horizontal: VGA to 4K
-        // VHeight == 480;           // Vertical: VGA to 4K
-
-        // 3. Sync pulse widths (typical non-zero values)
-        HSW inside {[8 : 255]};
-        VSW inside {[1 : 127]};
-
-        // 4. Back porch
-        HBack inside {[16 : 512]};
-        VBack inside {[4 : 128]};
-
-        // 5. Total dimensions: sum of all intervals
-        HTotal == HFront + HSW + HBack + HWidth;
-        VTotal == VFront + VSW + VBack + VHeight;
-
-        // 6. Start of active video (after sync + back porch)
-        HStart == HBack + HSW;
-        VStart == VBack + VSW;
-
-        // 7. Derive front porch values from everything else
-        HFront == HTotal - (HWidth + HBack + HSW);
-        VFront == VTotal - (VHeight + VBack + VSW);
-
-        // 8. Ensure front porch is non-negative (redundant safety)
-        HFront >= 0;
-        VFront >= 0;
-
-        // 9. Reasonable total bounds
-        HTotal inside {[800 : 4096]};            // HDMI/DVI/DP-friendly ranges
-        VTotal inside {[500 : 3000]};
-        // HTotal == 800;            // HDMI/DVI/DP-friendly ranges
-        // VTotal == 500;
-        HStart <= HTotal;
-        VStart <= VTotal;
-
-    // 10. Sync polarities — fully random, with equal probability
-        HSP dist {1'b1 := 90, 1'b0 := 10}; // HSP is 1 90% of the time
-        VSP dist {1'b1 := 90, 1'b0 := 10}; // VSP is 1 90% of the time
+        // Sync polarities — fully random, with equal probability
+        HSP dist {1'b0 := 90, 1'b1 := 10}; // HSP is 0 90% of the time
+        VSP dist {1'b0 := 90, 1'b1 := 10}; // VSP is 0 90% of the time
     }
+
+    constraint choose_resolution {
+        if (resolution_sel == 0) {
+            HTotal == 800; VTotal == 500;
+            HWidth == 640; VHeight == 480;
+            HFront == 16; HBack == 80;
+            VFront == 3; VBack == 13;
+            HSW == 64; VSW == 4;
+        } else if (resolution_sel == 1) {
+            HTotal == 1440; VTotal == 741;
+            HWidth == 1280; VHeight == 720;
+            HFront == 64; HBack == 192;
+            VFront == 3; VBack == 20;
+            HSW == 32; VSW == 5;
+        } else if (resolution_sel == 2) {
+            HTotal == 2200; VTotal == 1125;
+            HWidth == 1920; VHeight == 1080;
+            HFront == 88; HBack == 148;
+            VFront == 4; VBack == 36;
+            HSW == 44; VSW == 5;
+        } else if (resolution_sel == 3) {
+            HTotal == 3488; VTotal == 1493;
+            HWidth == 2560; VHeight == 1440;
+            HFront == 192; HBack == 464;
+            VFront == 3; VBack == 45;
+            HSW == 272; VSW == 5; 
+        }
+    }
+
 
     constraint ms_pixel_data_constraint {
         if (MISC0[7:5] == 3'b001) {
